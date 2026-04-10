@@ -245,7 +245,7 @@ daemon:
       # Cron expression specifying when the action should run.
       # Example: '0 14 * * *' runs every day at 14:00 (2 PM).
       # See https://crontab.guru/ for help creating or testing cron expressions.
-      expression: '0 14 * * *'
+      expression: '0 8 * * *'
       # Whether this action should be executed (true/false)
       enabled: true
     - action: 'gearMaintenanceNotification'

@@ -3,27 +3,34 @@
 namespace App\Tests\Application;
 
 use App\Application\AppUrl;
+use App\Application\UpdateData\GarminBridgeUpdater;
 use App\Application\importDataAndBuildAppCronAction;
 use App\Domain\Activity\ActivityRepository;
 use App\Domain\Strava\Webhook\WebhookAspectType;
 use App\Domain\Strava\Webhook\WebhookEvent;
 use App\Domain\Strava\Webhook\WebhookEventRepository;
+use App\Domain\Wellness\WellnessImportConfig;
 use App\Infrastructure\CQRS\Command\Bus\CommandBus;
 use App\Infrastructure\Doctrine\Migrations\MigrationRunner;
 use App\Infrastructure\Mutex\LockName;
 use App\Infrastructure\Mutex\Mutex;
+use App\Infrastructure\Process\ProcessFactory;
 use App\Infrastructure\Serialization\Json;
+use App\Infrastructure\ValueObject\String\KernelProjectDir;
 use App\Tests\Console\ConsoleOutputSnapshotDriver;
 use App\Tests\ContainerTestCase;
 use App\Tests\Infrastructure\CQRS\Command\Bus\SpyCommandBus;
 use App\Tests\Infrastructure\Time\Clock\PausedClock;
 use App\Tests\Infrastructure\Time\ResourceUsage\FixedResourceUsage;
 use App\Tests\SpySymfonyStyleOutput;
+use PHPUnit\Framework\Attributes\AllowMockObjectsWithoutExpectations;
 use PHPUnit\Framework\MockObject\MockObject;
 use Spatie\Snapshots\MatchesSnapshots;
 use Symfony\Component\Console\Input\StringInput;
 use Symfony\Component\Console\Output\NullOutput;
+use Symfony\Component\Process\Process;
 
+#[AllowMockObjectsWithoutExpectations]
 class importDataAndBuildAppCronActionTest extends ContainerTestCase
 {
     use MatchesSnapshots;
@@ -31,6 +38,7 @@ class importDataAndBuildAppCronActionTest extends ContainerTestCase
     private importDataAndBuildAppCronAction $importAndBuildAppCronAction;
     private CommandBus $commandBus;
     private MockObject $migrationRunner;
+    private MockObject $processFactory;
 
     public function testRun(): void
     {
@@ -39,6 +47,11 @@ class importDataAndBuildAppCronActionTest extends ContainerTestCase
         $this->migrationRunner
             ->expects($this->once())
             ->method('run');
+
+        $this->processFactory
+            ->expects($this->once())
+            ->method('create')
+            ->with(['uv', 'run', 'tools/garmin_givemydata_bridge.py']);
 
         $this->importAndBuildAppCronAction->run($output);
 
@@ -116,6 +129,11 @@ class importDataAndBuildAppCronActionTest extends ContainerTestCase
             $this->commandBus = new SpyCommandBus(),
             $this->getContainer()->get(WebhookEventRepository::class),
             $this->getContainer()->get(ActivityRepository::class),
+            new GarminBridgeUpdater(
+                WellnessImportConfig::create(true, 'storage/imports/wellness/garmin-bridge.json'),
+                $this->processFactory = $this->createMock(ProcessFactory::class),
+                KernelProjectDir::fromString('/var/www'),
+            ),
             new FixedResourceUsage(),
             AppUrl::fromString('http://localhost'),
             new Mutex(
@@ -125,5 +143,18 @@ class importDataAndBuildAppCronActionTest extends ContainerTestCase
             ),
             $this->migrationRunner = $this->createMock(MigrationRunner::class),
         );
+
+        $process = $this->createConfiguredMock(Process::class, [
+            'getOutput' => '',
+            'getErrorOutput' => '',
+            'isSuccessful' => true,
+        ]);
+        $process->method('setWorkingDirectory')->willReturnSelf();
+        $process->method('setTimeout')->willReturnSelf();
+        $process->method('run');
+
+        $this->processFactory
+            ->method('create')
+            ->willReturn($process);
     }
 }

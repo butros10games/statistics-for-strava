@@ -365,7 +365,7 @@ def main() -> int:
                 f"- {record['date']}: steps={record['steps']}, sleep={record['sleepDurationInSeconds']}, sleepScore={record['sleepScore']}, hrv={record['hrv']}"
             )
 
-    print("Next run: docker compose run --rm php-cli bin/console app:strava:import-data && docker compose run --rm php-cli bin/console app:strava:build-files")
+    print("Next run: docker compose exec daemon bin/console app:update-data")
     return 0
 
 

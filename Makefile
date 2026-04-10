@@ -83,9 +83,16 @@ app-import-data:
 app-build-files:
 	docker compose exec app bin/console app:strava:build-files
 
+app-update-data:
+	docker compose exec daemon bin/console app:update-data
+
+app-install-node-deps:
+	@make dcr cmd="sh bin/install-node-deps.sh"
+
 app-build-assets:
-	@make dcr cmd="npx @tailwindcss/cli -i public/css/tailwind.css -o public/css/dist/tailwind.min.css --minify"
-	@make dcr cmd="npx @tailwindcss/cli -i public/css/tailwind.css -o public/css/tailwind.output.css"
+	@make app-install-node-deps
+	@make dcr cmd="node_modules/.bin/tailwindcss -i public/css/tailwind.css -o public/css/dist/tailwind.min.css --minify"
+	@make dcr cmd="node_modules/.bin/tailwindcss -i public/css/tailwind.css -o public/css/tailwind.output.css"
 	@make dcr cmd="node_modules/.bin/webpack --config webpack.config.js"
 
 app-build-all:

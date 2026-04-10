@@ -59,6 +59,10 @@ https://github.com/user-attachments/assets/81554f32-31be-4899-afd6-681ce3e7bcb6
 Start off by showing some ❤️ and give this repo a star. 
 When you are done, head over to the [documentation](https://statistics-for-strava-docs.robiningelbrecht.be) to get started with the installation and configuration of Statistics for Strava.
 
+## 🤖 AI workflow note
+
+This repository includes a project-scoped frontend skill at [`.github/skills/frontend-design/SKILL.md`](.github/skills/frontend-design/SKILL.md). It is based on Anthropic's `frontend-design` guidance and lightly adapted for this app's Twig + Tailwind + vanilla JavaScript frontend.
+
 ## 🫶 Sponsors
 
 This project is sponsored by [Blackfire.io](https://www.blackfire.io).

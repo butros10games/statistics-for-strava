@@ -4,6 +4,8 @@ services:
         container_name: 'statistics-for-strava-php-cli'
         volumes:
             - './:/var/www/'
+            - 'statistics-for-strava-node-modules:/var/www/node_modules'
+            - 'statistics-for-strava-npm-cache:/root/.npm'
         working_dir: /var/www
         env_file:
             - path: ./.env
@@ -38,26 +40,27 @@ services:
         networks:
             - statistics-for-strava-network
     daemon:
-      build:
-        context: ./
-        dockerfile: docker/app/Dockerfile
-      container_name: 'statistics-for-strava-daemon'
-      restart: unless-stopped
-      volumes:
-        - ./config/app:/var/www/config/app
-        - ./build:/var/www/build
-        - ./storage/database:/var/www/storage/database
-        - ./storage/files:/var/www/storage/files
-        - ./storage/gear-maintenance:/var/www/storage/gear-maintenance
-      env_file: ".env.local"
-      healthcheck:
-        test: [ "CMD", "sh", "-c", "test -f /var/www/storage/database/strava.db && echo 'ok' || exit 1" ]
-        start_period: 5s
-      environment:
-        - TZ=Europe/Brussels
-      entrypoint: ['bin/console', 'app:daemon:run']
-      networks:
-        - statistics-for-strava-network
+        platform: linux/amd64
+        build:
+            context: ./
+            dockerfile: docker/daemon/Dockerfile
+        container_name: 'statistics-for-strava-daemon'
+        restart: unless-stopped
+        volumes:
+            - ./config/app:/var/www/config/app
+            - ./build:/var/www/build
+            - ./storage/database:/var/www/storage/database
+            - ./storage/files:/var/www/storage/files
+            - ./storage/gear-maintenance:/var/www/storage/gear-maintenance
+        env_file: ".env.local"
+        healthcheck:
+            test: [ "CMD", "sh", "-c", "test -f /var/www/storage/database/strava.db && echo 'ok' || exit 1" ]
+            start_period: 5s
+        environment:
+            - TZ=Europe/Brussels
+        command: ['bin/console', 'app:daemon:run']
+        networks:
+            - statistics-for-strava-network
 
 #    ollama:
 #        image: ollama/ollama:latest
@@ -77,3 +80,7 @@ services:
 
 networks:
     statistics-for-strava-network: {}
+
+volumes:
+    statistics-for-strava-node-modules: {}
+    statistics-for-strava-npm-cache: {}

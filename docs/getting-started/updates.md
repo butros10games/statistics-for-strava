@@ -7,11 +7,10 @@ When a new version of the app is released, you need to pull the latest Docker im
 > docker compose up -d # start a new container using the compose config and the new pulled image.
 ```
 
-After that, run the import and build commands again to apply the changes:
+After that, run the unified update command again to pull in the newest Garmin and Strava data and rebuild the app:
 
 
 ```bash
-> docker compose exec app bin/console app:strava:import-data
-> docker compose exec app bin/console app:strava:build-files
+> docker compose exec daemon bin/console app:update-data
 ```
 

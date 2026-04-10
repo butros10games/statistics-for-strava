@@ -141,6 +141,14 @@ You should see this page—just follow the steps to complete the setup.
 Once you have successfully authenticated with Strava, you can import your data and build the html files,
 after which you can view your statistics.
 
+If you configured the daemon container, it can run the full Garmin + Strava refresh for you every day based on the `daemon.cron` schedule. You can also trigger that full update manually:
+
+```bash
+> docker compose exec daemon bin/console app:update-data
+```
+
+The classic Strava-only commands remain available as well:
+
 ```bash
 > docker compose exec app bin/console app:strava:import-data
 > docker compose exec app bin/console app:strava:build-files

@@ -6,6 +6,7 @@ namespace App\Application;
 
 use App\Application\RunBuild\RunBuild;
 use App\Application\RunImport\RunImport;
+use App\Application\UpdateData\GarminBridgeUpdater;
 use App\Domain\Activity\ActivityId;
 use App\Domain\Activity\ActivityIds;
 use App\Domain\Activity\ActivityRepository;
@@ -29,6 +30,7 @@ final readonly class importDataAndBuildAppCronAction implements RunnableCronActi
         private CommandBus $commandBus,
         private WebhookEventRepository $webhookEventRepository,
         private ActivityRepository $activityRepository,
+        private GarminBridgeUpdater $garminBridgeUpdater,
         private ResourceUsage $resourceUsage,
         private AppUrl $appUrl,
         private Mutex $mutex,
@@ -56,12 +58,16 @@ final readonly class importDataAndBuildAppCronAction implements RunnableCronActi
         $this->migrationRunner->run($output);
         $this->mutex->acquireLock('importDataAndBuildAppCronAction');
 
-        $this->doRun(
-            output: $output,
-            restrictToActivityIds: null
-        );
+        try {
+            $this->garminBridgeUpdater->update($output);
 
-        $this->mutex->releaseLock();
+            $this->doRun(
+                output: $output,
+                restrictToActivityIds: null
+            );
+        } finally {
+            $this->mutex->releaseLock();
+        }
     }
 
     public function runForWebhooks(SymfonyStyle $output): void
@@ -74,34 +80,36 @@ final readonly class importDataAndBuildAppCronAction implements RunnableCronActi
             return;
         }
 
-        if (!$webhookEvents = $this->webhookEventRepository->grab()) {
-            // No webhooks to process.
-            $output->writeln('No webhook events left to process...');
+        try {
+            if (!$webhookEvents = $this->webhookEventRepository->grab()) {
+                // No webhooks to process.
+                $output->writeln('No webhook events left to process...');
 
-            return;
-        }
-
-        $activityIdsToDelete = ActivityIds::empty();
-        $createOrUpdateActivityIds = ActivityIds::empty();
-        foreach ($webhookEvents as $webhookEvent) {
-            $activityId = ActivityId::fromUnprefixed($webhookEvent->getObjectId());
-            if (WebhookAspectType::DELETE === $webhookEvent->getAspectType()) {
-                $activityIdsToDelete->add($activityId);
-            } else {
-                $createOrUpdateActivityIds->add($activityId);
+                return;
             }
+
+            $activityIdsToDelete = ActivityIds::empty();
+            $createOrUpdateActivityIds = ActivityIds::empty();
+            foreach ($webhookEvents as $webhookEvent) {
+                $activityId = ActivityId::fromUnprefixed($webhookEvent->getObjectId());
+                if (WebhookAspectType::DELETE === $webhookEvent->getAspectType()) {
+                    $activityIdsToDelete->add($activityId);
+                } else {
+                    $createOrUpdateActivityIds->add($activityId);
+                }
+            }
+
+            if (!$activityIdsToDelete->isEmpty()) {
+                $this->activityRepository->markActivitiesForDeletion($activityIdsToDelete);
+            }
+
+            $this->doRun(
+                output: $output,
+                restrictToActivityIds: $createOrUpdateActivityIds
+            );
+        } finally {
+            $this->mutex->releaseLock();
         }
-
-        if (!$activityIdsToDelete->isEmpty()) {
-            $this->activityRepository->markActivitiesForDeletion($activityIdsToDelete);
-        }
-
-        $this->doRun(
-            output: $output,
-            restrictToActivityIds: $createOrUpdateActivityIds
-        );
-
-        $this->mutex->releaseLock();
     }
 
     private function doRun(

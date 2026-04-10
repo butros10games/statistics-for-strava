@@ -606,7 +606,7 @@ def main() -> int:
 
     write_records(output_path, merged, pretty=args.pretty)
     print(f"Wrote {len(merged)} record(s) to {output_path}")
-    print("Next run: docker compose run --rm php-cli bin/console app:strava:import-data && docker compose run --rm php-cli bin/console app:strava:build-files")
+    print("Next run: docker compose exec daemon bin/console app:update-data")
 
     return 0
 
