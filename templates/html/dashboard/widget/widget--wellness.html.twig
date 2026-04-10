@@ -1,0 +1,119 @@
+{% set uniqueId = uniqueNumberForId('wellnessWidget') %}
+{% set fivePointScale = [1, 2, 3, 4, 5] %}
+{% autoescape false %}
+    <div class="flex items-center justify-between mb-4">
+        <div>
+            <h3 class="text-lg font-semibold">{{ "Wellness"|trans }}</h3>
+            {% if latestDay %}
+                <p class="text-xs text-gray-500">
+                    {{ "Latest sync"|trans }}: {{ latestDay|formatDate('normal') }}
+                </p>
+            {% endif %}
+        </div>
+    </div>
+    <div class="rounded-lg border border-amber-100 bg-amber-50 p-4 mb-4">
+        <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+            <div>
+                <div class="text-sm font-medium text-amber-900">{{ "Morning recovery check-in"|trans }}</div>
+                <div class="text-xs text-amber-800 mt-1">{{ "A quick self-report helps the app balance objective Garmin data with how recovered you actually feel."|trans }}</div>
+                {% if latestRecoveryCheckIn %}
+                    <div class="text-xs text-amber-900 mt-2">
+                        {{ "Latest"|trans }}: {{ latestRecoveryCheckIn.day|formatDate('normal') }} ·
+                        {{ "Fatigue"|trans }} {{ latestRecoveryCheckIn.fatigue }}/5 ·
+                        {{ "Soreness"|trans }} {{ latestRecoveryCheckIn.soreness }}/5 ·
+                        {{ "Stress"|trans }} {{ latestRecoveryCheckIn.stress }}/5 ·
+                        {{ "Motivation"|trans }} {{ latestRecoveryCheckIn.motivation }}/5 ·
+                        {{ "Sleep quality"|trans }} {{ latestRecoveryCheckIn.sleepQuality }}/5
+                    </div>
+                {% endif %}
+            </div>
+            <form action="/recovery-check-in" method="post" class="grid grid-cols-1 md:grid-cols-3 gap-3 flex-1">
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1" for="recovery-check-in-day-{{ uniqueId }}">{{ "Day"|trans }}</label>
+                    <input id="recovery-check-in-day-{{ uniqueId }}" name="day" type="date" value="{{ recoveryCheckInDefaultDay }}" class="block w-full rounded-lg border-gray-300 text-sm" />
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1" for="recovery-check-in-fatigue-{{ uniqueId }}">{{ "Fatigue"|trans }}</label>
+                    <select id="recovery-check-in-fatigue-{{ uniqueId }}" name="fatigue" class="block w-full rounded-lg border-gray-300 text-sm">
+                        {% for value in fivePointScale %}
+                            <option value="{{ value }}"{% if recoveryCheckInFormDefaults.fatigue == value %} selected{% endif %}>{{ value }} / 5</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1" for="recovery-check-in-soreness-{{ uniqueId }}">{{ "Soreness"|trans }}</label>
+                    <select id="recovery-check-in-soreness-{{ uniqueId }}" name="soreness" class="block w-full rounded-lg border-gray-300 text-sm">
+                        {% for value in fivePointScale %}
+                            <option value="{{ value }}"{% if recoveryCheckInFormDefaults.soreness == value %} selected{% endif %}>{{ value }} / 5</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1" for="recovery-check-in-stress-{{ uniqueId }}">{{ "Stress"|trans }}</label>
+                    <select id="recovery-check-in-stress-{{ uniqueId }}" name="stress" class="block w-full rounded-lg border-gray-300 text-sm">
+                        {% for value in fivePointScale %}
+                            <option value="{{ value }}"{% if recoveryCheckInFormDefaults.stress == value %} selected{% endif %}>{{ value }} / 5</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1" for="recovery-check-in-motivation-{{ uniqueId }}">{{ "Motivation"|trans }}</label>
+                    <select id="recovery-check-in-motivation-{{ uniqueId }}" name="motivation" class="block w-full rounded-lg border-gray-300 text-sm">
+                        {% for value in fivePointScale %}
+                            <option value="{{ value }}"{% if recoveryCheckInFormDefaults.motivation == value %} selected{% endif %}>{{ value }} / 5</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1" for="recovery-check-in-sleep-quality-{{ uniqueId }}">{{ "Sleep quality"|trans }}</label>
+                    <select id="recovery-check-in-sleep-quality-{{ uniqueId }}" name="sleepQuality" class="block w-full rounded-lg border-gray-300 text-sm">
+                        {% for value in fivePointScale %}
+                            <option value="{{ value }}"{% if recoveryCheckInFormDefaults.sleepQuality == value %} selected{% endif %}>{{ value }} / 5</option>
+                        {% endfor %}
+                    </select>
+                </div>
+                <div class="md:col-span-3 flex items-end justify-between gap-3">
+                    <div class="text-xs text-gray-600">{{ "Use 1 = very low/poor and 5 = very high/good. Higher fatigue, soreness, and stress reduce readiness."|trans }}</div>
+                    <button type="submit" class="inline-flex items-center rounded-lg bg-amber-600 px-3 py-2 text-sm font-medium text-white hover:bg-amber-700">{{ "Save check-in"|trans }}</button>
+                </div>
+            </form>
+        </div>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+        <div class="rounded-lg border border-gray-100 bg-gray-50 p-4">
+            <div class="text-sm text-gray-500">{{ "Steps"|trans }}</div>
+            <div class="mt-1 text-2xl font-semibold text-gray-900">{{ latestStepsCount is null ? 'n/a' : latestStepsCount|formatNumber(0) }}</div>
+            <div class="text-xs text-gray-500 mt-1">
+                {{ "30d avg"|trans }}: {{ averageStepsCount is null ? 'n/a' : averageStepsCount|formatNumber(0) }}
+            </div>
+        </div>
+        <div class="rounded-lg border border-gray-100 bg-gray-50 p-4">
+            <div class="text-sm text-gray-500">{{ "Sleep"|trans }}</div>
+            <div class="mt-1 text-2xl font-semibold text-gray-900">{{ latestSleepDurationInSeconds is null ? 'n/a' : latestSleepDurationInSeconds|formatSeconds }}</div>
+            <div class="text-xs text-gray-500 mt-1">
+                {{ "Score"|trans }}: {{ latestSleepScore is null ? 'n/a' : latestSleepScore }} · {{ "30d avg"|trans }}: {{ averageSleepDurationInSeconds is null ? 'n/a' : averageSleepDurationInSeconds|formatSeconds }}
+            </div>
+        </div>
+        <div class="rounded-lg border border-gray-100 bg-gray-50 p-4">
+            <div class="text-sm text-gray-500">{{ "HRV"|trans }}</div>
+            <div class="mt-1 text-2xl font-semibold text-gray-900">{{ latestHrv is null ? 'n/a' : latestHrv|formatNumber(1) ~ ' ms' }}</div>
+            <div class="text-xs text-gray-500 mt-1">
+                {{ "30d avg"|trans }}: {{ averageHrv is null ? 'n/a' : averageHrv|formatNumber(1) ~ ' ms' }}
+            </div>
+        </div>
+    </div>
+    <div class="grid grid-cols-1 gap-3">
+        <div class="rounded-lg border border-gray-100 p-3">
+            <div class="text-sm font-medium text-gray-700 mb-2">{{ "Steps trend"|trans }}</div>
+            <div id="wellnessStepsChart{{ uniqueId }}" class="h-28" data-echarts-options='{{ stepsTrendChart }}'></div>
+        </div>
+        <div class="rounded-lg border border-gray-100 p-3">
+            <div class="text-sm font-medium text-gray-700 mb-2">{{ "Sleep trend"|trans }}</div>
+            <div id="wellnessSleepChart{{ uniqueId }}" class="h-28" data-echarts-options='{{ sleepTrendChart }}'></div>
+        </div>
+        <div class="rounded-lg border border-gray-100 p-3">
+            <div class="text-sm font-medium text-gray-700 mb-2">{{ "HRV trend"|trans }}</div>
+            <div id="wellnessHrvChart{{ uniqueId }}" class="h-28" data-echarts-options='{{ hrvTrendChart }}'></div>
+        </div>
+    </div>
+{% endautoescape %}

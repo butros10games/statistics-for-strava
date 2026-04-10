@@ -1,0 +1,26 @@
+[
+    {
+        "day": "2026-04-01",
+        "source": "garmin",
+        "stepsCount": 12345,
+        "sleepDurationInSeconds": 27900,
+        "sleepScore": 81,
+        "hrv": 54.7,
+        "payload": {
+            "origin": "updated"
+        },
+        "importedAt": "2026-04-07 10:00:00"
+    },
+    {
+        "day": "2026-04-02",
+        "source": "garmin",
+        "stepsCount": 9876,
+        "sleepDurationInSeconds": 25200,
+        "sleepScore": 75,
+        "hrv": 49.2,
+        "payload": {
+            "origin": "second-day"
+        },
+        "importedAt": "2026-04-07 10:00:00"
+    }
+]

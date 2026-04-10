@@ -1,0 +1,29 @@
+<div class="rounded-xl bg-gray-100 p-5 border-l-4 {{ latestRecoveryCheckIn ? 'border-l-emerald-500' : 'border-l-amber-500' }}">
+    <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+        <div>
+            <div class="text-sm font-medium text-gray-900">{{ "Morning recovery check-in"|trans }}</div>
+            {% if latestRecoveryCheckIn %}
+                <div class="text-xs text-gray-500 mt-1">{{ "Today's recovery check-in is logged. Update it if your legs suddenly start negotiating."|trans }}</div>
+            {% else %}
+                <div class="text-xs text-gray-500 mt-1">{{ "You have not filled in today's recovery check-in yet. A quick self-report helps balance your objective Garmin data with how you actually feel."|trans }}</div>
+            {% endif %}
+            {% if latestRecoveryCheckInOverall %}
+                <div class="flex flex-wrap items-center gap-1.5 mt-2">
+                    <span class="text-xs text-gray-500">{{ "Latest"|trans }}: {{ latestRecoveryCheckInOverall.day }}</span>
+                    <span class="inline-flex items-center rounded-full bg-gray-200 px-2 py-0.5 text-xs text-gray-700">{{ "Fatigue"|trans }} {{ latestRecoveryCheckInOverall.fatigue }}/5</span>
+                    <span class="inline-flex items-center rounded-full bg-gray-200 px-2 py-0.5 text-xs text-gray-700">{{ "Soreness"|trans }} {{ latestRecoveryCheckInOverall.soreness }}/5</span>
+                    <span class="inline-flex items-center rounded-full bg-gray-200 px-2 py-0.5 text-xs text-gray-700">{{ "Stress"|trans }} {{ latestRecoveryCheckInOverall.stress }}/5</span>
+                    <span class="inline-flex items-center rounded-full bg-gray-200 px-2 py-0.5 text-xs text-gray-700">{{ "Motivation"|trans }} {{ latestRecoveryCheckInOverall.motivation }}/5</span>
+                    <span class="inline-flex items-center rounded-full bg-gray-200 px-2 py-0.5 text-xs text-gray-700">{{ "Sleep quality"|trans }} {{ latestRecoveryCheckInOverall.sleepQuality }}/5</span>
+                </div>
+            {% endif %}
+        </div>
+        <a href="#" data-model-content-url="/recovery-check-in"
+           class="shrink-0 inline-flex items-center justify-center rounded-lg bg-strava-orange px-4 py-2 text-sm font-medium text-white hover:bg-strava-orange/90">
+            {{ latestRecoveryCheckIn ? "Update today's check-in"|trans : "Fill in today's check-in"|trans }}
+        </a>
+    </div>
+</div>
+{% if shouldAutoOpenRecoveryCheckIn|default(false) and context == 'page' %}
+    <div class="hidden" data-auto-open-recovery-check-in-url="/recovery-check-in"></div>
+{% endif %}

@@ -37,6 +37,14 @@
                 <div class="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     {% include 'html/dashboard/training-metrics.html.twig' with {'trainingMetrics': trainingMetrics, 'context': 'modal' } %}
                 </div>
+                <div class="mt-4">
+                    {% include 'html/dashboard/recovery-check-in-summary.html.twig' with {
+                        'context': 'modal',
+                        'latestRecoveryCheckIn': latestRecoveryCheckIn,
+                        'latestRecoveryCheckInOverall': latestRecoveryCheckInOverall,
+                        'shouldAutoOpenRecoveryCheckIn': false
+                    } %}
+                </div>
             </div>
             <!-- Forecast Tab -->
             <div id="forecast" role="tabpanel" aria-labelledby="forecast-tab">

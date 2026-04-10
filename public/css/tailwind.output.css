@@ -27,6 +27,14 @@
     --color-orange-700: #9C4221;
     --color-orange-800: #7B341E;
     --color-orange-900: #652B19;
+    --color-amber-50: oklch(98.7% 0.022 95.277);
+    --color-amber-100: oklch(96.2% 0.059 95.617);
+    --color-amber-400: oklch(82.8% 0.189 84.429);
+    --color-amber-500: oklch(76.9% 0.188 70.08);
+    --color-amber-600: oklch(66.6% 0.179 58.318);
+    --color-amber-700: oklch(55.5% 0.163 48.998);
+    --color-amber-800: oklch(47.3% 0.137 46.201);
+    --color-amber-900: oklch(41.4% 0.112 45.904);
     --color-yellow-50: #FFFBEB;
     --color-yellow-100: #FEF3C7;
     --color-yellow-200: #FDE68A;
@@ -52,6 +60,7 @@
     --color-green-700: #047857;
     --color-green-800: #065F46;
     --color-green-900: #064E3B;
+    --color-emerald-500: oklch(69.6% 0.17 162.48);
     --color-emerald-600: oklch(59.6% 0.145 163.225);
     --color-teal-50: #F0FDFA;
     --color-teal-100: #CCFBF1;
@@ -1644,6 +1653,9 @@
   .h-16 {
     height: calc(var(--spacing) * 16);
   }
+  .h-28 {
+    height: calc(var(--spacing) * 28);
+  }
   .h-32 {
     height: calc(var(--spacing) * 32);
   }
@@ -2121,9 +2133,6 @@
   .grid-cols-2 {
     grid-template-columns: repeat(2, minmax(0, 1fr));
   }
-  .grid-cols-3 {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
   .grid-cols-4 {
     grid-template-columns: repeat(4, minmax(0, 1fr));
   }
@@ -2141,6 +2150,9 @@
   }
   .flex-wrap {
     flex-wrap: wrap;
+  }
+  .items-baseline {
+    align-items: baseline;
   }
   .items-center {
     align-items: center;
@@ -2168,6 +2180,9 @@
   }
   .gap-1 {
     gap: calc(var(--spacing) * 1);
+  }
+  .gap-1\.5 {
+    gap: calc(var(--spacing) * 1.5);
   }
   .gap-2 {
     gap: calc(var(--spacing) * 2);
@@ -2344,6 +2359,9 @@
   }
   .rounded-sm {
     border-radius: var(--radius-sm);
+  }
+  .rounded-xl {
+    border-radius: var(--radius-xl);
   }
   .rounded-xs {
     border-radius: var(--radius-xs);
@@ -2577,6 +2595,9 @@
       color: white;
     }
   }
+  .border-amber-100 {
+    border-color: var(--color-amber-100);
+  }
   .border-blue-300 {
     border-color: var(--color-blue-300);
   }
@@ -2607,14 +2628,26 @@
   .border-t-strava-orange {
     border-top-color: var(--color-strava-orange);
   }
+  .border-l-amber-500 {
+    border-left-color: var(--color-amber-500);
+  }
   .border-l-blue-600 {
     border-left-color: var(--color-blue-600);
+  }
+  .border-l-emerald-500 {
+    border-left-color: var(--color-emerald-500);
   }
   .border-l-emerald-600 {
     border-left-color: var(--color-emerald-600);
   }
   .border-l-gray-600 {
     border-left-color: var(--color-gray-600);
+  }
+  .border-l-gray-900 {
+    border-left-color: var(--color-gray-900);
+  }
+  .border-l-green-600 {
+    border-left-color: var(--color-green-600);
   }
   .border-l-orange-500 {
     border-left-color: var(--color-orange-500);
@@ -2624,6 +2657,9 @@
   }
   .border-l-yellow-300 {
     border-left-color: var(--color-yellow-300);
+  }
+  .border-l-yellow-600 {
+    border-left-color: var(--color-yellow-600);
   }
   .apexcharts-active {
     .apexcharts-canvas .apexcharts-tooltip-series-group& .apexcharts-tooltip-y-group {
@@ -2661,6 +2697,15 @@
   .bg-\[\#89D7D2\] {
     background-color: #89D7D2;
   }
+  .bg-amber-50 {
+    background-color: var(--color-amber-50);
+  }
+  .bg-amber-400 {
+    background-color: var(--color-amber-400);
+  }
+  .bg-amber-600 {
+    background-color: var(--color-amber-600);
+  }
   .bg-black\/0 {
     background-color: color-mix(in srgb, #000000 0%, transparent);
     @supports (color: color-mix(in lab, red, red)) {
@@ -2678,6 +2723,9 @@
   }
   .bg-blue-700 {
     background-color: var(--color-blue-700);
+  }
+  .bg-emerald-500 {
+    background-color: var(--color-emerald-500);
   }
   .bg-emerald-600\/10 {
     background-color: color-mix(in srgb, oklch(59.6% 0.145 163.225) 10%, transparent);
@@ -2878,6 +2926,9 @@
   }
   .p-4 {
     padding: calc(var(--spacing) * 4);
+  }
+  .p-5 {
+    padding: calc(var(--spacing) * 5);
   }
   .p-6 {
     padding: calc(var(--spacing) * 6);
@@ -3207,6 +3258,12 @@
   }
   .text-\[\#faba00\] {
     color: #faba00;
+  }
+  .text-amber-800 {
+    color: var(--color-amber-800);
+  }
+  .text-amber-900 {
+    color: var(--color-amber-900);
   }
   .text-blue-600 {
     color: var(--color-blue-600);
@@ -3656,6 +3713,13 @@
       }
     }
   }
+  .hover\:bg-amber-700 {
+    &:hover {
+      @media (hover: hover) {
+        background-color: var(--color-amber-700);
+      }
+    }
+  }
   .hover\:bg-blue-800 {
     &:hover {
       @media (hover: hover) {
@@ -3697,6 +3761,16 @@
         background-color: color-mix(in srgb, #F26722 30%, transparent);
         @supports (color: color-mix(in lab, red, red)) {
           background-color: color-mix(in oklab, var(--color-strava-orange) 30%, transparent);
+        }
+      }
+    }
+  }
+  .hover\:bg-strava-orange\/90 {
+    &:hover {
+      @media (hover: hover) {
+        background-color: color-mix(in srgb, #F26722 90%, transparent);
+        @supports (color: color-mix(in lab, red, red)) {
+          background-color: color-mix(in oklab, var(--color-strava-orange) 90%, transparent);
         }
       }
     }
@@ -3776,6 +3850,11 @@
       z-index: 10;
     }
   }
+  .focus\:border-amber-500 {
+    &:focus {
+      border-color: var(--color-amber-500);
+    }
+  }
   .focus\:border-blue-500 {
     &:focus {
       border-color: var(--color-blue-500);
@@ -3807,6 +3886,11 @@
     &:focus {
       --tw-ring-shadow: var(--tw-ring-inset,) 0 0 0 calc(4px + var(--tw-ring-offset-width)) var(--tw-ring-color, currentcolor);
       box-shadow: var(--tw-inset-shadow), var(--tw-inset-ring-shadow), var(--tw-ring-offset-shadow), var(--tw-ring-shadow), var(--tw-shadow);
+    }
+  }
+  .focus\:ring-amber-500 {
+    &:focus {
+      --tw-ring-color: var(--color-amber-500);
     }
   }
   .focus\:ring-blue-300 {
@@ -3915,6 +3999,16 @@
       inset: calc(var(--spacing) * 0);
     }
   }
+  .md\:col-span-2 {
+    @media (width >= 48rem) {
+      grid-column: span 2 / span 2;
+    }
+  }
+  .md\:col-span-3 {
+    @media (width >= 48rem) {
+      grid-column: span 3 / span 3;
+    }
+  }
   .md\:ml-2 {
     @media (width >= 48rem) {
       margin-left: calc(var(--spacing) * 2);
@@ -3954,6 +4048,36 @@
   .md\:grid-cols-2 {
     @media (width >= 48rem) {
       grid-template-columns: repeat(2, minmax(0, 1fr));
+    }
+  }
+  .md\:grid-cols-3 {
+    @media (width >= 48rem) {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+    }
+  }
+  .md\:flex-row {
+    @media (width >= 48rem) {
+      flex-direction: row;
+    }
+  }
+  .md\:items-center {
+    @media (width >= 48rem) {
+      align-items: center;
+    }
+  }
+  .md\:items-end {
+    @media (width >= 48rem) {
+      align-items: flex-end;
+    }
+  }
+  .md\:items-start {
+    @media (width >= 48rem) {
+      align-items: flex-start;
+    }
+  }
+  .md\:justify-between {
+    @media (width >= 48rem) {
+      justify-content: space-between;
     }
   }
   .md\:space-x-2 {
@@ -3998,12 +4122,6 @@
     @media (width >= 48rem) {
       font-size: var(--text-lg);
       line-height: var(--tw-leading, var(--text-lg--line-height));
-    }
-  }
-  .md\:text-xl {
-    @media (width >= 48rem) {
-      font-size: var(--text-xl);
-      line-height: var(--tw-leading, var(--text-xl--line-height));
     }
   }
   .lg\:sticky {
@@ -4324,15 +4442,25 @@
       max-height: 100%;
     }
   }
-  .sidebar-collapsed\:w-32 {
+  .sidebar-collapsed\:w-20 {
     &:where([data-sidebar-collapsed], [data-sidebar-collapsed] *) {
-      width: calc(var(--spacing) * 32);
+      width: calc(var(--spacing) * 20);
     }
   }
-  .sidebar-collapsed\:md\:ml-32 {
+  .sidebar-collapsed\:px-2 {
+    &:where([data-sidebar-collapsed], [data-sidebar-collapsed] *) {
+      padding-inline: calc(var(--spacing) * 2);
+    }
+  }
+  .sidebar-collapsed\:py-4 {
+    &:where([data-sidebar-collapsed], [data-sidebar-collapsed] *) {
+      padding-block: calc(var(--spacing) * 4);
+    }
+  }
+  .sidebar-collapsed\:md\:ml-20 {
     &:where([data-sidebar-collapsed], [data-sidebar-collapsed] *) {
       @media (width >= 48rem) {
-        margin-left: calc(var(--spacing) * 32);
+        margin-left: calc(var(--spacing) * 20);
       }
     }
   }
@@ -5116,17 +5244,24 @@
       background-color: var(--color-gray-100);
     }
     &:where([data-sidebar-collapsed], [data-sidebar-collapsed] *) {
-      flex-direction: column;
+      justify-content: center;
     }
     &:where([data-sidebar-collapsed], [data-sidebar-collapsed] *) {
-      row-gap: calc(var(--spacing) * 0.5);
+      gap: calc(var(--spacing) * 0);
     }
     &:where([data-sidebar-collapsed], [data-sidebar-collapsed] *) {
-      font-size: var(--text-xs);
-      line-height: var(--tw-leading, var(--text-xs--line-height));
+      padding-inline: calc(var(--spacing) * 1);
+    }
+    &:where([data-sidebar-collapsed], [data-sidebar-collapsed] *) {
+      padding-block: calc(var(--spacing) * 3);
     }
     &:hover .sidebar-menu-link-icon {
       color: var(--color-gray-900);
+    }
+  }
+  .sidebar-menu-link > .flex-1 {
+    &:where([data-sidebar-collapsed], [data-sidebar-collapsed] *) {
+      display: none;
     }
   }
   .sidebar-menu-link-icon {
@@ -5139,6 +5274,12 @@
     transition-duration: var(--tw-duration, var(--default-transition-duration));
     --tw-duration: 75ms;
     transition-duration: 75ms;
+    &:where([data-sidebar-collapsed], [data-sidebar-collapsed] *) {
+      height: calc(var(--spacing) * 7);
+    }
+    &:where([data-sidebar-collapsed], [data-sidebar-collapsed] *) {
+      width: calc(var(--spacing) * 7);
+    }
   }
 }
 @layer base {
@@ -5154,25 +5295,44 @@
     z-index: 1490 !important;
     opacity: 0.9 !important;
   }
-  .overflow-auto, .overflow-x-auto {
-    &::-webkit-scrollbar-track {
-      background-color: var(--scrollbar-track);
-      border-radius: var(--scrollbar-track-radius);
-    }
-    &::-webkit-scrollbar-thumb {
-      background-color: var(--scrollbar-thumb);
-      border-radius: var(--scrollbar-thumb-radius);
-    }
-    &::-webkit-scrollbar-corner {
-      background-color: var(--scrollbar-corner);
-      border-radius: var(--scrollbar-corner-radius);
-    }
+  .overflow-auto, .overflow-scroll, .overflow-x-auto, .overflow-y-auto, .overflow-y-scroll {
     scrollbar-width: thin;
-    scrollbar-color: var(--scrollbar-thumb, initial) var(--scrollbar-track, initial);
-    &::-webkit-scrollbar {
-      display: block;
-      width: 8px;
-      height: 8px;
+    scrollbar-color: var(--color-gray-300) transparent;
+  }
+  .overflow-auto::-webkit-scrollbar, .overflow-scroll::-webkit-scrollbar, .overflow-x-auto::-webkit-scrollbar, .overflow-y-auto::-webkit-scrollbar, .overflow-y-scroll::-webkit-scrollbar {
+    width: 0.5rem;
+    height: 0.5rem;
+  }
+  .overflow-auto::-webkit-scrollbar-track, .overflow-scroll::-webkit-scrollbar-track, .overflow-x-auto::-webkit-scrollbar-track, .overflow-y-auto::-webkit-scrollbar-track, .overflow-y-scroll::-webkit-scrollbar-track {
+    background: transparent;
+  }
+  .overflow-auto::-webkit-scrollbar-thumb, .overflow-scroll::-webkit-scrollbar-thumb, .overflow-x-auto::-webkit-scrollbar-thumb, .overflow-y-auto::-webkit-scrollbar-thumb, .overflow-y-scroll::-webkit-scrollbar-thumb {
+    background-color: color-mix(in srgb, #D1D5DB 85%, transparent);
+    @supports (color: color-mix(in lab, red, red)) {
+      background-color: color-mix(in srgb, var(--color-gray-300) 85%, transparent);
+    }
+    border: 2px solid transparent;
+    border-radius: 9999px;
+    background-clip: content-box;
+  }
+  [data-theme=dark] .overflow-auto, [data-theme=dark] .overflow-scroll, [data-theme=dark] .overflow-x-auto, [data-theme=dark] .overflow-y-auto, [data-theme=dark] .overflow-y-scroll {
+    scrollbar-color: var(--color-gray-600) transparent;
+  }
+  [data-theme=dark] .overflow-auto::-webkit-scrollbar-thumb, [data-theme=dark] .overflow-scroll::-webkit-scrollbar-thumb, [data-theme=dark] .overflow-x-auto::-webkit-scrollbar-thumb, [data-theme=dark] .overflow-y-auto::-webkit-scrollbar-thumb, [data-theme=dark] .overflow-y-scroll::-webkit-scrollbar-thumb {
+    background-color: color-mix(in srgb, #4B5563 90%, transparent);
+    @supports (color: color-mix(in lab, red, red)) {
+      background-color: color-mix(in srgb, var(--color-gray-600) 90%, transparent);
+    }
+  }
+  @supports (overflow: overlay) {
+    .overflow-auto, .overflow-scroll {
+      overflow: overlay;
+    }
+    .overflow-x-auto {
+      overflow-x: overlay;
+    }
+    .overflow-y-auto, .overflow-y-scroll {
+      overflow-y: overlay;
     }
   }
 }

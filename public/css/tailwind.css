@@ -17,6 +17,9 @@
 @source "../../src/Infrastructure/Twig/*.php";
 @source "../../src/Domain/Dashboard/Widget/TrainingLoad/*.php";
 
+/* Dynamic border classes generated from getTextColor()|replace({'text-': 'border-l-'}) */
+@source inline("border-l-green-600 border-l-blue-600 border-l-yellow-600 border-l-red-600 border-l-gray-900 border-l-orange-500 border-l-amber-500 border-l-emerald-500");
+
 @plugin "tailwind-scrollbar";
 @plugin "flowbite/plugin";
 @source "../../node_modules/flowbite";
@@ -53,8 +56,73 @@
         opacity: 0.9 !important;
     }
 
-    .overflow-auto, .overflow-x-auto {
-        @apply scrollbar-thin;
+    .overflow-auto,
+    .overflow-scroll,
+    .overflow-x-auto,
+    .overflow-y-auto,
+    .overflow-y-scroll {
+        scrollbar-width: thin;
+        scrollbar-color: var(--color-gray-300) transparent;
+    }
+
+    .overflow-auto::-webkit-scrollbar,
+    .overflow-scroll::-webkit-scrollbar,
+    .overflow-x-auto::-webkit-scrollbar,
+    .overflow-y-auto::-webkit-scrollbar,
+    .overflow-y-scroll::-webkit-scrollbar {
+        width: 0.5rem;
+        height: 0.5rem;
+    }
+
+    .overflow-auto::-webkit-scrollbar-track,
+    .overflow-scroll::-webkit-scrollbar-track,
+    .overflow-x-auto::-webkit-scrollbar-track,
+    .overflow-y-auto::-webkit-scrollbar-track,
+    .overflow-y-scroll::-webkit-scrollbar-track {
+        background: transparent;
+    }
+
+    .overflow-auto::-webkit-scrollbar-thumb,
+    .overflow-scroll::-webkit-scrollbar-thumb,
+    .overflow-x-auto::-webkit-scrollbar-thumb,
+    .overflow-y-auto::-webkit-scrollbar-thumb,
+    .overflow-y-scroll::-webkit-scrollbar-thumb {
+        background-color: color-mix(in srgb, var(--color-gray-300) 85%, transparent);
+        border: 2px solid transparent;
+        border-radius: 9999px;
+        background-clip: content-box;
+    }
+
+    [data-theme=dark] .overflow-auto,
+    [data-theme=dark] .overflow-scroll,
+    [data-theme=dark] .overflow-x-auto,
+    [data-theme=dark] .overflow-y-auto,
+    [data-theme=dark] .overflow-y-scroll {
+        scrollbar-color: var(--color-gray-600) transparent;
+    }
+
+    [data-theme=dark] .overflow-auto::-webkit-scrollbar-thumb,
+    [data-theme=dark] .overflow-scroll::-webkit-scrollbar-thumb,
+    [data-theme=dark] .overflow-x-auto::-webkit-scrollbar-thumb,
+    [data-theme=dark] .overflow-y-auto::-webkit-scrollbar-thumb,
+    [data-theme=dark] .overflow-y-scroll::-webkit-scrollbar-thumb {
+        background-color: color-mix(in srgb, var(--color-gray-600) 90%, transparent);
+    }
+
+    @supports (overflow: overlay) {
+        .overflow-auto,
+        .overflow-scroll {
+            overflow: overlay;
+        }
+
+        .overflow-x-auto {
+            overflow-x: overlay;
+        }
+
+        .overflow-y-auto,
+        .overflow-y-scroll {
+            overflow-y: overlay;
+        }
     }
 
 }

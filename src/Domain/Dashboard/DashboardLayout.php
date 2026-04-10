@@ -48,6 +48,7 @@ final readonly class DashboardLayout implements \IteratorAggregate
             ['widget' => 'challengeConsistency', 'width' => 50, 'enabled' => true, 'config' => ['challenges' => []]],
             ['widget' => 'mostRecentChallengesCompleted', 'width' => 50, 'enabled' => true, 'config' => ['numberOfChallengesToDisplay' => 5]],
             ['widget' => 'athleteWeightHistory', 'width' => 50, 'enabled' => true],
+            ['widget' => 'wellness', 'width' => 50, 'enabled' => false],
         ];
     }
 

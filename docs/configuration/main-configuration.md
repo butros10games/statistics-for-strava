@@ -72,6 +72,22 @@ import:
 > [!TIP]
 > You can create as many `config-*.yaml` files as you need, as long as the final merged configuration matches the expected schema.
 
+## Wellness bridge import
+
+You can optionally import bridge-backed wellness data such as Garmin steps, sleep, and HRV.
+
+```yaml
+integrations:
+  wellness:
+    enabled: true
+    bridge:
+      sourcePath: 'storage/imports/wellness/garmin-bridge.json'
+```
+
+The bridge file should contain either a list of daily records or an object with a top-level `records` list. Each record must contain a `date` field, and may include `steps`, `stepsCount`, `sleepDurationInSeconds`, `sleepScore`, and `hrv`.
+
+When enabled, wellness data is imported during the normal import flow and can be shown via the optional `wellness` dashboard widget.
+
 ## Athlete weight history
 
 The `weightHistory` is meant to represent a history or evolution of your body weight. It is needed to be able to calculate your relative power. Consider following example:

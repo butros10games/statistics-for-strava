@@ -1,0 +1,29 @@
+[
+  {
+    "date": "2026-04-01",
+    "steps": 12345,
+    "sleepDurationInSeconds": 27900,
+    "sleepScore": 81,
+    "hrv": 54.7,
+    "payload": {
+      "source": "garmin-connect-bridge",
+      "restingHeartRate": 48,
+      "sleepSummary": {
+        "deep": 5400,
+        "light": 13800,
+        "rem": 6300
+      }
+    }
+  },
+  {
+    "date": "2026-04-02",
+    "stepsCount": 9876,
+    "sleepDurationInSeconds": 25200,
+    "sleepScore": 75,
+    "hrv": 49.2,
+    "payload": {
+      "source": "garmin-connect-bridge",
+      "restingHeartRate": 50
+    }
+  }
+]

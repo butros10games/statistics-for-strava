@@ -8,11 +8,17 @@ use App\Domain\Activity\ActivityTypeRepository;
 use App\Domain\Calendar\FindMonthlyStats\FindMonthlyStats;
 use App\Domain\Dashboard\InvalidDashboardLayout;
 use App\Domain\Dashboard\StatsContext;
+use App\Domain\Dashboard\Widget\Wellness\FindWellnessMetrics\FindWellnessMetrics;
+use App\Domain\Dashboard\Widget\Wellness\FindWellnessMetrics\FindWellnessMetricsResponse;
+use App\Domain\Dashboard\Widget\Wellness\MonthlyWellnessStatsChart;
+use App\Domain\Dashboard\Widget\Wellness\WellnessMetric;
 use App\Domain\Dashboard\Widget\Widget;
 use App\Domain\Dashboard\Widget\WidgetConfiguration;
+use App\Domain\Wellness\WellnessSource;
 use App\Infrastructure\CQRS\Query\Bus\QueryBus;
 use App\Infrastructure\Serialization\Json;
 use App\Infrastructure\ValueObject\Measurement\UnitSystem;
+use App\Infrastructure\ValueObject\Time\DateRange;
 use App\Infrastructure\ValueObject\Time\SerializableDateTime;
 use Symfony\Contracts\Translation\TranslatorInterface;
 use Twig\Environment;
@@ -64,6 +70,8 @@ final readonly class MonthlyStatsWidget implements Widget
         $activityTypes = $this->activityTypeRepository->findAll();
 
         $monthlyStatChartsPerContext = [];
+        $monthlyWellnessCharts = [];
+        $monthlyWellnessMetricTabs = [];
         $monthlyStats = $this->queryBus->ask(new FindMonthlyStats());
 
         /** @var int $enableLastXYearsByDefault */
@@ -87,11 +95,41 @@ final readonly class MonthlyStatsWidget implements Widget
             }
         }
 
+        /** @var FindWellnessMetricsResponse $wellnessMetrics */
+        $wellnessMetrics = $this->queryBus->ask(new FindWellnessMetrics(
+            dateRange: DateRange::fromDates(
+                from: SerializableDateTime::fromString($now->modify('-20 years')->format('Y-m-d 00:00:00')),
+                till: SerializableDateTime::fromString($now->format('Y-m-d 23:59:59')),
+            ),
+            source: WellnessSource::GARMIN,
+        ));
+
+        foreach (WellnessMetric::cases() as $metric) {
+            $chartData = MonthlyWellnessStatsChart::create(
+                records: $wellnessMetrics->getRecords(),
+                metric: $metric,
+                translator: $this->translator,
+                enableLastXYearsByDefault: $enableLastXYearsByDefault,
+            )->build();
+
+            if ([] === $chartData) {
+                continue;
+            }
+
+            $monthlyWellnessCharts[$metric->value] = Json::encode($chartData);
+            $monthlyWellnessMetricTabs[] = [
+                'key' => $metric->value,
+                'label' => $metric->getLabel(),
+            ];
+        }
+
         /** @var string[] $metricsDisplayOrder */
         $metricsDisplayOrder = $configuration->get('metricsDisplayOrder');
 
         return $this->twig->load('html/dashboard/widget/widget--monthly-stats.html.twig')->render([
             'monthlyStatsChartsPerContext' => $monthlyStatChartsPerContext,
+            'monthlyWellnessCharts' => $monthlyWellnessCharts,
+            'monthlyWellnessMetricTabs' => $monthlyWellnessMetricTabs,
             'metricsDisplayOrder' => array_map(
                 StatsContext::from(...),
                 $metricsDisplayOrder,

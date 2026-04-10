@@ -4,14 +4,15 @@ declare(strict_types=1);
 
 namespace App\Domain\Dashboard\Widget\ActivityGrid;
 
-use App\Domain\Activity\DailyTrainingLoad;
 use App\Domain\Dashboard\InvalidDashboardLayout;
+use App\Domain\Dashboard\Widget\TrainingLoad\IntegratedDailyLoadCalculator;
 use App\Domain\Dashboard\Widget\ActivityGrid\FindCaloriesBurnedPerDay\FindCaloriesBurnedPerDay;
 use App\Domain\Dashboard\Widget\Widget;
 use App\Domain\Dashboard\Widget\WidgetConfiguration;
 use App\Domain\Rewind\FindMovingTimePerDay\FindMovingTimePerDay;
 use App\Infrastructure\CQRS\Query\Bus\QueryBus;
 use App\Infrastructure\Serialization\Json;
+use App\Infrastructure\ValueObject\Time\DateRange;
 use App\Infrastructure\ValueObject\Time\SerializableDateTime;
 use App\Infrastructure\ValueObject\Time\Years;
 use Symfony\Contracts\Translation\TranslatorInterface;
@@ -20,7 +21,7 @@ use Twig\Environment;
 final readonly class ActivityGridWidget implements Widget
 {
     public function __construct(
-        private DailyTrainingLoad $trainingLoad,
+        private IntegratedDailyLoadCalculator $integratedDailyLoadCalculator,
         private QueryBus $queryBus,
         private Environment $twig,
         private TranslatorInterface $translator,
@@ -67,6 +68,10 @@ final readonly class ActivityGridWidget implements Widget
             startDate: $fromDate,
             endDate: $toDate
         );
+        $integratedDailyLoads = $this->integratedDailyLoadCalculator->calculateForDateRange(DateRange::fromDates(
+            from: $fromDate,
+            till: $toDate,
+        ));
 
         $movingTimePerDay = $this->queryBus->ask(new FindMovingTimePerDay($years))->getMovingTimePerDayInMinutes();
         $caloriesBurnedPerDay = $this->queryBus->ask(new FindCaloriesBurnedPerDay($years))->getCaloriesBurnedPerDay();
@@ -83,7 +88,7 @@ final readonly class ActivityGridWidget implements Widget
             $on = SerializableDateTime::fromDateTimeImmutable($dt);
             $activityGrids[ActivityGridType::LOAD->value]->add(
                 on: $on,
-                value: $this->trainingLoad->calculate($on)
+                value: $integratedDailyLoads[$on->format('Y-m-d')] ?? 0
             );
             $activityGrids[ActivityGridType::MOVING_TIME->value]->add(
                 on: $on,

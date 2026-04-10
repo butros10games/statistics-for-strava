@@ -10,11 +10,13 @@ use App\Application\Import\ImportActivities\ImportActivities;
 use App\Application\Import\ImportAthlete\ImportAthlete;
 use App\Application\Import\ImportChallenges\ImportChallenges;
 use App\Application\Import\ImportGear\ImportGear;
+use App\Application\Import\ImportWellness\ImportWellness;
 use App\Application\Import\ImportSegments\ImportSegments;
 use App\Application\Import\LinkCustomGearToActivities\LinkCustomGearToActivities;
 use App\Application\Import\ProcessRawActivityData\ProcessRawActivityData;
 use App\Domain\Strava\RateLimit\StravaRateLimits;
 use App\Domain\Strava\Strava;
+use App\Domain\Wellness\WellnessImportConfig;
 use App\Infrastructure\CQRS\Command\Bus\CommandBus;
 use App\Infrastructure\CQRS\Command\Command;
 use App\Infrastructure\CQRS\Command\CommandHandler;
@@ -28,6 +30,7 @@ final readonly class RunImportCommandHandler implements CommandHandler
     public function __construct(
         private Strava $strava,
         private CommandBus $commandBus,
+        private WellnessImportConfig $wellnessImportConfig,
         private PermissionChecker $fileSystemPermissionChecker,
         private Connection $connection,
     ) {
@@ -59,6 +62,9 @@ final readonly class RunImportCommandHandler implements CommandHandler
         $this->commandBus->dispatch(new LinkCustomGearToActivities($output));
         $this->commandBus->dispatch(new ImportSegments($output));
         $this->commandBus->dispatch(new ImportChallenges($output));
+        if ($this->wellnessImportConfig->isEnabled()) {
+            $this->commandBus->dispatch(new ImportWellness($output));
+        }
         $this->commandBus->dispatch(new CalculateActivityMetrics($output));
         $this->commandBus->dispatch(new DeleteActivitiesMarkedForDeletion($output));
 

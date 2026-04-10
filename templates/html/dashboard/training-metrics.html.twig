@@ -1,7 +1,51 @@
-<div class="flex flex-col justify-between p-3 border border-gray-200 rounded-lg shadow-xs">
-    <div class="flex items-center">
-        <h4 class="text-sm font-semibold">{{ "CTL (Fitness)"|trans }}</h4>
-        <button class="hidden lg:block ml-1" data-popover-target="popover-ctl-{{ context }}" data-popover-placement="right" type="button">
+{% set metricCardClass = 'rounded-xl border border-gray-200 bg-gray-100 p-5 shadow-xs h-full' %}
+{% set statusMetricCardClass = metricCardClass ~ ' border-l-4' %}
+{% set metricHeaderClass = 'flex items-center gap-1.5 mb-2' %}
+
+{# === READINESS (hero card, spans 2 cols) === #}
+{% if readinessScore %}
+{% set readinessColor = readinessScore.getStatus().getTextColor() %}
+<div class="col-span-2 {{ statusMetricCardClass }} {{ readinessColor|replace({'text-': 'border-l-'}) }}">
+    <div class="{{ metricHeaderClass }}">
+        <h4 class="text-sm font-medium text-gray-500">{{ "Readiness"|trans }}</h4>
+        <button class="hidden lg:block" data-popover-target="popover-readiness-{{ context }}" data-popover-placement="right" type="button">
+            <svg class="w-4 h-4 text-gray-400 hover:text-gray-500" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"></path></svg>
+        </button>
+        <div data-popover id="popover-readiness-{{ context }}" role="tooltip" class="hidden lg:block max-w-100 text-xs">
+            <div class="p-2 space-y-2">
+                <p>{{ "A research-informed readiness score that blends load balance, monotony, individualized HRV/sleep baselines, and your latest morning recovery check-in."|trans }}</p>
+                <ul class="space-y-2">
+                    {% for readinessStatus in enum('App\\Domain\\Dashboard\\Widget\\TrainingLoad\\ReadinessStatus').cases() %}
+                        <li><span class="{{ readinessStatus.getTextColor() }} font-semibold">{{ readinessStatus.getRange() }}</span>: {{ readinessStatus|trans }} - {{ readinessStatus|transDescription }}</li>
+                    {% endfor %}
+                </ul>
+            </div>
+        </div>
+    </div>
+    <div class="flex items-baseline gap-3 mb-2">
+        <div class="text-3xl font-bold {{ readinessColor }}">{{ readinessScore.getValue()|formatNumber(0) }}<span class="text-lg text-gray-500 font-normal">/100</span></div>
+        <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium {{ readinessColor }} bg-gray-200">{{ readinessScore.getStatus()|trans }}</span>
+    </div>
+    <div class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
+        {% if latestWellnessHrv is not null %}
+            <span>{{ "HRV"|trans }} {{ latestWellnessHrv|formatNumber(1) }}{% if wellnessHrvBaseline is not null %} / {{ wellnessHrvBaseline|formatNumber(1) }}{% endif %} ms</span>
+        {% endif %}
+        {% if latestWellnessSleepScore is not null %}
+            <span>{{ "Sleep score"|trans }} {{ latestWellnessSleepScore }}</span>
+        {% endif %}
+        {% if latestRecoveryCheckIn %}
+            <span>{{ "Fatigue"|trans }} {{ latestRecoveryCheckIn.fatigue }}/5</span>
+            <span>{{ "Stress"|trans }} {{ latestRecoveryCheckIn.stress }}/5</span>
+        {% endif %}
+    </div>
+</div>
+{% endif %}
+
+{# === CTL (Fitness) === #}
+<div class="{{ metricCardClass }}">
+    <div class="{{ metricHeaderClass }}">
+        <h4 class="text-sm font-medium text-gray-500">{{ "CTL (Fitness)"|trans }}</h4>
+        <button class="hidden lg:block" data-popover-target="popover-ctl-{{ context }}" data-popover-placement="right" type="button">
             <svg class="w-4 h-4 text-gray-400 hover:text-gray-500" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"></path></svg>
         </button>
         <div data-popover id="popover-ctl-{{ context }}" role="tooltip" class="hidden lg:block max-w-100 text-xs">
@@ -10,13 +54,15 @@
             </div>
         </div>
     </div>
-    <div class="text-xl font-bold">{{ trainingMetrics.getCurrentCtl()|formatNumber(1) }}</div>
-    <div class="text-xs text-gray-500 truncate">{{ "42-day fitness trend"|trans }}</div>
+    <div class="text-2xl font-bold">{{ trainingMetrics.getCurrentCtl()|formatNumber(1) }}</div>
+    <div class="text-xs text-gray-500">{{ "42-day fitness trend"|trans }}</div>
 </div>
-<div class="flex flex-col justify-between p-3 border border-gray-200 rounded-lg shadow-xs">
-    <div class="flex items-center">
-        <h4 class="text-sm font-semibold">{{ "ATL (Fatigue)"|trans }}</h4>
-        <button class="hidden lg:block ml-1" data-popover-target="popover-atl-{{ context }}" data-popover-placement="right" type="button">
+
+{# === ATL (Fatigue) === #}
+<div class="{{ metricCardClass }}">
+    <div class="{{ metricHeaderClass }}">
+        <h4 class="text-sm font-medium text-gray-500">{{ "ATL (Fatigue)"|trans }}</h4>
+        <button class="hidden lg:block" data-popover-target="popover-atl-{{ context }}" data-popover-placement="right" type="button">
             <svg class="w-4 h-4 text-gray-400 hover:text-gray-500" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"></path></svg>
         </button>
         <div data-popover id="popover-atl-{{ context }}" role="tooltip" class="hidden lg:block max-w-100 text-xs">
@@ -25,13 +71,17 @@
             </div>
         </div>
     </div>
-    <div class="text-xl font-bold">{{ trainingMetrics.getCurrentAtl()|formatNumber(1) }}</div>
-    <div class="text-xs text-gray-500 truncate">{{ "7-day fatigue level"|trans }}</div>
+    <div class="text-2xl font-bold">{{ trainingMetrics.getCurrentAtl()|formatNumber(1) }}</div>
+    <div class="text-xs text-gray-500">{{ "7-day fatigue level"|trans }}</div>
 </div>
-<div class="flex flex-col justify-between p-3 border border-gray-200 rounded-lg shadow-xs">
-    <div class="flex items-center">
-        <h4 class="text-sm font-semibold">{{ "TSB (Form)"|trans }}</h4>
-        <button class="hidden lg:block ml-1" data-popover-target="popover-tsb-{{ context }}" data-popover-placement="right" type="button">
+
+{# === TSB (Form) — status card === #}
+{% set currentTsb = trainingMetrics.getCurrentTsb() %}
+{% set tsbColor = currentTsb.getStatus().getTextColor() %}
+<div class="{{ statusMetricCardClass }} {{ tsbColor|replace({'text-': 'border-l-'}) }}">
+    <div class="{{ metricHeaderClass }}">
+        <h4 class="text-sm font-medium text-gray-500">{{ "TSB (Form)"|trans }}</h4>
+        <button class="hidden lg:block" data-popover-target="popover-tsb-{{ context }}" data-popover-placement="right" type="button">
             <svg class="w-4 h-4 text-gray-400 hover:text-gray-500" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"></path></svg>
         </button>
         <div data-popover id="popover-tsb-{{ context }}" role="tooltip" class="hidden lg:block max-w-100 text-xs">
@@ -46,18 +96,17 @@
             </div>
         </div>
     </div>
-    {% set currentTsb = trainingMetrics.getCurrentTsb() %}
-    <div class="text-xl font-bold {{ currentTsb.getStatus().getTextColor() }}">
-        {{ currentTsb.getValue()|formatNumber(1) }}
-    </div>
-    <div class="text-xs text-gray-500 truncate">
-        {{ currentTsb.getStatus()|trans }}
-    </div>
+    <div class="text-2xl font-bold {{ tsbColor }}">{{ currentTsb.getValue()|formatNumber(1) }}</div>
+    <div class="text-xs text-gray-500">{{ currentTsb.getStatus()|trans }}</div>
 </div>
-<div class="flex flex-col justify-between p-3 border border-gray-200 rounded-lg shadow-xs">
-    <div class="flex items-center">
-        <h4 class="text-sm font-semibold">{{ "A:C Ratio"|trans }}</h4>
-        <button class="hidden lg:block ml-1" data-popover-target="popover-ac-{{ context }}" data-popover-placement="right" type="button">
+
+{# === A:C Ratio — status card === #}
+{% set currentAcRatio = trainingMetrics.getCurrentAcRatio() %}
+{% set acColor = currentAcRatio.getStatus().getTextColor() %}
+<div class="{{ statusMetricCardClass }} {{ acColor|replace({'text-': 'border-l-'}) }}">
+    <div class="{{ metricHeaderClass }}">
+        <h4 class="text-sm font-medium text-gray-500">{{ "A:C Ratio"|trans }}</h4>
+        <button class="hidden lg:block" data-popover-target="popover-ac-{{ context }}" data-popover-placement="right" type="button">
             <svg class="w-4 h-4 text-gray-400 hover:text-gray-500" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"></path></svg>
         </button>
         <div data-popover id="popover-ac-{{ context }}" role="tooltip" class="hidden lg:block max-w-100 text-xs">
@@ -71,25 +120,26 @@
             </div>
         </div>
     </div>
-    {% set currentAcRatio = trainingMetrics.getCurrentAcRatio() %}
-    <div class="text-xl font-bold {{ currentAcRatio.getStatus().getTextColor() }}">
-        {{ currentAcRatio.getValue()|formatNumber(2) }}
-    </div>
-    <div class="text-xs text-gray-500 truncate">
-        {{ currentAcRatio.getStatus()|trans }}
-    </div>
+    <div class="text-2xl font-bold {{ acColor }}">{{ currentAcRatio.getValue()|formatNumber(2) }}</div>
+    <div class="text-xs text-gray-500">{{ currentAcRatio.getStatus()|trans }}</div>
 </div>
-<div class="flex flex-col justify-between p-3 border border-gray-200 rounded-lg shadow-xs">
-    <div class="flex items-center">
-        <h4 class="text-sm font-semibold">{{ "Rest Days"|trans }}</h4>
+
+{# === Rest Days === #}
+<div class="{{ metricCardClass }}">
+    <div class="{{ metricHeaderClass }}">
+        <h4 class="text-sm font-medium text-gray-500">{{ "Rest Days"|trans }}</h4>
     </div>
-    <div class="text-xl font-bold">{{ restDaysInLast7Days }} / 7</div>
-    <div class="text-xs text-gray-500 truncate">{{ "Rest days in last 7 days"|trans }}</div>
+    <div class="text-2xl font-bold">{{ restDaysInLast7Days }} / 7</div>
+    <div class="text-xs text-gray-500">{{ "Rest days in last 7 days"|trans }}</div>
 </div>
-<div class="flex flex-col justify-between p-3 border border-gray-200 rounded-lg shadow-xs">
-    <div class="flex items-center">
-        <h4 class="text-sm font-semibold">{{ "Monotony"|trans }}</h4>
-        <button class="hidden lg:block ml-1" data-popover-target="popover-monotony-{{ context }}" data-popover-placement="right" type="button">
+
+{# === Monotony — status card === #}
+{% set currentMonotony = trainingMetrics.getCurrentMonotony() %}
+{% set monotonyColor = currentMonotony > 2.0 ? 'text-red-600' : (currentMonotony > 1.5 ? 'text-yellow-600' : 'text-green-600') %}
+<div class="{{ statusMetricCardClass }} {{ monotonyColor|replace({'text-': 'border-l-'}) }}">
+    <div class="{{ metricHeaderClass }}">
+        <h4 class="text-sm font-medium text-gray-500">{{ "Monotony"|trans }}</h4>
+        <button class="hidden lg:block" data-popover-target="popover-monotony-{{ context }}" data-popover-placement="right" type="button">
             <svg class="w-4 h-4 text-gray-400 hover:text-gray-500" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"></path></svg>
         </button>
         <div data-popover id="popover-monotony-{{ context }}" role="tooltip" class="hidden lg:block max-w-100 text-xs">
@@ -100,11 +150,8 @@
             </div>
         </div>
     </div>
-    {% set currentMonotony = trainingMetrics.getCurrentMonotony() %}
-    <div class="text-xl font-bold {{ currentMonotony > 2.0 ? 'text-red-600' : (currentMonotony > 1.5 ? 'text-yellow-600' : 'text-green-600') }}">
-        {{ currentMonotony|formatNumber(2) }}
-    </div>
-    <div class="text-xs text-gray-500 truncate">
+    <div class="text-2xl font-bold {{ monotonyColor }}">{{ currentMonotony|formatNumber(2) }}</div>
+    <div class="text-xs text-gray-500">
         {% if currentMonotony > 2.0 %}
             {{ "High monotony - increase variety"|trans }}
         {% elseif currentMonotony > 1.5 %}
@@ -114,10 +161,12 @@
         {% endif %}
     </div>
 </div>
-<div class="flex flex-col justify-between p-3 border border-gray-200 rounded-lg shadow-xs">
-    <div class="flex items-center">
-        <h4 class="text-sm font-semibold">{{ "Weekly Strain"|trans }}</h4>
-        <button class="hidden lg:block ml-1" data-popover-target="popover-strain-{{ context }}" data-popover-placement="right" type="button">
+
+{# === Weekly Strain (wider on desktop) === #}
+<div class="lg:col-span-2 {{ metricCardClass }}">
+    <div class="{{ metricHeaderClass }}">
+        <h4 class="text-sm font-medium text-gray-500">{{ "Weekly Strain"|trans }}</h4>
+        <button class="hidden lg:block" data-popover-target="popover-strain-{{ context }}" data-popover-placement="right" type="button">
             <svg class="w-4 h-4 text-gray-400 hover:text-gray-500" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"></path></svg>
         </button>
         <div data-popover id="popover-strain-{{ context }}" role="tooltip" class="hidden lg:block max-w-100 text-xs">
@@ -127,29 +176,36 @@
             </div>
         </div>
     </div>
-    <div class="text-xl font-bold">{{ trainingMetrics.getCurrentStrain() }}</div>
-    <div class="text-xs text-gray-500 truncate">{{ "Overall weekly training stress"|trans }}</div>
+    <div class="text-2xl font-bold">{{ trainingMetrics.getCurrentStrain() }}</div>
+    <div class="text-xs text-gray-500">{{ "Overall weekly training stress"|trans }}</div>
 </div>
-<div class="flex flex-col justify-between p-3 border border-gray-200 rounded-lg shadow-xs">
-    <div class="flex items-center">
-        <h4 class="text-sm font-semibold">{{ "Weekly TRIMP"|trans }}</h4>
-        <button class="hidden lg:block ml-1" data-popover-target="popover-trimp-{{ context }}" data-popover-placement="right" type="button">
+
+{# === Weekly Load (wider on desktop) === #}
+<div class="lg:col-span-2 {{ metricCardClass }}">
+    <div class="{{ metricHeaderClass }}">
+        <h4 class="text-sm font-medium text-gray-500">{{ "Weekly load"|trans }}</h4>
+        <button class="hidden lg:block" data-popover-target="popover-trimp-{{ context }}" data-popover-placement="right" type="button">
             <svg class="w-4 h-4 text-gray-400 hover:text-gray-500" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"></path></svg>
         </button>
         <div data-popover id="popover-trimp-{{ context }}" role="tooltip" class="hidden lg:block max-w-100 text-xs">
             <div class="p-2 space-y-2">
-                <p>{{ "Training Impulse - Training load metric that accounts for intensity and duration."|trans }}</p>
+                <p>{{ "Integrated weekly load - Banister-style activity load plus wellness-derived recovery strain from HRV, sleep, sleep score, and steps."|trans }}</p>
             </div>
         </div>
     </div>
-    <div class="text-xl font-bold">{{ trainingMetrics.getWeeklyTrimp() }}</div>
-    <div class="text-xs text-gray-500 truncate">{{ "Last 7 days training load"|trans }}</div>
+    <div class="text-2xl font-bold">{{ trainingMetrics.getWeeklyTrimp() }}</div>
+    <div class="text-xs text-gray-500">{{ "Last 7 days integrated load"|trans }}</div>
 </div>
+
+{# === Polarized Training (full width, stacked bar) === #}
 {% if timeInHeartRateZonesForLast30Days %}
-<div class="col-span-2 lg:col-span-4 flex flex-col justify-between p-3 border border-gray-200 rounded-lg shadow-xs">
-    <div class="flex items-center">
-        <h4 class="text-sm font-semibold">{{ "Polarised training (last 30 days)"|trans }}</h4>
-        <button class="hidden lg:block ml-1" data-popover-target="popover-polarised-{{ context }}" data-popover-placement="right" type="button">
+{% set percentageInLowZones = timeInHeartRateZonesForLast30Days.getPercentageInLowZones() %}
+{% set percentageInMediumZones = timeInHeartRateZonesForLast30Days.getPercentageInMediumZone() %}
+{% set percentageInHighZones = timeInHeartRateZonesForLast30Days.getPercentageInHighZones() %}
+<div class="col-span-2 lg:col-span-4 {{ metricCardClass }}">
+    <div class="{{ metricHeaderClass }} mb-4">
+        <h4 class="text-sm font-medium text-gray-500">{{ "Polarised training (last 30 days)"|trans }}</h4>
+        <button class="hidden lg:block" data-popover-target="popover-polarised-{{ context }}" data-popover-placement="right" type="button">
             <svg class="w-4 h-4 text-gray-400 hover:text-gray-500" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"></path></svg>
         </button>
         <div data-popover id="popover-polarised-{{ context }}" role="tooltip" class="hidden lg:block max-w-100 text-xs">
@@ -161,21 +217,36 @@
             </div>
         </div>
     </div>
-    {% set percentageInLowZones = timeInHeartRateZonesForLast30Days.getPercentageInLowZones() %}
-    {% set percentageInMediumZones = timeInHeartRateZonesForLast30Days.getPercentageInMediumZone() %}
-    {% set percentageInHighZones = timeInHeartRateZonesForLast30Days.getPercentageInHighZones() %}
-    <div class="grid grid-cols-3 gap-4 divide-x divide-gray-200">
-        <div class="flex flex-col items-center">
-            <div class="text-lg md:text-xl font-bold">{{ percentageInLowZones|formatNumber(2) }}%</div>
-            <div class="text-xs text-gray-500 truncate">{{ "Z1-2 (Low)"|trans }}</div>
+    <div class="space-y-4">
+        <div class="overflow-hidden rounded-full border border-gray-200 bg-gray-200">
+            <div class="flex h-4 w-full overflow-hidden rounded-full">
+                <div class="bg-emerald-500 h-full" style="width: {{ percentageInLowZones }}%"></div>
+                <div class="bg-amber-400 h-full" style="width: {{ percentageInMediumZones }}%"></div>
+                <div class="bg-red-500 h-full" style="width: {{ percentageInHighZones }}%"></div>
+            </div>
         </div>
-        <div class="flex flex-col items-center">
-            <div class="text-lg md:text-xl font-bold">{{ percentageInMediumZones|formatNumber(2) }}%</div>
-            <div class="text-xs text-gray-500 truncate">{{ "Z3 (Mod)"|trans }}</div>
-        </div>
-        <div class="flex flex-col items-center">
-            <div class="text-lg md:text-xl font-bold">{{ percentageInHighZones|formatNumber(2) }}%</div>
-            <div class="text-xs text-gray-500 truncate">{{ "Z4-5 (High)"|trans }}</div>
+        <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
+            <div class="rounded-lg border border-gray-200 bg-white px-3 py-2">
+                <div class="flex items-center gap-2">
+                    <span class="inline-block w-3 h-3 rounded-full bg-emerald-500 shrink-0"></span>
+                    <span class="text-sm font-medium">{{ percentageInLowZones|formatNumber(1) }}%</span>
+                </div>
+                <div class="mt-1 text-xs text-gray-500">{{ "Z1-2 (Low)"|trans }}</div>
+            </div>
+            <div class="rounded-lg border border-gray-200 bg-white px-3 py-2">
+                <div class="flex items-center gap-2">
+                    <span class="inline-block w-3 h-3 rounded-full bg-amber-400 shrink-0"></span>
+                    <span class="text-sm font-medium">{{ percentageInMediumZones|formatNumber(1) }}%</span>
+                </div>
+                <div class="mt-1 text-xs text-gray-500">{{ "Z3 (Mod)"|trans }}</div>
+            </div>
+            <div class="rounded-lg border border-gray-200 bg-white px-3 py-2">
+                <div class="flex items-center gap-2">
+                    <span class="inline-block w-3 h-3 rounded-full bg-red-500 shrink-0"></span>
+                    <span class="text-sm font-medium">{{ percentageInHighZones|formatNumber(1) }}%</span>
+                </div>
+                <div class="mt-1 text-xs text-gray-500">{{ "Z4-5 (High)"|trans }}</div>
+            </div>
         </div>
     </div>
 </div>

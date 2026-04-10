@@ -1,9 +1,10 @@
 {% set uniqueId = uniqueNumberForId('weeklyStatsWidget') %}
+{% set weeklyTopLevelTabCount = weeklyDistanceCharts|length + (weeklyWellnessCharts|length > 0 ? 1 : 0) %}
 {% autoescape false %}
     <h3 class="mb-4 text-lg font-semibold">
         {{ "Weekly stats"|trans }}
     </h3>
-    {% if weeklyDistanceCharts|length > 1 %}
+    {% if weeklyTopLevelTabCount > 1 %}
         <div class="tabs tabs--default">
             <ul id="weeklyDistancesActivityTypeTab{{ uniqueId }}" data-tabs="#weeklyDistancesActivityTypeTabContent{{ uniqueId }}"
                 role="tablist">
@@ -15,6 +16,14 @@
                         </a>
                     </li>
                 {% endfor %}
+                {% if weeklyWellnessCharts|length > 0 %}
+                    <li role="presentation">
+                        <a href="#" data-tabs-target="#weeklyWellness{{ uniqueId }}" role="tab"
+                           aria-controls="weeklyWellness{{ uniqueId }}">
+                            {{ "Wellness"|trans }}
+                        </a>
+                    </li>
+                {% endif %}
             </ul>
         </div>
     {% endif %}
@@ -25,5 +34,33 @@
                 <div class="h-80" data-echarts-options='{{ chart }}' data-echarts-click="handleWeeklyStatsClick" data-echarts-click-data='{{ weeksPerActivityType[activityType] }}'></div>
             </div>
         {% endfor %}
+        {% if weeklyWellnessCharts|length > 0 %}
+            <div id="weeklyWellness{{ uniqueId }}" role="tabpanel"
+                 aria-labelledby="weeklyWellness{{ uniqueId }}-tab">
+                {% if weeklyWellnessMetricTabs|length > 1 %}
+                    <div class="tabs tabs--default mb-3">
+                        <ul id="weeklyWellnessMetricTab{{ uniqueId }}" data-tabs="#weeklyWellnessMetricTabContent{{ uniqueId }}"
+                            role="tablist">
+                            {% for metric in weeklyWellnessMetricTabs %}
+                                <li role="presentation">
+                                    <a href="#" data-tabs-target="#weeklyWellness{{ metric.key }}{{ uniqueId }}" role="tab"
+                                       aria-controls="weeklyWellness{{ metric.key }}{{ uniqueId }}">
+                                        {{ metric.label|trans }}
+                                    </a>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                {% endif %}
+                <div id="weeklyWellnessMetricTabContent{{ uniqueId }}">
+                    {% for metric in weeklyWellnessMetricTabs %}
+                        <div id="weeklyWellness{{ metric.key }}{{ uniqueId }}" role="tabpanel"
+                             aria-labelledby="weeklyWellness{{ metric.key }}{{ uniqueId }}-tab">
+                            <div class="h-80" data-echarts-options='{{ weeklyWellnessCharts[metric.key] }}'></div>
+                        </div>
+                    {% endfor %}
+                </div>
+            </div>
+        {% endif %}
     </div>
 {% endautoescape %}

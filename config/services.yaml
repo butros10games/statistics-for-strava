@@ -121,6 +121,15 @@ services:
       factory: [ null, 'fromBool' ]
       arguments: [ '@=app_config("import.optInToSegmentDetailImport", false)' ]
 
+    App\Domain\Wellness\WellnessImportConfig:
+      factory: [ null, 'create' ]
+      arguments:
+        - '@=app_config("integrations.wellness.enabled", false)'
+        - '@=app_config("integrations.wellness.bridge.sourcePath", "storage/imports/wellness/garmin-bridge.json")'
+
+    App\Domain\Wellness\WellnessProvider:
+      alias: 'App\Domain\Wellness\BridgeWellnessProvider'
+
     NeuronAI\Agent\AgentInterface:
         class: App\Domain\Integration\AI\NeuronAIAgent
 

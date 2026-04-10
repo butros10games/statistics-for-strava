@@ -124,7 +124,7 @@ final readonly class TrainingLoadChart
             'yAxis' => [
                 [
                     'type' => 'value',
-                    'name' => Escape::forJsonEncode($this->translator->trans('Daily TRIMP')),
+                    'name' => Escape::forJsonEncode($this->translator->trans('Daily load')),
                     'nameLocation' => 'middle',
                     'nameGap' => 35,
                     'gridIndex' => 1,
@@ -212,7 +212,7 @@ final readonly class TrainingLoadChart
                     ],
                 ],
                 [
-                    'name' => Escape::forJsonEncode($this->translator->trans('Daily TRIMP')),
+                    'name' => Escape::forJsonEncode($this->translator->trans('Daily load')),
                     'type' => 'bar',
                     'data' => $this->trainingMetrics->getTrimpValuesForXLastDays(self::NUMBER_OF_DAYS_TO_DISPLAY),
                     'itemStyle' => ['color' => '#FC4C02'],

@@ -201,6 +201,13 @@ zwift:
   # Optional, your Zwift racing score (0 - 1000). Will be used to add to your Zwift badge if zwift.level is filled out.
   racingScore: null
 integrations:
+  wellness:
+    # Optional: enable importing bridge-backed wellness data such as Garmin steps, sleep and HRV.
+    enabled: false
+    bridge:
+      # Relative paths are resolved from the project root.
+      # The file must contain either a list of daily records or an object with a top-level "records" list.
+      sourcePath: 'storage/imports/wellness/garmin-bridge.json'
   notifications:
     # Optional: Specify one or more notification services. For a complete list of available services, see: https://shoutrrr.nickfedor.com/dev/services/overview/
     # Leave empty to disable notifications entirely.

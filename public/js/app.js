@@ -58,6 +58,25 @@ const initElements = (rootNode) => {
     scrollTo.init(rootNode);
 }
 
+const maybeAutoOpenRecoveryCheckIn = (modalId) => {
+    if (modalId) {
+        return;
+    }
+
+    const triggerNode = document.querySelector('[data-auto-open-recovery-check-in-url]');
+    if (!triggerNode) {
+        return;
+    }
+
+    const recoveryCheckInModalUrl = triggerNode.getAttribute('data-auto-open-recovery-check-in-url');
+    if (!recoveryCheckInModalUrl) {
+        return;
+    }
+
+    modalManager.open(recoveryCheckInModalUrl);
+    router.pushCurrentRouteToHistoryState(recoveryCheckInModalUrl);
+}
+
 sidebar.init();
 darkModeManager.attachEventListeners();
 
@@ -86,6 +105,8 @@ eventBus.on(Events.PAGE_LOADED, async ({page, modalId}) => {
         const $photoWallWrapper = document.querySelector('.photo-wall-wrapper');
         await new PhotoWall($photoWallWrapper).render();
     }
+
+    maybeAutoOpenRecoveryCheckIn(modalId);
 });
 eventBus.on(Events.NAVIGATION_CLICKED, ({link}) => {
     if (!link || !link.hasAttribute('data-filters')) {

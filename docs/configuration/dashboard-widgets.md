@@ -34,6 +34,7 @@ appearance:
       - { 'widget': 'challengeConsistency', 'width': 50, 'enabled': true, 'config': { 'challenges': [] } }
       - { 'widget': 'mostRecentChallengesCompleted', 'width': 50, 'enabled': true, 'config': { 'numberOfChallengesToDisplay': 5 } }
       - { 'widget': 'athleteWeightHistory', 'width': 50, 'enabled': true }
+      - { 'widget': 'wellness', 'width': 50, 'enabled': false }
 ```
 
 > [!TIP]
@@ -130,6 +131,8 @@ sportTypesToInclude: ['Ride', 'MountainBikeRide', 'GravelRide', 'VirtualRide']
 
 This widget provides a summary of your weekly statistics per sport type, including total distance and moving time
 
+When Garmin wellness data has been imported, the widget also adds a dedicated wellness tab with weekly step totals plus weekly sleep, sleep score, and HRV trends.
+
 * __metricsDisplayOrder__: The order in which the metrics are displayed in the widget. Supported metrics are 'distance', 'movingTime' and 'elevation'. All 3 metrics must be included.
 
 ```yml
@@ -209,6 +212,8 @@ This widget shows your heart rate zones, helping you understand your training in
 
 This widget displays your monthly statistics and lets you compare your performance with the same months in previous years.
 
+When Garmin wellness data has been imported, the widget also adds a dedicated wellness tab with monthly step totals plus monthly sleep, sleep score, and HRV trends across years.
+
 * __enableLastXYearsByDefault__: enable the last X years of data dy default. Earlier years will be disabled but can be toggled.
 * __metricsDisplayOrder__: The order in which the metrics are displayed in the widget. Supported metrics are 'distance', 'movingTime' and 'elevation'. All 3 metrics must be included.
 
@@ -231,6 +236,9 @@ This widget displays a timeline view of your key achievements and milestones ove
 ## trainingLoad
 
 This widget displays your training load, helping you monitor your training stress and recovery.
+
+If Garmin wellness data has been imported, the widget also shows a readiness score that blends recent HRV and sleep signals with your current load balance.
+When wellness data is available, the training-load history also includes a small lifestyle-strain contribution from high daily steps and poor sleep, plus a modest HRV-based nudge when enough history exists to establish a baseline, so the balance model can use the wellness data you have imported without overpowering workout load.
 
 ```yml
 { 'widget': 'trainingLoad', 'width': 100, 'enabled': true }
@@ -257,6 +265,19 @@ This widget shows a breakdown of your activities by time of day, helping you und
 ```
 
 ![dayTimeStats widget](../assets/images/dashboard-widgets/day-time-stats.png)
+
+## wellness
+
+This widget displays bridge-imported wellness data such as steps, sleep, and HRV. It only renders when wellness data has been imported.
+
+> [!NOTE]
+> **Note** This widget is disabled in the default dashboard layout. To use it, enable `integrations.wellness.enabled`, import wellness data, and add the widget to your dashboard layout.
+
+```yml
+{ 'widget': 'wellness', 'width': 50, 'enabled': true }
+```
+
+The widget currently has no custom configuration options.
 
 ## distanceBreakdown
 

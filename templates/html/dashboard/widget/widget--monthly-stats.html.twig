@@ -13,6 +13,14 @@
                 </a>
             </li>
         {% endfor %}
+        {% if monthlyWellnessCharts|length > 0 %}
+            <li role="presentation">
+                <a href="#" data-tabs-target="#monthlyStatsWellness{{ uniqueId }}" role="tab"
+                   aria-controls="monthlyStatsWellness{{ uniqueId }}">
+                    <span class="hidden md:block">{{ "Wellness"|trans }}</span>
+                </a>
+            </li>
+        {% endif %}
     </ul>
 </div>
 <div class="flex flex-col grow" id="monthlyStatsTabContent{{ uniqueId }}">
@@ -45,4 +53,32 @@
             </div>
         </div>
     {% endfor %}
+    {% if monthlyWellnessCharts|length > 0 %}
+        <div class="flex flex-col grow" id="monthlyStatsWellness{{ uniqueId }}" role="tabpanel"
+             aria-labelledby="monthlyStatsWellness{{ uniqueId }}">
+            {% if monthlyWellnessMetricTabs|length > 1 %}
+                <div class="tabs tabs--default">
+                    <ul id="monthlyWellnessMetricTab{{ uniqueId }}" data-tabs="#monthlyWellnessMetricTabContent{{ uniqueId }}"
+                        role="tablist">
+                        {% for metric in monthlyWellnessMetricTabs %}
+                            <li role="presentation">
+                                <a href="#" data-tabs-target="#monthlyWellness{{ metric.key }}{{ uniqueId }}" role="tab"
+                                   aria-controls="monthlyWellness{{ metric.key }}{{ uniqueId }}">
+                                    {{ metric.label|trans }}
+                                </a>
+                            </li>
+                        {% endfor %}
+                    </ul>
+                </div>
+            {% endif %}
+            <div class="flex flex-col grow" id="monthlyWellnessMetricTabContent{{ uniqueId }}">
+                {% for metric in monthlyWellnessMetricTabs %}
+                    <div class="flex flex-col grow" id="monthlyWellness{{ metric.key }}{{ uniqueId }}" role="tabpanel"
+                         aria-labelledby="monthlyWellness{{ metric.key }}{{ uniqueId }}-tab">
+                        <div class="grow min-h-80" data-echarts-options='{{ monthlyWellnessCharts[metric.key] }}'></div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
 </div>

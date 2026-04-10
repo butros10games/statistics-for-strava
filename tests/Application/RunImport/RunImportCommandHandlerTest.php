@@ -5,6 +5,7 @@ namespace App\Tests\Application\RunImport;
 use App\Application\RunImport\RunImport;
 use App\Application\RunImport\RunImportCommandHandler;
 use App\Domain\Strava\Strava;
+use App\Domain\Wellness\WellnessImportConfig;
 use App\Infrastructure\CQRS\Command\Bus\CommandBus;
 use App\Infrastructure\Serialization\Json;
 use App\Tests\ContainerTestCase;
@@ -42,6 +43,30 @@ class RunImportCommandHandlerTest extends ContainerTestCase
         $this->assertMatchesJsonSnapshot(Json::encode($this->commandBus->getDispatchedCommands()));
     }
 
+    public function testHandleWithWellnessImportEnabled(): void
+    {
+        $this->connection
+            ->expects($this->once())
+            ->method('executeStatement')
+            ->with('VACUUM');
+
+        $this->importStravaDataCommandHandler = new RunImportCommandHandler(
+            $this->getContainer()->get(Strava::class),
+            $this->commandBus = new SpyCommandBus(),
+            WellnessImportConfig::create(true, 'tests/fixtures/wellness/garmin-bridge.json'),
+            new SuccessfulPermissionChecker(),
+            $this->connection,
+        );
+
+        $output = new SpyOutput();
+        $this->importStravaDataCommandHandler->handle(new RunImport(
+            output: new SymfonyStyle(new StringInput('input'), $output),
+            restrictToActivityIds: null,
+        ));
+
+        $this->assertMatchesJsonSnapshot(Json::encode($this->commandBus->getDispatchedCommands()));
+    }
+
     public function testHandleWithInsufficientPermissions(): void
     {
         $this->connection
@@ -51,6 +76,7 @@ class RunImportCommandHandlerTest extends ContainerTestCase
         $this->importStravaDataCommandHandler = new RunImportCommandHandler(
             $this->getContainer()->get(Strava::class),
             $this->commandBus = new SpyCommandBus(),
+            WellnessImportConfig::create(false, 'storage/imports/wellness/garmin-bridge.json'),
             new UnwritablePermissionChecker(),
             $this->connection,
         );
@@ -69,6 +95,7 @@ class RunImportCommandHandlerTest extends ContainerTestCase
         $this->importStravaDataCommandHandler = new RunImportCommandHandler(
             $this->getContainer()->get(Strava::class),
             $this->commandBus = new SpyCommandBus(),
+            WellnessImportConfig::create(false, 'storage/imports/wellness/garmin-bridge.json'),
             new SuccessfulPermissionChecker(),
             $this->connection = $this->createMock(Connection::class),
         );

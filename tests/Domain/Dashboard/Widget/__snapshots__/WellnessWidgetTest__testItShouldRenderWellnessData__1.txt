@@ -1,0 +1,45 @@
+    <div class="flex items-center justify-between mb-4">
+        <div>
+            <h3 class="text-lg font-semibold">Wellness</h3>
+                            <p class="text-xs text-gray-500">
+                    Latest sync: 02-04-2026
+                </p>
+                    </div>
+    </div>
+    <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+        <div class="rounded-lg border border-gray-100 bg-gray-50 p-4">
+            <div class="text-sm text-gray-500">Steps</div>
+            <div class="mt-1 text-2xl font-semibold text-gray-900">9 876</div>
+            <div class="text-xs text-gray-500 mt-1">
+                30d avg: 11 111
+            </div>
+        </div>
+        <div class="rounded-lg border border-gray-100 bg-gray-50 p-4">
+            <div class="text-sm text-gray-500">Sleep</div>
+            <div class="mt-1 text-2xl font-semibold text-gray-900">7h</div>
+            <div class="text-xs text-gray-500 mt-1">
+                Score: 75 · 30d avg: 7h 22m
+            </div>
+        </div>
+        <div class="rounded-lg border border-gray-100 bg-gray-50 p-4">
+            <div class="text-sm text-gray-500">HRV</div>
+            <div class="mt-1 text-2xl font-semibold text-gray-900">49.2 ms</div>
+            <div class="text-xs text-gray-500 mt-1">
+                30d avg: 52.0 ms
+            </div>
+        </div>
+    </div>
+    <div class="grid grid-cols-1 gap-3">
+        <div class="rounded-lg border border-gray-100 p-3">
+            <div class="text-sm font-medium text-gray-700 mb-2">Steps trend</div>
+            <div id="wellnessStepsChart--1" class="h-28" data-echarts-options='{"animation":true,"backgroundColor":null,"tooltip":{"trigger":"axis"},"grid":{"top":8,"left":8,"right":8,"bottom":20,"containLabel":true},"xAxis":[{"type":"category","boundaryGap":false,"data":["04-01","04-02"],"axisTick":{"show":false},"axisLine":{"show":false},"axisLabel":{"fontSize":10,"color":"#6B7280"}}],"yAxis":[{"type":"value","min":8888,"splitLine":{"show":false},"axisTick":{"show":false},"axisLine":{"show":false},"axisLabel":{"show":false}}],"series":[{"name":"Steps","type":"line","smooth":true,"showSymbol":false,"data":[12345,9876],"lineStyle":{"width":2,"color":"#2563EB"},"areaStyle":{"opacity":0.12,"color":"#2563EB"},"itemStyle":{"color":"#2563EB"}}]}'></div>
+        </div>
+        <div class="rounded-lg border border-gray-100 p-3">
+            <div class="text-sm font-medium text-gray-700 mb-2">Sleep trend</div>
+            <div id="wellnessSleepChart--1" class="h-28" data-echarts-options='{"animation":true,"backgroundColor":null,"tooltip":{"trigger":"axis"},"grid":{"top":8,"left":8,"right":8,"bottom":20,"containLabel":true},"xAxis":[{"type":"category","boundaryGap":false,"data":["04-01","04-02"],"axisTick":{"show":false},"axisLine":{"show":false},"axisLabel":{"fontSize":10,"color":"#6B7280"}}],"yAxis":[{"type":"value","min":6,"splitLine":{"show":false},"axisTick":{"show":false},"axisLine":{"show":false},"axisLabel":{"show":false}}],"series":[{"name":"Sleep","type":"line","smooth":true,"showSymbol":false,"data":[7.8,7],"lineStyle":{"width":2,"color":"#7C3AED"},"areaStyle":{"opacity":0.12,"color":"#7C3AED"},"itemStyle":{"color":"#7C3AED"}}]}'></div>
+        </div>
+        <div class="rounded-lg border border-gray-100 p-3">
+            <div class="text-sm font-medium text-gray-700 mb-2">HRV trend</div>
+            <div id="wellnessHrvChart--1" class="h-28" data-echarts-options='{"animation":true,"backgroundColor":null,"tooltip":{"trigger":"axis"},"grid":{"top":8,"left":8,"right":8,"bottom":20,"containLabel":true},"xAxis":[{"type":"category","boundaryGap":false,"data":["04-01","04-02"],"axisTick":{"show":false},"axisLine":{"show":false},"axisLabel":{"fontSize":10,"color":"#6B7280"}}],"yAxis":[{"type":"value","min":44,"splitLine":{"show":false},"axisTick":{"show":false},"axisLine":{"show":false},"axisLabel":{"show":false}}],"series":[{"name":"HRV","type":"line","smooth":true,"showSymbol":false,"data":[54.7,49.2],"lineStyle":{"width":2,"color":"#059669"},"areaStyle":{"opacity":0.12,"color":"#059669"},"itemStyle":{"color":"#059669"}}]}'></div>
+        </div>
+    </div>
