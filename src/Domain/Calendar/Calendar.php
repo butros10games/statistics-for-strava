@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Domain\Calendar;
 
 use App\Domain\Activity\EnrichedActivities;
+use App\Domain\TrainingPlanner\PlannedSession;
 use App\Infrastructure\ValueObject\Time\SerializableDateTime;
 
 final readonly class Calendar
@@ -12,16 +13,19 @@ final readonly class Calendar
     private function __construct(
         private Month $month,
         private EnrichedActivities $enrichedActivities,
+        private array $plannedSessionsByDay,
     ) {
     }
 
     public static function create(
         Month $month,
         EnrichedActivities $enrichedActivities,
+        array $plannedSessionsByDay = [],
     ): self {
         return new self(
             month: $month,
             enrichedActivities: $enrichedActivities,
+            plannedSessionsByDay: $plannedSessionsByDay,
         );
     }
 
@@ -40,40 +44,50 @@ final readonly class Calendar
         for ($i = 1; $i < $this->month->getWeekDayOfFirstDay(); ++$i) {
             // Prepend with days of previous month.
             $dayNumber = $numberOfDaysInPreviousMonth - ($this->month->getWeekDayOfFirstDay() - $i - 1);
+            $date = SerializableDateTime::createFromFormat(
+                format: 'd-n-Y',
+                datetime: $dayNumber.'-'.$previousMonth->getMonth().'-'.$previousMonth->getYear(),
+            );
+
             $days->add(Day::create(
+                date: $date,
                 dayNumber: $dayNumber,
                 isCurrentMonth: false,
-                activities: $this->enrichedActivities->findByStartDate(SerializableDateTime::createFromFormat(
-                    format: 'd-n-Y',
-                    datetime: $dayNumber.'-'.$previousMonth->getMonth().'-'.$previousMonth->getYear(),
-                ), null)
+                activities: $this->enrichedActivities->findByStartDate($date, null),
+                plannedSessions: $this->plannedSessionsByDay[$date->format('Y-m-d')] ?? [],
             ));
         }
 
         for ($i = 0; $i < $this->month->getNumberOfDays(); ++$i) {
             $dayNumber = $i + 1;
+            $date = SerializableDateTime::createFromFormat(
+                format: 'd-n-Y',
+                datetime: $dayNumber.'-'.$this->month->getMonth().'-'.$this->month->getYear(),
+            );
 
             $days->add(Day::create(
+                date: $date,
                 dayNumber: $dayNumber,
                 isCurrentMonth: true,
-                activities: $this->enrichedActivities->findByStartDate(SerializableDateTime::createFromFormat(
-                    format: 'd-n-Y',
-                    datetime: $dayNumber.'-'.$this->month->getMonth().'-'.$this->month->getYear(),
-                ), null)
+                activities: $this->enrichedActivities->findByStartDate($date, null),
+                plannedSessions: $this->plannedSessionsByDay[$date->format('Y-m-d')] ?? [],
             ));
         }
 
         for ($i = 0; $i < count($days) % 7; ++$i) {
             // Append with days of next month.
             $dayNumber = $i + 1;
+            $date = SerializableDateTime::createFromFormat(
+                format: 'd-n-Y',
+                datetime: $dayNumber.'-'.$nextMonth->getMonth().'-'.$nextMonth->getYear(),
+            );
 
             $days->add(Day::create(
+                date: $date,
                 dayNumber: $dayNumber,
                 isCurrentMonth: false,
-                activities: $this->enrichedActivities->findByStartDate(SerializableDateTime::createFromFormat(
-                    format: 'd-n-Y',
-                    datetime: $dayNumber.'-'.$nextMonth->getMonth().'-'.$nextMonth->getYear(),
-                ), null)
+                activities: $this->enrichedActivities->findByStartDate($date, null),
+                plannedSessions: $this->plannedSessionsByDay[$date->format('Y-m-d')] ?? [],
             ));
         }
 

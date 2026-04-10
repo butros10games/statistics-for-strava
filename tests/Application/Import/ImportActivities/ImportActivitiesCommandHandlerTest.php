@@ -28,6 +28,13 @@ use App\Domain\Segment\SegmentEffort\SegmentEffortRepository;
 use App\Domain\Segment\SegmentId;
 use App\Domain\Segment\SegmentRepository;
 use App\Domain\Strava\Strava;
+use App\Domain\TrainingPlanner\PlannedSession;
+use App\Domain\TrainingPlanner\PlannedSessionActivityLinker;
+use App\Domain\TrainingPlanner\PlannedSessionEstimationSource;
+use App\Domain\TrainingPlanner\PlannedSessionId;
+use App\Domain\TrainingPlanner\PlannedSessionIntensity;
+use App\Domain\TrainingPlanner\PlannedSessionLinkStatus;
+use App\Domain\TrainingPlanner\PlannedSessionRepository;
 use App\Infrastructure\Mutex\LockName;
 use App\Infrastructure\Mutex\Mutex;
 use App\Infrastructure\Serialization\Json;
@@ -35,6 +42,7 @@ use App\Infrastructure\ValueObject\Geography\Coordinate;
 use App\Infrastructure\ValueObject\Geography\Latitude;
 use App\Infrastructure\ValueObject\Geography\Longitude;
 use App\Infrastructure\ValueObject\Measurement\UnitSystem;
+use App\Infrastructure\ValueObject\Time\SerializableDateTime;
 use App\Tests\ContainerTestCase;
 use App\Tests\Domain\Activity\ActivityBuilder;
 use App\Tests\Domain\Activity\BestEffort\ActivityBestEffortBuilder;
@@ -285,6 +293,7 @@ class ImportActivitiesCommandHandlerTest extends ContainerTestCase
                 lockName: LockName::IMPORT_DATA_OR_BUILD_APP,
             ),
             activityImportPipeline: $this->getContainer()->get(ActivityImportPipeline::class),
+            plannedSessionActivityLinker: $this->getContainer()->get(PlannedSessionActivityLinker::class),
         );
 
         $output = new SpyOutput();
@@ -323,6 +332,7 @@ class ImportActivitiesCommandHandlerTest extends ContainerTestCase
                 lockName: LockName::IMPORT_DATA_OR_BUILD_APP,
             ),
             activityImportPipeline: $this->getContainer()->get(ActivityImportPipeline::class),
+            plannedSessionActivityLinker: $this->getContainer()->get(PlannedSessionActivityLinker::class),
         );
 
         $output = new SpyOutput();
@@ -366,6 +376,7 @@ class ImportActivitiesCommandHandlerTest extends ContainerTestCase
                 lockName: LockName::IMPORT_DATA_OR_BUILD_APP,
             ),
             activityImportPipeline: $this->getContainer()->get(ActivityImportPipeline::class),
+            plannedSessionActivityLinker: $this->getContainer()->get(PlannedSessionActivityLinker::class),
         );
 
         $output = new SpyOutput();
@@ -400,6 +411,7 @@ class ImportActivitiesCommandHandlerTest extends ContainerTestCase
                 lockName: LockName::IMPORT_DATA_OR_BUILD_APP,
             ),
             activityImportPipeline: $this->getContainer()->get(ActivityImportPipeline::class),
+            plannedSessionActivityLinker: $this->getContainer()->get(PlannedSessionActivityLinker::class),
         );
 
         $output = new SpyOutput();
@@ -469,6 +481,48 @@ class ImportActivitiesCommandHandlerTest extends ContainerTestCase
         $this->assertMatchesTextSnapshot($output);
     }
 
+    public function testHandleAutoLinksImportedActivitiesToPlannedSessions(): void
+    {
+        $output = new SpyOutput();
+        $this->strava->setMaxNumberOfCallsBeforeTriggering429(1000);
+
+        $this->getContainer()->get(ImportedGearRepository::class)->save(ImportedGearBuilder::fromDefaults()
+            ->withGearId(GearId::fromString('gear-b12659861'))
+            ->build()
+        );
+
+        /** @var PlannedSessionRepository $plannedSessionRepository */
+        $plannedSessionRepository = $this->getContainer()->get(PlannedSessionRepository::class);
+        $plannedSessionId = PlannedSessionId::random();
+        $plannedSessionRepository->upsert(PlannedSession::create(
+            plannedSessionId: $plannedSessionId,
+            day: SerializableDateTime::fromString('2023-09-11 00:00:00'),
+            activityType: \App\Domain\Activity\ActivityType::RIDE,
+            title: 'Night Ride3',
+            notes: null,
+            targetLoad: null,
+            targetDurationInSeconds: 1001,
+            targetIntensity: PlannedSessionIntensity::MODERATE,
+            templateActivityId: null,
+            estimationSource: PlannedSessionEstimationSource::DURATION_INTENSITY,
+            linkedActivityId: null,
+            linkStatus: PlannedSessionLinkStatus::UNLINKED,
+            createdAt: SerializableDateTime::fromString('2023-09-10 09:00:00'),
+            updatedAt: SerializableDateTime::fromString('2023-09-10 09:00:00'),
+        ));
+
+        $this->importActivitiesCommandHandler->handle(new ImportActivities(
+            output: $output,
+            restrictToActivityIds: ActivityIds::fromArray([ActivityId::fromUnprefixed(4)]),
+        ));
+
+        $linkedPlannedSession = $plannedSessionRepository->findById($plannedSessionId);
+
+        self::assertNotNull($linkedPlannedSession);
+        self::assertSame(PlannedSessionLinkStatus::LINKED, $linkedPlannedSession->getLinkStatus());
+        self::assertSame('activity-4', (string) $linkedPlannedSession->getLinkedActivityId());
+    }
+
     #[\Override]
     protected function setUp(): void
     {
@@ -495,6 +549,7 @@ class ImportActivitiesCommandHandlerTest extends ContainerTestCase
                 lockName: LockName::IMPORT_DATA_OR_BUILD_APP,
             ),
             activityImportPipeline: $this->getContainer()->get(ActivityImportPipeline::class),
+            plannedSessionActivityLinker: $this->getContainer()->get(PlannedSessionActivityLinker::class),
         );
     }
 }

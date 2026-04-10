@@ -5,6 +5,8 @@
 {# === READINESS (hero card, spans 2 cols) === #}
 {% if readinessScore %}
 {% set readinessColor = readinessScore.getStatus().getTextColor() %}
+{% set topPositiveReadinessFactors = readinessAssessment ? readinessAssessment.getTopPositiveFactors(2) : [] %}
+{% set topNegativeReadinessFactors = readinessAssessment ? readinessAssessment.getTopNegativeFactors(2) : [] %}
 <div class="col-span-2 {{ statusMetricCardClass }} {{ readinessColor|replace({'text-': 'border-l-'}) }}">
     <div class="{{ metricHeaderClass }}">
         <h4 class="text-sm font-medium text-gray-500">{{ "Readiness"|trans }}</h4>
@@ -38,6 +40,25 @@
             <span>{{ "Stress"|trans }} {{ latestRecoveryCheckIn.stress }}/5</span>
         {% endif %}
     </div>
+    {% if topPositiveReadinessFactors or topNegativeReadinessFactors %}
+        <div class="mt-3 space-y-2">
+            <div class="text-[11px] uppercase tracking-wide text-gray-400">{{ "Top drivers"|trans }}</div>
+            <div class="flex flex-wrap gap-2">
+                {% for factor in topPositiveReadinessFactors %}
+                    <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-green-100 text-green-800">{{ factor.getLabel()|trans }} +{{ factor.getValue()|formatNumber(0) }}</span>
+                {% endfor %}
+                {% for factor in topNegativeReadinessFactors %}
+                    <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-amber-100 text-amber-900">{{ factor.getLabel()|trans }} {{ factor.getValue()|formatNumber(0) }}</span>
+                {% endfor %}
+            </div>
+        </div>
+    {% endif %}
+    {% if context == 'modal' and readinessMismatchInsight %}
+        <div class="mt-3 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs">
+            <div class="font-semibold text-gray-700">{{ readinessMismatchInsight.getTitle()|trans }}</div>
+            <div class="mt-1 text-gray-500">{{ readinessMismatchInsight.getSummary()|trans }}</div>
+        </div>
+    {% endif %}
 </div>
 {% endif %}
 
@@ -220,29 +241,29 @@
     <div class="space-y-4">
         <div class="overflow-hidden rounded-full border border-gray-200 bg-gray-200">
             <div class="flex h-4 w-full overflow-hidden rounded-full">
-                <div class="bg-emerald-500 h-full" style="width: {{ percentageInLowZones }}%"></div>
-                <div class="bg-amber-400 h-full" style="width: {{ percentageInMediumZones }}%"></div>
-                <div class="bg-red-500 h-full" style="width: {{ percentageInHighZones }}%"></div>
+                <div class="h-full" style="width: {{ percentageInLowZones }}%; background-color: #059669;"></div>
+                <div class="h-full" style="width: {{ percentageInMediumZones }}%; background-color: #FBBF24;"></div>
+                <div class="h-full" style="width: {{ percentageInHighZones }}%; background-color: #EF4444;"></div>
             </div>
         </div>
         <div class="grid grid-cols-1 gap-3 md:grid-cols-3">
             <div class="rounded-lg border border-gray-200 bg-white px-3 py-2">
                 <div class="flex items-center gap-2">
-                    <span class="inline-block w-3 h-3 rounded-full bg-emerald-500 shrink-0"></span>
+                    <span class="inline-block w-3 h-3 rounded-full shrink-0" style="background-color: #059669;"></span>
                     <span class="text-sm font-medium">{{ percentageInLowZones|formatNumber(1) }}%</span>
                 </div>
                 <div class="mt-1 text-xs text-gray-500">{{ "Z1-2 (Low)"|trans }}</div>
             </div>
             <div class="rounded-lg border border-gray-200 bg-white px-3 py-2">
                 <div class="flex items-center gap-2">
-                    <span class="inline-block w-3 h-3 rounded-full bg-amber-400 shrink-0"></span>
+                    <span class="inline-block w-3 h-3 rounded-full shrink-0" style="background-color: #FBBF24;"></span>
                     <span class="text-sm font-medium">{{ percentageInMediumZones|formatNumber(1) }}%</span>
                 </div>
                 <div class="mt-1 text-xs text-gray-500">{{ "Z3 (Mod)"|trans }}</div>
             </div>
             <div class="rounded-lg border border-gray-200 bg-white px-3 py-2">
                 <div class="flex items-center gap-2">
-                    <span class="inline-block w-3 h-3 rounded-full bg-red-500 shrink-0"></span>
+                    <span class="inline-block w-3 h-3 rounded-full shrink-0" style="background-color: #EF4444;"></span>
                     <span class="text-sm font-medium">{{ percentageInHighZones|formatNumber(1) }}%</span>
                 </div>
                 <div class="mt-1 text-xs text-gray-500">{{ "Z4-5 (High)"|trans }}</div>

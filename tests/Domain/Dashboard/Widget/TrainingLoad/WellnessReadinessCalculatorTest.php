@@ -81,6 +81,41 @@ final class WellnessReadinessCalculatorTest extends TestCase
         $this->assertContains($score->getStatus(), [ReadinessStatus::CAUTION, ReadinessStatus::NEEDS_RECOVERY]);
     }
 
+    public function testItProvidesDriverBreakdownAlongsideTheScore(): void
+    {
+        $trainingMetrics = TrainingMetrics::create($this->buildMonotonousIntensities());
+        $wellnessMetrics = new FindWellnessMetricsResponse(
+            records: [
+                ['day' => '2026-04-01', 'stepsCount' => 9000, 'sleepDurationInSeconds' => 28200, 'sleepScore' => 80, 'hrv' => 60.0],
+                ['day' => '2026-04-02', 'stepsCount' => 9200, 'sleepDurationInSeconds' => 28500, 'sleepScore' => 81, 'hrv' => 61.0],
+                ['day' => '2026-04-03', 'stepsCount' => 9100, 'sleepDurationInSeconds' => 28800, 'sleepScore' => 82, 'hrv' => 60.5],
+                ['day' => '2026-04-04', 'stepsCount' => 9400, 'sleepDurationInSeconds' => 27900, 'sleepScore' => 79, 'hrv' => 59.5],
+                ['day' => '2026-04-05', 'stepsCount' => 9500, 'sleepDurationInSeconds' => 27600, 'sleepScore' => 78, 'hrv' => 59.0],
+                ['day' => '2026-04-06', 'stepsCount' => 14500, 'sleepDurationInSeconds' => 24000, 'sleepScore' => 70, 'hrv' => 52.0],
+            ],
+            latestDay: SerializableDateTime::fromString('2026-04-06 00:00:00'),
+        );
+        $latestRecoveryCheckIn = ['day' => '2026-04-06', 'fatigue' => 4, 'soreness' => 3, 'stress' => 4, 'motivation' => 2, 'sleepQuality' => 2];
+
+        $assessment = $this->calculator->assess(
+            trainingMetrics: $trainingMetrics,
+            wellnessMetrics: $wellnessMetrics,
+            latestRecoveryCheckIn: $latestRecoveryCheckIn,
+        );
+
+        $score = $this->calculator->calculate(
+            trainingMetrics: $trainingMetrics,
+            wellnessMetrics: $wellnessMetrics,
+            latestRecoveryCheckIn: $latestRecoveryCheckIn,
+        );
+
+        $this->assertNotNull($assessment);
+        $this->assertNotNull($score);
+        $this->assertSame($score->getValue(), $assessment->getScore()->getValue());
+        $this->assertNotEmpty($assessment->getTopNegativeFactors());
+        $this->assertNotEmpty($assessment->getTopPositiveFactors());
+    }
+
     #[\Override]
     protected function setUp(): void
     {

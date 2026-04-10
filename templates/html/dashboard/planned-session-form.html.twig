@@ -1,0 +1,493 @@
+{% macro workoutItem(item, plannedSessionStepTypes, plannedSessionStepTargetTypes, plannedSessionStepConditionTypes, activityType) %}
+    {% import _self as workoutForm %}
+    {% if item.type == 'repeatBlock' %}
+        <div data-workout-item data-workout-block data-item-id="{{ item.itemId }}" data-collapsed="false" data-expand-label="{{ 'Expand block'|trans }}" data-collapse-label="{{ 'Collapse block'|trans }}" data-set-label-singular="{{ 'Set'|trans }}" data-set-label-plural="{{ 'Sets'|trans }}" data-more-label="{{ 'more'|trans }}" draggable="true" class="planned-session-step planned-session-block planned-session-repeat-block rounded-lg px-2.5 py-2 shadow-xs">
+            <input type="hidden" name="workoutSteps[{{ item.formIndex|default('0') }}][itemId]" data-name-template="workoutSteps[__INDEX__][itemId]" value="{{ item.itemId }}" />
+            <input type="hidden" name="workoutSteps[{{ item.formIndex|default('0') }}][parentBlockId]" data-parent-block-id-input data-name-template="workoutSteps[__INDEX__][parentBlockId]" value="" />
+            <input type="hidden" name="workoutSteps[{{ item.formIndex|default('0') }}][type]" data-name-template="workoutSteps[__INDEX__][type]" value="repeatBlock" />
+            <input type="hidden" name="workoutSteps[{{ item.formIndex|default('0') }}][targetType]" data-name-template="workoutSteps[__INDEX__][targetType]" value="" />
+            <input type="hidden" name="workoutSteps[{{ item.formIndex|default('0') }}][conditionType]" data-name-template="workoutSteps[__INDEX__][conditionType]" value="" />
+            <input type="hidden" name="workoutSteps[{{ item.formIndex|default('0') }}][durationInMinutes]" data-name-template="workoutSteps[__INDEX__][durationInMinutes]" value="" />
+            <input type="hidden" name="workoutSteps[{{ item.formIndex|default('0') }}][durationInSecondsPart]" data-name-template="workoutSteps[__INDEX__][durationInSecondsPart]" value="" />
+            <input type="hidden" name="workoutSteps[{{ item.formIndex|default('0') }}][distanceInMeters]" data-name-template="workoutSteps[__INDEX__][distanceInMeters]" value="" />
+            <input type="hidden" name="workoutSteps[{{ item.formIndex|default('0') }}][targetPace]" data-name-template="workoutSteps[__INDEX__][targetPace]" value="" />
+            <input type="hidden" name="workoutSteps[{{ item.formIndex|default('0') }}][targetPower]" data-name-template="workoutSteps[__INDEX__][targetPower]" value="" />
+            <input type="hidden" name="workoutSteps[{{ item.formIndex|default('0') }}][targetHeartRate]" data-name-template="workoutSteps[__INDEX__][targetHeartRate]" value="" />
+            {# ── Row 1: drag handle, badge, label, reps, actions ── #}
+            <div class="flex items-center gap-1.5">
+                <span data-workout-drag-handle draggable="true" class="select-none text-sm leading-none text-amber-500 cursor-grab rounded px-0.5 py-0.5 hover:bg-amber-100" title="{{ 'Drag to reorder'|trans }}">⋮⋮</span>
+                <span data-workout-block-reps-badge class="planned-session-repeat-badge inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none">{{ item.repetitions|default(1) }}×</span>
+                <div class="text-[10px] font-semibold uppercase tracking-wide text-amber-700">{{ 'Repeat block'|trans }}</div>
+                <div data-workout-block-summary class="hidden text-[10px] font-medium text-amber-800 truncate"></div>
+                <div class="ml-auto flex items-center gap-1.5">
+                    <input type="text" name="workoutSteps[{{ item.formIndex|default('0') }}][label]" data-name-template="workoutSteps[__INDEX__][label]" value="{{ item.label }}" placeholder="{{ 'Block label'|trans }}" class="w-28 rounded border border-gray-300 bg-white px-1.5 py-1 text-xs text-gray-900 focus:border-amber-500 focus:ring-amber-500" />
+                    <input type="number" min="1" step="1" name="workoutSteps[{{ item.formIndex|default('0') }}][repetitions]" data-name-template="workoutSteps[__INDEX__][repetitions]" value="{{ item.repetitions }}" data-workout-block-reps-input class="w-14 rounded border border-gray-300 bg-white px-1.5 py-1 text-xs text-gray-900 text-center focus:border-amber-500 focus:ring-amber-500" title="{{ 'Reps'|trans }}" />
+                    <button type="button" data-workout-item-duplicate class="planned-session-step-btn planned-session-repeat-action-btn" title="{{ 'Duplicate block'|trans }}">
+                        <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                    </button>
+                    <button type="button" data-workout-block-toggle class="planned-session-step-btn planned-session-repeat-action-btn planned-session-block-toggle-btn" title="{{ 'Collapse block'|trans }}" aria-label="{{ 'Collapse block'|trans }}" aria-expanded="true">
+                        <svg data-workout-block-toggle-icon class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                        <span class="sr-only" data-workout-block-toggle-label>{{ 'Collapse block'|trans }}</span>
+                    </button>
+                    <button type="button" data-workout-item-remove class="planned-session-step-btn text-red-400 hover:text-red-600 hover:bg-red-50" title="{{ 'Remove block'|trans }}">
+                        <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                    </button>
+                </div>
+            </div>
+            {# ── Block children area ── #}
+            <div data-workout-block-content class="mt-2 ml-5 border-l-2 border-amber-200 pl-2.5">
+                <div class="space-y-1.5" data-workout-dropzone data-dropzone-type="block" data-block-id="{{ item.itemId }}" data-workout-block-steps>
+                    {% for child in item.children %}
+                        {{ workoutForm.workoutItem(child, plannedSessionStepTypes, plannedSessionStepTargetTypes, plannedSessionStepConditionTypes, activityType) }}
+                    {% endfor %}
+                </div>
+                <div data-workout-block-empty class="flex min-h-[1.5rem] items-center justify-center rounded border border-dashed border-amber-200 px-2 py-1 text-center text-[10px] text-amber-800{% if item.children is not empty %} hidden{% endif %}">
+                    {{ 'Drag sets here or add inside block'|trans }}
+                </div>
+                <div class="mt-1 flex justify-end">
+                    <button type="button" data-workout-step-add-to-block class="inline-flex items-center rounded border border-amber-300 bg-white px-1.5 py-0.5 text-[10px] font-medium text-amber-800 hover:bg-amber-100">
+                        + {{ 'Add set'|trans }}
+                    </button>
+                </div>
+            </div>
+        </div>
+    {% else %}
+        {% set isRideActivity = activityType == 'Ride' %}
+        {# ── Regular workout step: two-row card with color-coded left border ── #}
+        <div data-workout-item data-workout-step data-item-id="{{ item.itemId }}" data-step-type="{{ item.type }}" draggable="true" class="planned-session-step rounded-lg border border-gray-200 bg-white shadow-xs">
+            <input type="hidden" name="workoutSteps[{{ item.formIndex|default('0') }}][itemId]" data-name-template="workoutSteps[__INDEX__][itemId]" value="{{ item.itemId }}" />
+            <input type="hidden" name="workoutSteps[{{ item.formIndex|default('0') }}][parentBlockId]" data-parent-block-id-input data-name-template="workoutSteps[__INDEX__][parentBlockId]" value="{{ item.parentBlockId ?? '' }}" />
+            <input type="hidden" name="workoutSteps[{{ item.formIndex|default('0') }}][repetitions]" data-name-template="workoutSteps[__INDEX__][repetitions]" value="{{ item.repetitions|default('1') }}" />
+            <div class="planned-session-step-inner" data-workout-step-row>
+                {# ── Row 1: Drag, Type, Label, Actions ── #}
+                <div class="flex items-center gap-1.5">
+                    <span data-workout-drag-handle draggable="true" class="select-none text-sm leading-none text-gray-400 cursor-grab rounded px-0.5 py-0.5 hover:bg-gray-100" title="{{ 'Drag to reorder'|trans }}">⋮⋮</span>
+                    <div class="w-24 shrink-0">
+                        <select name="workoutSteps[{{ item.formIndex|default('0') }}][type]" data-name-template="workoutSteps[__INDEX__][type]" data-workout-step-type-select class="block w-full rounded border border-gray-300 bg-white px-1.5 py-1 text-xs font-medium text-gray-900 focus:border-amber-500 focus:ring-amber-500">
+                            {% for plannedSessionStepType in plannedSessionStepTypes %}
+                                {% if not plannedSessionStepType.isContainer() %}
+                                    <option value="{{ plannedSessionStepType.value }}"{% if item.type == plannedSessionStepType.value %} selected{% endif %}>{{ plannedSessionStepType.getLabel()|trans }}</option>
+                                {% endif %}
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="min-w-0 flex-1">
+                        <input type="text" name="workoutSteps[{{ item.formIndex|default('0') }}][label]" data-name-template="workoutSteps[__INDEX__][label]" value="{{ item.label }}" placeholder="{{ 'Label'|trans }}" class="block w-full rounded border border-gray-300 bg-white px-1.5 py-1 text-xs text-gray-900 focus:border-amber-500 focus:ring-amber-500" />
+                    </div>
+                    <div class="flex shrink-0 items-center gap-1">
+                        <button type="button" data-workout-item-duplicate class="planned-session-step-btn" title="{{ 'Duplicate set'|trans }}">
+                            <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                        </button>
+                        <button type="button" data-workout-item-remove class="planned-session-step-btn text-red-400 hover:text-red-600 hover:bg-red-50" title="{{ 'Remove set'|trans }}">
+                            <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                        </button>
+                    </div>
+                </div>
+                {# ── Row 2: Target fields ── #}
+                <div class="flex items-end gap-1.5 mt-1.5 ml-6">
+                    <div class="w-24 shrink-0">
+                        <label class="mb-0.5 block text-[10px] font-medium uppercase tracking-normal text-gray-400">{{ 'Target'|trans }}</label>
+                        <select name="workoutSteps[{{ item.formIndex|default('0') }}][targetType]" data-name-template="workoutSteps[__INDEX__][targetType]" data-workout-step-target-type class="block w-full rounded border border-gray-300 bg-white px-1.5 py-1 text-xs text-gray-900 focus:border-amber-500 focus:ring-amber-500">
+                            {% for plannedSessionStepTargetType in plannedSessionStepTargetTypes %}
+                                <option value="{{ plannedSessionStepTargetType.value }}"{% if item.targetType == plannedSessionStepTargetType.value %} selected{% endif %}>{{ plannedSessionStepTargetType.getLabel()|trans }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="min-w-0 flex-1" data-target-field-group="time heartRate">
+                        <label class="mb-0.5 block text-[10px] font-medium uppercase tracking-normal text-gray-400">{{ 'Condition'|trans }}</label>
+                        <select name="workoutSteps[{{ item.formIndex|default('0') }}][conditionType]" data-name-template="workoutSteps[__INDEX__][conditionType]" data-workout-step-condition-select class="block w-full rounded border border-gray-300 bg-white px-1.5 py-1 text-xs text-gray-900 focus:border-amber-500 focus:ring-amber-500">
+                            <option value="" data-condition-default-option data-valid-for="time" data-time-label="{{ 'Target time'|trans }}" data-heart-rate-label="{{ 'Hold target'|trans }}"{% if item.conditionType == '' %} selected{% endif %}>{{ item.targetType == 'time' ? 'Target time'|trans : 'Hold target'|trans }}</option>
+                            {% for plannedSessionStepConditionType in plannedSessionStepConditionTypes %}
+                                <option value="{{ plannedSessionStepConditionType.value }}" data-valid-for="{{ plannedSessionStepConditionType.value in ['untilBelow', 'untilAbove'] ? 'heartRate' : 'time heartRate' }}"{% if item.conditionType == plannedSessionStepConditionType.value %} selected{% endif %}>{{ plannedSessionStepConditionType.getLabel()|trans }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+                    <div class="min-w-0 flex-1" data-target-field-group="time heartRate">
+                        <label class="mb-0.5 block text-[10px] font-medium uppercase tracking-normal text-gray-400">{{ 'Min'|trans }}</label>
+                        <input type="number" min="0" step="1" name="workoutSteps[{{ item.formIndex|default('0') }}][durationInMinutes]" data-name-template="workoutSteps[__INDEX__][durationInMinutes]" value="{{ item.durationInMinutes }}" class="block w-full rounded border border-gray-300 bg-white px-1.5 py-1 text-xs text-gray-900 focus:border-amber-500 focus:ring-amber-500" />
+                    </div>
+                    <div class="min-w-0 flex-1" data-target-field-group="time heartRate">
+                        <label class="mb-0.5 block text-[10px] font-medium uppercase tracking-normal text-gray-400">{{ 'Sec'|trans }}</label>
+                        <input type="number" min="0" max="59" step="1" name="workoutSteps[{{ item.formIndex|default('0') }}][durationInSecondsPart]" data-name-template="workoutSteps[__INDEX__][durationInSecondsPart]" value="{{ item.durationInSecondsPart|default('') }}" class="block w-full rounded border border-gray-300 bg-white px-1.5 py-1 text-xs text-gray-900 focus:border-amber-500 focus:ring-amber-500" />
+                    </div>
+                    <div class="min-w-0 flex-1" data-target-field-group="distance">
+                        <label class="mb-0.5 block text-[10px] font-medium uppercase tracking-normal text-gray-400">{{ 'Meters'|trans }}</label>
+                        <input type="number" min="0" step="50" name="workoutSteps[{{ item.formIndex|default('0') }}][distanceInMeters]" data-name-template="workoutSteps[__INDEX__][distanceInMeters]" value="{{ item.distanceInMeters }}" placeholder="800" class="block w-full rounded border border-gray-300 bg-white px-1.5 py-1 text-xs text-gray-900 focus:border-amber-500 focus:ring-amber-500" />
+                    </div>
+                    <div class="min-w-0 flex-1{% if isRideActivity %} hidden{% endif %}" data-target-field-group="time distance" data-target-effort="pace">
+                        <label class="mb-0.5 block text-[10px] font-medium uppercase tracking-normal text-gray-400">{{ 'Pace'|trans }}</label>
+                        <input type="text" name="workoutSteps[{{ item.formIndex|default('0') }}][targetPace]" data-name-template="workoutSteps[__INDEX__][targetPace]" value="{{ item.targetPace }}" placeholder="4:20/km" class="block w-full rounded border border-gray-300 bg-white px-1.5 py-1 text-xs text-gray-900 focus:border-amber-500 focus:ring-amber-500" />
+                    </div>
+                    <div class="min-w-0 flex-1{% if not isRideActivity %} hidden{% endif %}" data-target-field-group="time distance" data-target-effort="power">
+                        <label class="mb-0.5 block text-[10px] font-medium uppercase tracking-normal text-gray-400">{{ 'Power'|trans }}</label>
+                        <input type="number" min="0" step="5" name="workoutSteps[{{ item.formIndex|default('0') }}][targetPower]" data-name-template="workoutSteps[__INDEX__][targetPower]" value="{{ item.targetPower|default('') }}" placeholder="250" class="block w-full rounded border border-gray-300 bg-white px-1.5 py-1 text-xs text-gray-900 focus:border-amber-500 focus:ring-amber-500" />
+                    </div>
+                    <div class="min-w-0 flex-1" data-target-field-group="heartRate">
+                        <label class="mb-0.5 block text-[10px] font-medium uppercase tracking-normal text-gray-400">{{ 'BPM'|trans }}</label>
+                        <input type="number" min="0" step="1" name="workoutSteps[{{ item.formIndex|default('0') }}][targetHeartRate]" data-name-template="workoutSteps[__INDEX__][targetHeartRate]" value="{{ item.targetHeartRate }}" placeholder="165" class="block w-full rounded border border-gray-300 bg-white px-1.5 py-1 text-xs text-gray-900 focus:border-amber-500 focus:ring-amber-500" />
+                    </div>
+                </div>
+            </div>
+        </div>
+    {% endif %}
+{% endmacro %}
+
+{% import _self as workoutForm %}
+{% set uniqueId = _uniqueId|default(uniqueNumberForId('plannedSession')) %}
+{% set redirectTarget = redirectTo|default('/dashboard') %}
+
+{% if _renderPanel|default('') == 'left' %}
+
+{# ════════════════════════════════════════════════════════
+   LEFT PANEL — Activity link status + Session config cards
+   Rendered inline into the left column of the parent grid
+   ════════════════════════════════════════════════════════ #}
+
+{# ── Activity Link Status (shown prominently at top when relevant) ── #}
+{% if plannedSession and matchedActivity and plannedSessionMatchStatus == 'suggested' %}
+    <div class="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3">
+        <div class="flex flex-col gap-2">
+            <div class="flex items-start gap-2">
+                <svg class="mt-0.5 h-4 w-4 shrink-0 text-amber-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1"/></svg>
+                <div class="min-w-0">
+                    <div class="font-semibold text-xs text-amber-900">{{ "Suggested match"|trans }}</div>
+                    <div class="mt-0.5 text-[11px] text-amber-800 truncate">{{ matchedActivity.name }} · {{ matchedActivity.activityType|trans }} · {{ matchedActivity.movingTime|formatSeconds }}</div>
+                </div>
+            </div>
+            <form action="/planned-session/confirm-link" method="post" class="flex justify-end">
+                <input type="hidden" name="plannedSessionId" value="{{ plannedSession.plannedSessionId }}" />
+                <input type="hidden" name="linkedActivityId" value="{{ matchedActivity.activityId }}" />
+                <input type="hidden" name="redirectTo" value="{{ redirectTarget }}" />
+                <button type="submit" class="inline-flex items-center rounded-lg bg-amber-600 px-3 py-1.5 text-xs font-medium text-white hover:bg-amber-700">{{ "Confirm match"|trans }}</button>
+            </form>
+        </div>
+    </div>
+{% elseif plannedSession and matchedActivity and plannedSessionMatchStatus == 'linked' %}
+    <div class="rounded-lg border border-green-200 bg-green-50 px-4 py-3">
+        <div class="flex flex-col gap-2">
+            <div class="flex items-start gap-2">
+                <svg class="mt-0.5 h-4 w-4 shrink-0 text-green-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                <div class="min-w-0">
+                    <div class="font-semibold text-xs text-green-900">{{ "Linked activity"|trans }}</div>
+                    <div class="mt-0.5 text-[11px] text-green-800 truncate">{{ matchedActivity.name }} · {{ matchedActivity.activityType|trans }} · {{ matchedActivity.movingTime|formatSeconds }}</div>
+                </div>
+            </div>
+            <form action="/planned-session/unlink" method="post" class="flex justify-end">
+                <input type="hidden" name="plannedSessionId" value="{{ plannedSession.plannedSessionId }}" />
+                <input type="hidden" name="redirectTo" value="{{ redirectTarget }}" />
+                <button type="submit" class="inline-flex items-center rounded-lg border border-green-300 px-3 py-1.5 text-xs font-medium text-green-800 hover:bg-green-100">{{ "Unlink"|trans }}</button>
+            </form>
+        </div>
+    </div>
+{% endif %}
+
+{# ── Session Details Card ── #}
+<div class="rounded-lg border border-gray-200 bg-white shadow-xs">
+    <div class="px-4 py-3 border-b border-gray-100">
+        <div class="text-xs font-semibold uppercase tracking-wide text-gray-500">{{ "Session details"|trans }}</div>
+        {% if latestPlannedSession %}
+            <div class="mt-0.5 text-[11px] text-gray-400 truncate">
+                {{ "Latest"|trans }}: {{ latestPlannedSession.day }} · {{ latestPlannedSession.activityType|trans }}
+            </div>
+        {% endif %}
+    </div>
+    <div class="px-4 py-3">
+        <div class="grid grid-cols-2 gap-3">
+            <div>
+                <label class="block text-[10px] font-medium uppercase tracking-wide text-gray-500 mb-1" for="planned-session-day-{{ uniqueId }}">{{ "Day"|trans }}</label>
+                <input id="planned-session-day-{{ uniqueId }}" name="day" type="date" value="{{ plannedSessionDefaultDay }}" form="planned-session-form-{{ uniqueId }}" class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-amber-500 focus:ring-amber-500" />
+            </div>
+            <div>
+                <label class="block text-[10px] font-medium uppercase tracking-wide text-gray-500 mb-1" for="planned-session-title-{{ uniqueId }}">{{ "Title"|trans }}</label>
+                <input id="planned-session-title-{{ uniqueId }}" name="title" type="text" value="{{ plannedSessionFormDefaults.title }}" placeholder="{{ 'Long run'|trans }}" form="planned-session-form-{{ uniqueId }}" class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-amber-500 focus:ring-amber-500" />
+            </div>
+            <div>
+                <label class="block text-[10px] font-medium uppercase tracking-wide text-gray-500 mb-1" for="planned-session-activity-type-{{ uniqueId }}">{{ "Activity type"|trans }}</label>
+                <select id="planned-session-activity-type-{{ uniqueId }}" name="activityType" form="planned-session-form-{{ uniqueId }}" data-planned-session-activity-type class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-amber-500 focus:ring-amber-500">
+                    {% for activityType in activityTypes %}
+                        <option value="{{ activityType.value }}"{% if plannedSessionFormDefaults.activityType == activityType.value %} selected{% endif %}>{{ activityType|trans }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+            <div>
+                <label class="block text-[10px] font-medium uppercase tracking-wide text-gray-500 mb-1" for="planned-session-intensity-{{ uniqueId }}">{{ "Intensity"|trans }}</label>
+                <select id="planned-session-intensity-{{ uniqueId }}" name="targetIntensity" form="planned-session-form-{{ uniqueId }}" data-planned-session-intensity class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-amber-500 focus:ring-amber-500">
+                    <option value="">{{ "None"|trans }}</option>
+                    {% for intensity in plannedSessionIntensities %}
+                        <option value="{{ intensity.value }}"{% if plannedSessionFormDefaults.targetIntensity == intensity.value %} selected{% endif %}>{{ intensity.getLabel()|trans }}</option>
+                    {% endfor %}
+                </select>
+            </div>
+        </div>
+    </div>
+</div>
+
+{# ── Targets & Estimation Card ── #}
+<div class="rounded-lg border border-gray-200 bg-white shadow-xs" data-planned-session-targets-card data-planned-session-form-id="planned-session-form-{{ uniqueId }}">
+    <div class="px-4 py-3 border-b border-gray-100 flex items-center justify-between gap-2">
+        <div class="text-xs font-semibold uppercase tracking-wide text-gray-500">{{ "Targets & estimation"|trans }}</div>
+        <span data-planned-session-estimate-badge data-planned-session-form-id="planned-session-form-{{ uniqueId }}" class="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-800 whitespace-nowrap{% if plannedSessionEstimatedLoad is null or not plannedSession %} hidden{% endif %}">
+            {% if plannedSessionEstimatedLoad is not null and plannedSession %}
+                {{ "Est."|trans }} {{ plannedSessionEstimatedLoad|formatNumber(1) }} · {{ plannedSession.estimationSource|trans }}
+            {% endif %}
+        </span>
+    </div>
+    <div class="px-4 py-3">
+        <div class="grid grid-cols-2 gap-3">
+            <div>
+                <label class="block text-[10px] font-medium uppercase tracking-wide text-gray-500 mb-1" for="planned-session-target-load-{{ uniqueId }}">{{ "Target load"|trans }}</label>
+                <input id="planned-session-target-load-{{ uniqueId }}" name="targetLoad" type="number" step="0.1" min="0" form="planned-session-form-{{ uniqueId }}" data-planned-session-target-load value="{{ plannedSessionFormDefaults.targetLoad is null ? '' : plannedSessionFormDefaults.targetLoad }}" class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-amber-500 focus:ring-amber-500" />
+            </div>
+            <div>
+                <label class="block text-[10px] font-medium uppercase tracking-wide text-gray-500 mb-1" for="planned-session-duration-minutes-{{ uniqueId }}">{{ "Duration"|trans }}</label>
+                <div class="grid grid-cols-2 gap-1.5">
+                    <input id="planned-session-duration-minutes-{{ uniqueId }}" name="targetDurationInMinutes" type="number" min="0" step="1" form="planned-session-form-{{ uniqueId }}" data-planned-session-target-duration-minutes value="{{ plannedSessionFormDefaults.targetDurationInMinutes is null ? '' : plannedSessionFormDefaults.targetDurationInMinutes }}" placeholder="{{ 'Min'|trans }}" class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-amber-500 focus:ring-amber-500" />
+                    <input id="planned-session-duration-seconds-{{ uniqueId }}" name="targetDurationInSecondsPart" type="number" min="0" max="59" step="1" form="planned-session-form-{{ uniqueId }}" data-planned-session-target-duration-seconds value="{{ plannedSessionFormDefaults.targetDurationInSecondsPart is null ? '' : plannedSessionFormDefaults.targetDurationInSecondsPart }}" placeholder="{{ 'Sec'|trans }}" class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-amber-500 focus:ring-amber-500" />
+                </div>
+            </div>
+            <div class="col-span-2">
+                <label class="block text-[10px] font-medium uppercase tracking-wide text-gray-500 mb-1" for="planned-session-template-{{ uniqueId }}">{{ "Template activity"|trans }}</label>
+                <select id="planned-session-template-{{ uniqueId }}" name="templateActivityId" form="planned-session-form-{{ uniqueId }}" data-planned-session-template-activity class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-amber-500 focus:ring-amber-500">
+                    <option value="">{{ "None"|trans }}</option>
+                    {% for templateActivity in templateActivities %}
+                        <option value="{{ templateActivity.activityId }}" data-moving-time-seconds="{{ templateActivity.movingTimeInSeconds }}" data-estimated-load="{{ templateActivity.estimatedLoad is null ? '' : templateActivity.estimatedLoad }}"{% if plannedSessionFormDefaults.templateActivityId == templateActivity.activityId %} selected{% endif %}>
+                            {{ templateActivity.day }} · {{ templateActivity.activityType|trans }} · {{ templateActivity.name }}
+                        </option>
+                    {% endfor %}
+                </select>
+                <div class="mt-1 text-[10px] text-gray-400">{{ "Reuse duration and load profile from a recent activity."|trans }}</div>
+                {% if selectedTemplateActivity %}
+                    <div class="mt-1.5 rounded border border-gray-200 bg-gray-50 px-2.5 py-1.5 text-[11px] text-gray-600 truncate">
+                        {{ selectedTemplateActivity.day }} · {{ selectedTemplateActivity.activityType|trans }} · {{ selectedTemplateActivity.name }} · {{ selectedTemplateActivity.movingTimeLabel }}
+                    </div>
+                {% endif %}
+            </div>
+        </div>
+        <div data-planned-session-estimate-note data-planned-session-form-id="planned-session-form-{{ uniqueId }}" class="mt-2 hidden text-[10px] text-gray-400"></div>
+    </div>
+</div>
+
+{# ════════════════════════════════════════════════════════════
+   RIGHT PANEL — Workout Builder + Preview + Notes + Actions
+   This entire column is injected into the parent grid's right side.
+   ════════════════════════════════════════════════════════════ #}
+
+{% endif %}
+{% if _renderPanel|default('') == 'right' %}
+
+<div class="lg:col-span-3 flex flex-col gap-4 planned-session-right-panel">
+    <form id="planned-session-form-{{ uniqueId }}" action="/planned-session" method="post" class="flex flex-col gap-4" data-planned-session-form data-planned-session-estimation-context="{{ plannedSessionEstimationContext|json_encode|e('html_attr') }}" data-planned-session-manual-target-load="{{ plannedSessionHasManualTargetLoad ? 'true' : 'false' }}">
+        {% if plannedSession %}
+            <input type="hidden" name="plannedSessionId" value="{{ plannedSession.plannedSessionId }}" />
+        {% endif %}
+        <input type="hidden" name="redirectTo" value="{{ redirectTarget }}" />
+
+        {# ── Workout Steps Editor ── #}
+        <div class="rounded-lg border border-gray-200 bg-gray-50 shadow-xs" data-workout-editor>
+            <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-white rounded-t-lg">
+                <div>
+                    <div class="text-xs font-semibold uppercase tracking-wide text-gray-500">{{ "Workout"|trans }}</div>
+                    <div class="mt-0.5 text-[10px] text-gray-400">{{ "Define sets with time, distance, pace or power, and heart-rate targets."|trans }}</div>
+                </div>
+                <div class="flex shrink-0 gap-1.5">
+                    <button type="button" data-workout-step-add class="inline-flex items-center rounded-lg border border-gray-300 bg-white px-2.5 py-1.5 text-[10px] font-medium text-gray-700 hover:bg-gray-100 shadow-xs">
+                        + {{ "Add set"|trans }}
+                    </button>
+                    <button type="button" data-workout-block-add class="planned-session-repeat-add-btn inline-flex items-center rounded-lg px-2.5 py-1.5 text-[10px] font-semibold shadow-xs">
+                        + {{ "Repeat block"|trans }}
+                    </button>
+                </div>
+            </div>
+            <div class="px-3 py-3 space-y-2" style="min-height: 4rem;" data-workout-dropzone data-dropzone-type="top-level" data-workout-top-level>
+                {% for workoutItem in plannedSessionFormDefaults.workoutItems %}
+                    {{ workoutForm.workoutItem(workoutItem, plannedSessionStepTypes, plannedSessionStepTargetTypes, plannedSessionStepConditionTypes, plannedSessionFormDefaults.activityType) }}
+                {% endfor %}
+
+            {# ══════════════════════════════════════════════════════
+               TEMPLATES — cloned by workout-editor.js to add new items
+               Keep these inside the editor container so template lookups work
+               even if the runtime only searches descendants of [data-workout-editor].
+               ══════════════════════════════════════════════════════ #}
+
+            {# ── Step template ── #}
+            <template data-workout-step-template>
+                {% set isRideActivity = plannedSessionFormDefaults.activityType == 'Ride' %}
+                <div data-workout-item data-workout-step data-item-id="__ITEM_ID__" data-step-type="interval" draggable="true" class="planned-session-step rounded-lg border border-gray-200 bg-white shadow-xs">
+                    <input type="hidden" data-name-template="workoutSteps[__INDEX__][itemId]" value="__ITEM_ID__" />
+                    <input type="hidden" data-parent-block-id-input data-name-template="workoutSteps[__INDEX__][parentBlockId]" value="" />
+                    <input type="hidden" data-name-template="workoutSteps[__INDEX__][repetitions]" value="1" />
+                    <div class="planned-session-step-inner" data-workout-step-row>
+                        {# Row 1 #}
+                        <div class="flex items-center gap-1.5">
+                            <span data-workout-drag-handle draggable="true" class="select-none text-sm leading-none text-gray-400 cursor-grab rounded px-0.5 py-0.5 hover:bg-gray-100" title="{{ 'Drag to reorder'|trans }}">⋮⋮</span>
+                            <div class="w-24 shrink-0">
+                                <select data-name-template="workoutSteps[__INDEX__][type]" data-workout-step-type-select class="block w-full rounded border border-gray-300 bg-white px-1.5 py-1 text-xs font-medium text-gray-900 focus:border-amber-500 focus:ring-amber-500">
+                                    {% for plannedSessionStepType in plannedSessionStepTypes %}
+                                        {% if not plannedSessionStepType.isContainer() %}
+                                            <option value="{{ plannedSessionStepType.value }}"{% if plannedSessionStepType.value == 'interval' %} selected{% endif %}>{{ plannedSessionStepType.getLabel()|trans }}</option>
+                                        {% endif %}
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="min-w-0 flex-1">
+                                <input type="text" data-name-template="workoutSteps[__INDEX__][label]" value="" placeholder="{{ 'Label'|trans }}" class="block w-full rounded border border-gray-300 bg-white px-1.5 py-1 text-xs text-gray-900 focus:border-amber-500 focus:ring-amber-500" />
+                            </div>
+                            <div class="flex shrink-0 items-center gap-1">
+                                <button type="button" data-workout-item-duplicate class="planned-session-step-btn" title="{{ 'Duplicate set'|trans }}">
+                                    <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                                </button>
+                                <button type="button" data-workout-item-remove class="planned-session-step-btn text-red-400 hover:text-red-600 hover:bg-red-50" title="{{ 'Remove set'|trans }}">
+                                    <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                                </button>
+                            </div>
+                        </div>
+                        {# Row 2 #}
+                        <div class="flex items-end gap-1.5 mt-1.5 ml-6">
+                            <div class="w-24 shrink-0">
+                                <label class="mb-0.5 block text-[10px] font-medium uppercase tracking-normal text-gray-400">{{ 'Target'|trans }}</label>
+                                <select data-name-template="workoutSteps[__INDEX__][targetType]" data-workout-step-target-type class="block w-full rounded border border-gray-300 bg-white px-1.5 py-1 text-xs text-gray-900 focus:border-amber-500 focus:ring-amber-500">
+                                    {% for plannedSessionStepTargetType in plannedSessionStepTargetTypes %}
+                                        <option value="{{ plannedSessionStepTargetType.value }}"{% if plannedSessionStepTargetType.value == 'time' %} selected{% endif %}>{{ plannedSessionStepTargetType.getLabel()|trans }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="min-w-0 flex-1" data-target-field-group="time heartRate">
+                                <label class="mb-0.5 block text-[10px] font-medium uppercase tracking-normal text-gray-400">{{ 'Condition'|trans }}</label>
+                                <select data-name-template="workoutSteps[__INDEX__][conditionType]" data-workout-step-condition-select class="block w-full rounded border border-gray-300 bg-white px-1.5 py-1 text-xs text-gray-900 focus:border-amber-500 focus:ring-amber-500">
+                                    <option value="" data-condition-default-option data-valid-for="time" data-time-label="{{ 'Target time'|trans }}" data-heart-rate-label="{{ 'Hold target'|trans }}" selected>{{ 'Target time'|trans }}</option>
+                                    {% for plannedSessionStepConditionType in plannedSessionStepConditionTypes %}
+                                        <option value="{{ plannedSessionStepConditionType.value }}" data-valid-for="{{ plannedSessionStepConditionType.value in ['untilBelow', 'untilAbove'] ? 'heartRate' : 'time heartRate' }}"{% if plannedSessionStepConditionType.value == 'holdTarget' %} selected{% endif %}>{{ plannedSessionStepConditionType.getLabel()|trans }}</option>
+                                    {% endfor %}
+                                </select>
+                            </div>
+                            <div class="min-w-0 flex-1" data-target-field-group="time heartRate">
+                                <label class="mb-0.5 block text-[10px] font-medium uppercase tracking-normal text-gray-400">{{ 'Min'|trans }}</label>
+                                <input type="number" min="0" step="1" data-name-template="workoutSteps[__INDEX__][durationInMinutes]" value="" class="block w-full rounded border border-gray-300 bg-white px-1.5 py-1 text-xs text-gray-900 focus:border-amber-500 focus:ring-amber-500" />
+                            </div>
+                            <div class="min-w-0 flex-1" data-target-field-group="time heartRate">
+                                <label class="mb-0.5 block text-[10px] font-medium uppercase tracking-normal text-gray-400">{{ 'Sec'|trans }}</label>
+                                <input type="number" min="0" max="59" step="1" data-name-template="workoutSteps[__INDEX__][durationInSecondsPart]" value="" class="block w-full rounded border border-gray-300 bg-white px-1.5 py-1 text-xs text-gray-900 focus:border-amber-500 focus:ring-amber-500" />
+                            </div>
+                            <div class="min-w-0 flex-1" data-target-field-group="distance">
+                                <label class="mb-0.5 block text-[10px] font-medium uppercase tracking-normal text-gray-400">{{ 'Meters'|trans }}</label>
+                                <input type="number" min="0" step="50" data-name-template="workoutSteps[__INDEX__][distanceInMeters]" value="" placeholder="800" class="block w-full rounded border border-gray-300 bg-white px-1.5 py-1 text-xs text-gray-900 focus:border-amber-500 focus:ring-amber-500" />
+                            </div>
+                            <div class="min-w-0 flex-1{% if isRideActivity %} hidden{% endif %}" data-target-field-group="time distance" data-target-effort="pace">
+                                <label class="mb-0.5 block text-[10px] font-medium uppercase tracking-normal text-gray-400">{{ 'Pace'|trans }}</label>
+                                <input type="text" data-name-template="workoutSteps[__INDEX__][targetPace]" value="" placeholder="4:20/km" class="block w-full rounded border border-gray-300 bg-white px-1.5 py-1 text-xs text-gray-900 focus:border-amber-500 focus:ring-amber-500" />
+                            </div>
+                            <div class="min-w-0 flex-1{% if not isRideActivity %} hidden{% endif %}" data-target-field-group="time distance" data-target-effort="power">
+                                <label class="mb-0.5 block text-[10px] font-medium uppercase tracking-normal text-gray-400">{{ 'Power'|trans }}</label>
+                                <input type="number" min="0" step="5" data-name-template="workoutSteps[__INDEX__][targetPower]" value="" placeholder="250" class="block w-full rounded border border-gray-300 bg-white px-1.5 py-1 text-xs text-gray-900 focus:border-amber-500 focus:ring-amber-500" />
+                            </div>
+                            <div class="min-w-0 flex-1" data-target-field-group="heartRate">
+                                <label class="mb-0.5 block text-[10px] font-medium uppercase tracking-normal text-gray-400">{{ 'BPM'|trans }}</label>
+                                <input type="number" min="0" step="1" data-name-template="workoutSteps[__INDEX__][targetHeartRate]" value="" placeholder="165" class="block w-full rounded border border-gray-300 bg-white px-1.5 py-1 text-xs text-gray-900 focus:border-amber-500 focus:ring-amber-500" />
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </template>
+
+            {# ── Block template ── #}
+            <template data-workout-block-template>
+                <div data-workout-item data-workout-block data-item-id="__ITEM_ID__" data-collapsed="false" data-expand-label="{{ 'Expand block'|trans }}" data-collapse-label="{{ 'Collapse block'|trans }}" data-set-label-singular="{{ 'Set'|trans }}" data-set-label-plural="{{ 'Sets'|trans }}" data-more-label="{{ 'more'|trans }}" draggable="true" class="planned-session-step planned-session-block planned-session-repeat-block rounded-lg px-2.5 py-2 shadow-xs">
+                    <input type="hidden" data-name-template="workoutSteps[__INDEX__][itemId]" value="__ITEM_ID__" />
+                    <input type="hidden" data-parent-block-id-input data-name-template="workoutSteps[__INDEX__][parentBlockId]" value="" />
+                    <input type="hidden" data-name-template="workoutSteps[__INDEX__][type]" value="repeatBlock" />
+                    <input type="hidden" data-name-template="workoutSteps[__INDEX__][targetType]" value="" />
+                    <input type="hidden" data-name-template="workoutSteps[__INDEX__][conditionType]" value="" />
+                    <input type="hidden" data-name-template="workoutSteps[__INDEX__][durationInMinutes]" value="" />
+                    <input type="hidden" data-name-template="workoutSteps[__INDEX__][durationInSecondsPart]" value="" />
+                    <input type="hidden" data-name-template="workoutSteps[__INDEX__][distanceInMeters]" value="" />
+                    <input type="hidden" data-name-template="workoutSteps[__INDEX__][targetPace]" value="" />
+                    <input type="hidden" data-name-template="workoutSteps[__INDEX__][targetPower]" value="" />
+                    <input type="hidden" data-name-template="workoutSteps[__INDEX__][targetHeartRate]" value="" />
+                    <div class="flex items-center gap-1.5">
+                        <span data-workout-drag-handle draggable="true" class="select-none text-sm leading-none text-amber-500 cursor-grab rounded px-0.5 py-0.5 hover:bg-amber-100" title="{{ 'Drag to reorder'|trans }}">⋮⋮</span>
+                        <span data-workout-block-reps-badge class="planned-session-repeat-badge inline-flex items-center rounded-full px-1.5 py-0.5 text-[10px] font-bold leading-none">4×</span>
+                        <div class="text-[10px] font-semibold uppercase tracking-wide text-amber-700">{{ 'Repeat block'|trans }}</div>
+                        <div data-workout-block-summary class="hidden text-[10px] font-medium text-amber-800 truncate"></div>
+                        <div class="ml-auto flex items-center gap-1.5">
+                            <input type="text" data-name-template="workoutSteps[__INDEX__][label]" value="" placeholder="{{ 'Block label'|trans }}" class="w-28 rounded border border-gray-300 bg-white px-1.5 py-1 text-xs text-gray-900 focus:border-amber-500 focus:ring-amber-500" />
+                            <input type="number" min="1" step="1" data-name-template="workoutSteps[__INDEX__][repetitions]" value="4" data-workout-block-reps-input class="w-14 rounded border border-gray-300 bg-white px-1.5 py-1 text-xs text-gray-900 text-center focus:border-amber-500 focus:ring-amber-500" title="{{ 'Reps'|trans }}" />
+                            <button type="button" data-workout-item-duplicate class="planned-session-step-btn planned-session-repeat-action-btn" title="{{ 'Duplicate block'|trans }}">
+                                <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><rect x="9" y="9" width="13" height="13" rx="2"/><path d="M5 15H4a2 2 0 01-2-2V4a2 2 0 012-2h9a2 2 0 012 2v1"/></svg>
+                            </button>
+                            <button type="button" data-workout-block-toggle class="planned-session-step-btn planned-session-repeat-action-btn planned-session-block-toggle-btn" title="{{ 'Collapse block'|trans }}" aria-label="{{ 'Collapse block'|trans }}" aria-expanded="true">
+                                <svg data-workout-block-toggle-icon class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2.5"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
+                                <span class="sr-only" data-workout-block-toggle-label>{{ 'Collapse block'|trans }}</span>
+                            </button>
+                            <button type="button" data-workout-item-remove class="planned-session-step-btn text-red-400 hover:text-red-600 hover:bg-red-50" title="{{ 'Remove block'|trans }}">
+                                <svg class="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M6 18L18 6M6 6l12 12"/></svg>
+                            </button>
+                        </div>
+                    </div>
+                    <div data-workout-block-content class="mt-2 ml-5 border-l-2 border-amber-200 pl-2.5">
+                        <div class="space-y-1.5" data-workout-dropzone data-dropzone-type="block" data-block-id="__ITEM_ID__" data-workout-block-steps></div>
+                        <div data-workout-block-empty class="flex min-h-[1.5rem] items-center justify-center rounded border border-dashed border-amber-200 px-2 py-1 text-center text-[10px] text-amber-800">
+                            {{ 'Drag sets here or add inside block'|trans }}
+                        </div>
+                        <div class="mt-1 flex justify-end">
+                            <button type="button" data-workout-step-add-to-block class="inline-flex items-center rounded border border-amber-300 bg-white px-1.5 py-0.5 text-[10px] font-medium text-amber-800 hover:bg-amber-100">
+                                + {{ 'Add set'|trans }}
+                            </button>
+                        </div>
+                    </div>
+                </div>
+            </template>
+            </div>
+        </div>
+
+        {# ── Structured Session Preview (Timeline) ── #}
+        {% if plannedSessionWorkoutPreview is not empty %}
+            <div class="rounded-lg border border-gray-200 bg-white shadow-xs">
+                <div class="px-4 py-2.5 border-b border-gray-100">
+                    <div class="text-[10px] font-semibold uppercase tracking-wide text-gray-500">{{ "Structured preview"|trans }}</div>
+                </div>
+                <div class="px-4 py-3">
+                    <div class="planned-session-timeline">
+                        {% for previewRow in plannedSessionWorkoutPreview %}
+                            <div class="planned-session-timeline-item" style="{% if previewRow.depth > 0 %}margin-left: {{ previewRow.depth * 1.25 }}rem{% endif %}">
+                                <div class="planned-session-timeline-dot"></div>
+                                <div class="min-w-0">
+                                    <div class="text-xs font-medium text-gray-800 leading-tight">{{ previewRow.headline }}</div>
+                                    <div class="text-[10px] text-gray-500">{{ previewRow.meta }}</div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        {% endif %}
+
+        {# ── Notes ── #}
+        <div class="rounded-lg border border-gray-200 bg-white shadow-xs">
+            <div class="px-4 py-2.5 border-b border-gray-100">
+                <label class="text-[10px] font-semibold uppercase tracking-wide text-gray-500" for="planned-session-notes-{{ uniqueId }}">{{ "Notes"|trans }}</label>
+            </div>
+            <div class="px-4 py-3">
+                <textarea id="planned-session-notes-{{ uniqueId }}" name="notes" rows="2" class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-amber-500 focus:ring-amber-500 resize-y" placeholder="{{ 'Session notes…'|trans }}">{{ plannedSessionFormDefaults.notes }}</textarea>
+            </div>
+        </div>
+
+        {# ── Sticky Action Footer ── #}
+        <div class="planned-session-actions sticky bottom-0 z-10 -mx-3 -mb-3 mt-auto flex items-center justify-between border-t border-gray-200 bg-white/95 backdrop-blur-sm px-4 py-3 rounded-b-lg lg:-mx-5 lg:-mb-5 lg:px-5">
+            <div>
+                {% if plannedSession %}
+                    <button type="submit" formaction="/planned-session/delete" formmethod="post" name="plannedSessionId" value="{{ plannedSession.plannedSessionId }}" onclick="return confirm('{{ 'Delete this planned session?'|trans|e('html_attr') }}');" class="inline-flex items-center gap-1.5 rounded-lg border border-red-200 px-3 py-2 text-xs font-medium text-red-600 hover:bg-red-50 transition-colors">
+                        <svg class="w-3.5 h-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"/></svg>
+                        {{ "Delete"|trans }}
+                    </button>
+                {% endif %}
+            </div>
+            <button type="submit" class="inline-flex items-center gap-1.5 rounded-lg bg-amber-600 px-5 py-2 text-sm font-medium text-white shadow-sm hover:bg-amber-700 transition-colors">
+                <svg class="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7"/></svg>
+                {{ "Save session"|trans }}
+            </button>
+        </div>
+
+    </form>
+</div>
+
+{% endif %}

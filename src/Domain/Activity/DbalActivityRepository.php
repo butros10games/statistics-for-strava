@@ -16,6 +16,7 @@ use App\Infrastructure\ValueObject\Geography\Latitude;
 use App\Infrastructure\ValueObject\Geography\Longitude;
 use App\Infrastructure\ValueObject\Measurement\Length\Meter;
 use App\Infrastructure\ValueObject\Measurement\Velocity\KmPerHour;
+use App\Infrastructure\ValueObject\Time\DateRange;
 use App\Infrastructure\ValueObject\Time\SerializableDateTime;
 use Doctrine\DBAL\ArrayParameterType;
 
@@ -41,6 +42,22 @@ final readonly class DbalActivityRepository extends DbalRepository implements Ac
         $results = $this->connection->executeQuery(
             'SELECT * FROM Activity ORDER BY startDateTime DESC'
         )->fetchAllAssociative();
+
+        return Activities::fromArray(array_map($this->hydrate(...), $results));
+    }
+
+    public function findByDateRange(DateRange $dateRange): Activities
+    {
+        $results = $this->connection->createQueryBuilder()
+            ->select('*')
+            ->from('Activity')
+            ->andWhere('startDateTime >= :from')
+            ->andWhere('startDateTime <= :till')
+            ->setParameter('from', $dateRange->getFrom())
+            ->setParameter('till', $dateRange->getTill())
+            ->orderBy('startDateTime', 'DESC')
+            ->executeQuery()
+            ->fetchAllAssociative();
 
         return Activities::fromArray(array_map($this->hydrate(...), $results));
     }

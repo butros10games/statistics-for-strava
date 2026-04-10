@@ -14,6 +14,7 @@ use App\Domain\Activity\ActivityWithRawData;
 use App\Domain\Activity\SportType\SportType;
 use App\Domain\Activity\SportType\SportTypesToImport;
 use App\Domain\Activity\Stream\ActivityStreamRepository;
+use App\Domain\TrainingPlanner\PlannedSessionActivityLinker;
 use App\Domain\Strava\RateLimit\StravaRateLimitHasBeenReached;
 use App\Domain\Strava\Strava;
 use App\Infrastructure\CQRS\Command\Command;
@@ -41,6 +42,7 @@ final readonly class ImportActivitiesCommandHandler implements CommandHandler
         private ?SkipActivitiesRecordedBefore $skipActivitiesRecordedBefore,
         private Mutex $mutex,
         private ActivityImportPipeline $activityImportPipeline,
+        private PlannedSessionActivityLinker $plannedSessionActivityLinker,
     ) {
     }
 
@@ -86,6 +88,7 @@ final readonly class ImportActivitiesCommandHandler implements CommandHandler
         }
 
         $delta = 1;
+        $daysToSynchronize = [];
         foreach ($stravaActivities as $rawStravaData) {
             if (!SportType::tryFrom($rawStravaData['sport_type'])) {
                 $command->getOutput()->writeln(sprintf(
@@ -174,6 +177,7 @@ final readonly class ImportActivitiesCommandHandler implements CommandHandler
             }
 
             unset($activityIdsToDelete[(string) $context->getActivity()->getId()]);
+            $daysToSynchronize[$activity->getStartDate()->format('Y-m-d')] = $activity->getStartDate()->setTime(0, 0);
 
             $command->getOutput()->writeln(sprintf(
                 '  => [%d/%d] %s activity: "%s - %s"',
@@ -194,9 +198,13 @@ final readonly class ImportActivitiesCommandHandler implements CommandHandler
         }
 
         if ($this->numberOfNewActivitiesToProcessPerImport->maxNumberProcessed()) {
+            $this->syncPlannedSessions($daysToSynchronize);
+
             // Shortcut the process here to make sure no activities are deleted yet.
             return;
         }
+
+        $this->syncPlannedSessions($daysToSynchronize);
 
         if (!$command->isFullImport()) {
             // Only delete activities during full imports to avoid accidental deletion of data.
@@ -221,6 +229,16 @@ final readonly class ImportActivitiesCommandHandler implements CommandHandler
                 $activity->getName(),
                 $activity->getStartDate()->format('d-m-Y'))
             );
+        }
+    }
+
+    /**
+     * @param array<string, SerializableDateTime> $daysToSynchronize
+     */
+    private function syncPlannedSessions(array $daysToSynchronize): void
+    {
+        foreach ($daysToSynchronize as $day) {
+            $this->plannedSessionActivityLinker->syncDay($day);
         }
     }
 }

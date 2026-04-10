@@ -93,14 +93,14 @@ final readonly class MeasurementTwigExtension
     }
 
     #[AsTwigFilter('formatSeconds')]
-    public function formatSeconds(Seconds $seconds): string
+    public function formatSeconds(Seconds|int $seconds): string
     {
-        return $this->formatDurationAsHumanString($seconds->toInt());
+        return $this->formatDurationAsHumanString($seconds instanceof Seconds ? $seconds->toInt() : $seconds);
     }
 
     #[AsTwigFilter('formatSecondsAsPaddedClock')]
-    public function formatSecondsAsPaddedClock(Seconds $seconds): string
+    public function formatSecondsAsPaddedClock(Seconds|int $seconds): string
     {
-        return $this->formatDurationAsPaddedClock($seconds->toInt());
+        return $this->formatDurationAsPaddedClock($seconds instanceof Seconds ? $seconds->toInt() : $seconds);
     }
 }

@@ -105,6 +105,14 @@ final class TrainingMetrics
     }
 
     /**
+     * @return array<string, int|float>
+     */
+    public function getAtlValues(): array
+    {
+        return $this->atlValues;
+    }
+
+    /**
      * @return array<int, int|float>
      */
     public function getCtlValuesForXLastDays(int $numberOfDays): array
@@ -122,6 +130,14 @@ final class TrainingMetrics
     }
 
     /**
+     * @return array<string, int|float>
+     */
+    public function getCtlValues(): array
+    {
+        return $this->ctlValues;
+    }
+
+    /**
      * @return array<int, int|float>
      */
     public function getTsbValuesForXLastDays(int $numberOfDays): array
@@ -136,6 +152,14 @@ final class TrainingMetrics
         }
 
         return TSB::of(end($this->tsbValues));
+    }
+
+    /**
+     * @return array<string, int|float>
+     */
+    public function getTsbValues(): array
+    {
+        return $this->tsbValues;
     }
 
     /**
@@ -157,6 +181,14 @@ final class TrainingMetrics
         return (int) array_sum($lastSevenDaysTrimp);
     }
 
+    /**
+     * @return array<string, int|float|null>
+     */
+    public function getTrimpValues(): array
+    {
+        return $this->trimpValues;
+    }
+
     public function getCurrentMonotony(): ?float
     {
         if ([] === $this->monotonyValues) {
@@ -164,6 +196,14 @@ final class TrainingMetrics
         }
 
         return end($this->monotonyValues);
+    }
+
+    /**
+     * @return array<string, int|float|null>
+     */
+    public function getMonotonyValues(): array
+    {
+        return $this->monotonyValues;
     }
 
     public function getCurrentStrain(): ?float
@@ -175,6 +215,14 @@ final class TrainingMetrics
         return end($this->strainValues);
     }
 
+    /**
+     * @return array<string, int|float|null>
+     */
+    public function getStrainValues(): array
+    {
+        return $this->strainValues;
+    }
+
     public function getCurrentAcRatio(): ?AcRatio
     {
         if ([] === $this->acRatioValues) {
@@ -182,6 +230,22 @@ final class TrainingMetrics
         }
 
         return AcRatio::of(end($this->acRatioValues));
+    }
+
+    /**
+     * @return array<string, int|float>
+     */
+    public function getAcRatioValues(): array
+    {
+        return $this->acRatioValues;
+    }
+
+    /**
+     * @return array<string, int>
+     */
+    public function getIntensities(): array
+    {
+        return $this->intensities;
     }
 
     /**

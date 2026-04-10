@@ -16,6 +16,7 @@ import ScrollTo from "./components/scroll-to";
 import Heatmap from "./features/heatmap/heatmap";
 import MilestoneFilter from "./features/milestones/milestone-filter";
 import DarkModeManager from "./components/dark-mode";
+import WorkoutEditor from "./features/planned-session/workout-editor";
 
 const $main = document.querySelector("main");
 
@@ -34,6 +35,7 @@ const dataTableManager = new DataTableManager();
 const fullscreenManager = new FullscreenManager();
 const scrollTo = new ScrollTo();
 const darkModeManager = new DarkModeManager();
+const workoutEditor = new WorkoutEditor();
 const lazyLoad = new LazyLoad({
     thresholds: "50px",
     callback_error: (img) => {
@@ -56,6 +58,7 @@ const initElements = (rootNode) => {
     leafletMapManager.init(rootNode);
     fullscreenManager.init(rootNode);
     scrollTo.init(rootNode);
+    workoutEditor.init(rootNode);
 }
 
 const maybeAutoOpenRecoveryCheckIn = (modalId) => {

@@ -125,6 +125,7 @@ class RunBuildCommandHandlerTest extends ContainerTestCase
             commandBus: $this->commandBus = new SpyCommandBus(),
             activityIdRepository: $this->getContainer()->get(ActivityIdRepository::class),
             gearImportStatus: $this->getContainer()->get(GearImportStatus::class),
+            plannedSessionActivityLinker: $this->getContainer()->get(\App\Domain\TrainingPlanner\PlannedSessionActivityLinker::class),
             migrationRunner: $this->migrationRunner = $this->createMock(MigrationRunner::class),
             clock: PausedClock::on(SerializableDateTime::fromString('2023-10-17 16:15:04')),
         );

@@ -238,6 +238,10 @@ services:
         factory: [ null, 'fromOptionalString' ]
         arguments: ['@=app_config("zwift.racingScore")']
 
+    App\Domain\TrainingPlanner\PlannedSessionLoadEstimator:
+        arguments:
+            $activityRepository: '@App\Domain\Activity\DbalActivityRepository'
+
     # Autowiring of vendor classes
     League\Flysystem\FilesystemOperator: '@default.storage'
 

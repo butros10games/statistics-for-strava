@@ -13,7 +13,7 @@ final class WellnessReadinessCalculator
     /**
      * @param array{day: string, fatigue: int, soreness: int, stress: int, motivation: int, sleepQuality: int}|null $latestRecoveryCheckIn
      */
-    public function calculate(TrainingMetrics $trainingMetrics, FindWellnessMetricsResponse $wellnessMetrics, ?array $latestRecoveryCheckIn = null): ?ReadinessScore
+    public function assess(TrainingMetrics $trainingMetrics, FindWellnessMetricsResponse $wellnessMetrics, ?array $latestRecoveryCheckIn = null): ?ReadinessAssessment
     {
         if ($wellnessMetrics->isEmpty()) {
             return null;
@@ -31,35 +31,73 @@ final class WellnessReadinessCalculator
         $records = $wellnessMetrics->getRecords();
         $baselineRecords = count($records) > 1 ? array_slice($records, 0, -1) : $records;
 
+        $factors = [
+            ReadinessFactor::create(ReadinessFactor::KEY_BASELINE, 'Baseline', 55.0, false),
+        ];
+
         $score = 55.0;
-        $score += $this->calculateHrvComponent($latestRecord, $baselineRecords);
-        $score += $this->calculateSleepDurationComponent($latestRecord, $baselineRecords);
-        $score += $this->calculateSleepScoreComponent($latestRecord, $baselineRecords);
-        $score += $this->calculateStepsComponent($latestRecord, $baselineRecords);
 
+        $hrvComponent = $this->calculateHrvComponent($latestRecord, $baselineRecords);
+        $factors[] = ReadinessFactor::create(ReadinessFactor::KEY_HRV, 'HRV', $hrvComponent);
+        $score += $hrvComponent;
+
+        $sleepDurationComponent = $this->calculateSleepDurationComponent($latestRecord, $baselineRecords);
+        $factors[] = ReadinessFactor::create(ReadinessFactor::KEY_SLEEP_DURATION, 'Sleep duration', $sleepDurationComponent);
+        $score += $sleepDurationComponent;
+
+        $sleepScoreComponent = $this->calculateSleepScoreComponent($latestRecord, $baselineRecords);
+        $factors[] = ReadinessFactor::create(ReadinessFactor::KEY_SLEEP_SCORE, 'Sleep score', $sleepScoreComponent);
+        $score += $sleepScoreComponent;
+
+        $stepsComponent = $this->calculateStepsComponent($latestRecord, $baselineRecords);
+        $factors[] = ReadinessFactor::create(ReadinessFactor::KEY_STEPS, 'Steps', $stepsComponent);
+        $score += $stepsComponent;
+
+        $tsbComponent = 0.0;
         if (($currentTsb = $trainingMetrics->getCurrentTsb()?->getValue()) !== null) {
-            $score += $this->clamp($currentTsb * 0.45, -10, 10);
+            $tsbComponent = $this->clamp($currentTsb * 0.45, -10, 10);
         }
+        $factors[] = ReadinessFactor::create(ReadinessFactor::KEY_TSB, 'Form (TSB)', $tsbComponent);
+        $score += $tsbComponent;
 
+        $acRatioComponent = 0.0;
         if (($currentAcRatio = $trainingMetrics->getCurrentAcRatio()) !== null) {
-            $score += match ($currentAcRatio->getStatus()) {
+            $acRatioComponent = match ($currentAcRatio->getStatus()) {
                 AcRatioStatus::LOW_RISK => 6,
                 AcRatioStatus::LOW_TRAINING_LOAD => -3,
                 AcRatioStatus::HIGH_RISK => -12,
             };
         }
+        $factors[] = ReadinessFactor::create(ReadinessFactor::KEY_AC_RATIO, 'A:C Ratio', $acRatioComponent);
+        $score += $acRatioComponent;
 
+        $monotonyComponent = 0.0;
         if (($currentMonotony = $trainingMetrics->getCurrentMonotony()) !== null) {
-            $score += match (true) {
+            $monotonyComponent = match (true) {
                 $currentMonotony > 2.25 => -10,
                 $currentMonotony > 1.75 => -5,
                 default => 0,
             };
         }
+        $factors[] = ReadinessFactor::create(ReadinessFactor::KEY_MONOTONY, 'Monotony', $monotonyComponent);
+        $score += $monotonyComponent;
 
-        $score += $this->calculateRecoveryQuestionnaireComponent($latestRecoveryCheckIn);
+        $recoveryCheckInComponent = $this->calculateRecoveryQuestionnaireComponent($latestRecoveryCheckIn);
+        $factors[] = ReadinessFactor::create(ReadinessFactor::KEY_RECOVERY_CHECK_IN, 'Recovery check-in', $recoveryCheckInComponent);
+        $score += $recoveryCheckInComponent;
 
-        return ReadinessScore::of((int) round($this->clamp($score, 0, 100)));
+        return ReadinessAssessment::fromFactors(
+            score: (int) round($this->clamp($score, 0, 100)),
+            factors: $factors,
+        );
+    }
+
+    /**
+     * @param array{day: string, fatigue: int, soreness: int, stress: int, motivation: int, sleepQuality: int}|null $latestRecoveryCheckIn
+     */
+    public function calculate(TrainingMetrics $trainingMetrics, FindWellnessMetricsResponse $wellnessMetrics, ?array $latestRecoveryCheckIn = null): ?ReadinessScore
+    {
+        return $this->assess($trainingMetrics, $wellnessMetrics, $latestRecoveryCheckIn)?->getScore();
     }
 
     /**

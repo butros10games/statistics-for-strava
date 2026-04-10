@@ -22,10 +22,12 @@ use App\Application\Build\BuildPhotosHtml\BuildPhotosHtml;
 use App\Application\Build\BuildRecordingDevices\BuildRecordingDevices;
 use App\Application\Build\BuildRewindHtml\BuildRewindHtml;
 use App\Application\Build\BuildSegmentsHtml\BuildSegmentsHtml;
+use App\Application\Build\BuildTrainingAdvisorExport\BuildTrainingAdvisorExport;
 use App\Application\Build\ConfigureAppColors\ConfigureAppColors;
 use App\Application\Build\ConfigureAppLocale\ConfigureAppLocale;
 use App\Application\Import\ImportGear\GearImportStatus;
 use App\Domain\Activity\ActivityIdRepository;
+use App\Domain\TrainingPlanner\PlannedSessionActivityLinker;
 use App\Infrastructure\Console\ProgressBar;
 use App\Infrastructure\CQRS\Command\Bus\CommandBus;
 use App\Infrastructure\CQRS\Command\Command;
@@ -39,6 +41,7 @@ final readonly class RunBuildCommandHandler implements CommandHandler
         private CommandBus $commandBus,
         private ActivityIdRepository $activityIdRepository,
         private GearImportStatus $gearImportStatus,
+        private PlannedSessionActivityLinker $plannedSessionActivityLinker,
         private MigrationRunner $migrationRunner,
         private Clock $clock,
     ) {
@@ -68,6 +71,8 @@ This is not a bug, once all your activities have been imported, your gear statis
 
         $now = $this->clock->getCurrentDateTimeImmutable();
 
+        $this->plannedSessionActivityLinker->syncUpTo($now);
+
         $output->writeln('Building app...');
         $output->newLine();
 
@@ -91,6 +96,7 @@ This is not a bug, once all your activities have been imported, your gear statis
             'Building rewind' => new BuildRewindHtml($now),
             'Building challenges' => new BuildChallengesHtml($now),
             'Building photos' => new BuildPhotosHtml(),
+            'Building training advisor export' => new BuildTrainingAdvisorExport($now),
             'Building badges' => new BuildBadgeSvg($now),
         ];
 

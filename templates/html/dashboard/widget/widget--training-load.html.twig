@@ -1,10 +1,16 @@
 {% autoescape false %}
-    <div class="flex items-center justify-between mb-6">
+    <div class="flex items-center justify-between gap-3 mb-6">
         <h3 class="text-lg font-semibold">{{ "Training Load Analysis"|trans }}</h3>
-        <a href="#" data-model-content-url="{{ relativeUrl('training-load.html') }}"
-           class="shrink-0 inline-flex items-center p-2 text-sm font-medium rounded-lg text-blue-600 hover:bg-gray-100">
-            {{ "View details"|trans }}
-        </a>
+        <div class="flex items-center gap-2">
+            <a href="{{ relativeUrl('api/exports/training-advisor.json') }}" download="training-advisor.json"
+               class="shrink-0 inline-flex items-center gap-2 rounded-lg border border-blue-200 px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50">
+                {{ "Export for AI feedback"|trans }}
+            </a>
+            <a href="#" data-model-content-url="{{ relativeUrl('training-load.html') }}"
+               class="shrink-0 inline-flex items-center p-2 text-sm font-medium rounded-lg text-blue-600 hover:bg-gray-100">
+                {{ "View details"|trans }}
+            </a>
+        </div>
     </div>
     <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
         {% include 'html/dashboard/training-metrics.html.twig' with {

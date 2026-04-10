@@ -4,7 +4,11 @@
         <h3>
             <span> {{ "Training Load Analysis"|trans }}</span>
         </h3>
-        <div class="flex items-center">
+        <div class="flex items-center gap-2">
+            <a href="{{ relativeUrl('api/exports/training-advisor.json') }}" download="training-advisor.json"
+               class="inline-flex items-center gap-2 rounded-lg border border-blue-200 px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50">
+                {{ "Export for AI feedback"|trans }}
+            </a>
             <button type="button" class="close">
                 <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
                     <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
@@ -37,6 +41,92 @@
                 <div class="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
                     {% include 'html/dashboard/training-metrics.html.twig' with {'trainingMetrics': trainingMetrics, 'context': 'modal' } %}
                 </div>
+                {% set analyticsSectionCardClass = 'rounded-xl border border-gray-200 bg-gray-100 px-3 py-3 shadow-xs dark:border-gray-700 dark:bg-gray-800/80' %}
+                {% set analyticsSectionHeadingClass = 'text-sm font-medium text-gray-500 dark:text-gray-400' %}
+                {% set analyticsSectionBodyClass = 'text-sm text-gray-600 dark:text-gray-300' %}
+                {% set analyticsSectionMetaClass = 'text-xs text-gray-500 dark:text-gray-400' %}
+                {% set strongSignalPillStyle = 'background-color: #DBEAFE; color: #1D4ED8;' %}
+                {% set moderateSignalPillStyle = 'background-color: var(--color-gray-200); color: var(--color-gray-700);' %}
+                {% set bouncesBackPillStyle = 'background-color: #D1FAE5; color: #065F46;' %}
+                {% set mixedResponsePillStyle = 'background-color: var(--color-gray-200); color: var(--color-gray-700);' %}
+                {% set needsBufferPillStyle = 'background-color: #FEF3C7; color: #9A3412;' %}
+                {% set higherConfidencePillStyle = 'background-color: #DBEAFE; color: #1D4ED8;' %}
+                {% set emergingConfidencePillStyle = 'background-color: var(--color-gray-200); color: var(--color-gray-700);' %}
+                <div class="mt-4 space-y-5">
+                    {% if correlationInsights|length > 0 %}
+                        <div class="space-y-3.5">
+                            <div class="flex items-center justify-between px-1">
+                                <h4 class="{{ analyticsSectionHeadingClass }}">{{ "Correlation insights (90 days)"|trans }}</h4>
+                                <span class="inline-flex items-center rounded-full bg-gray-200 px-2 py-0.5 text-xs font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-200">{{ correlationInsights|length }}</span>
+                            </div>
+                            <div class="space-y-3.5">
+                                {% for insight in correlationInsights %}
+                                    <div class="{{ analyticsSectionCardClass }} space-y-2">
+                                        <div class="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+                                            <div>
+                                                <div class="text-sm font-semibold text-gray-800 dark:text-gray-100">{{ insight.getTitle()|trans }}</div>
+                                                <p class="mt-1 {{ analyticsSectionBodyClass }}">{{ insight.getSummary()|trans }}</p>
+                                            </div>
+                                            <span class="inline-flex items-center self-start rounded-full px-2 py-0.5 text-xs font-semibold shadow-sm" style="{{ insight.getCorrelation()|abs >= 0.55 ? strongSignalPillStyle : moderateSignalPillStyle }}">{{ insight.getStrengthLabel()|trans }}</span>
+                                        </div>
+                                        <div class="flex flex-wrap gap-x-4 gap-y-1 {{ analyticsSectionMetaClass }}">
+                                            <span>{{ "Correlation"|trans }} {{ insight.getCorrelation()|formatNumber(2) }}</span>
+                                            <span>{{ "Samples"|trans }} {{ insight.getSampleSize() }}</span>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endif %}
+                    {% if activityTypeRecoveryFingerprints|length > 0 %}
+                        <div class="space-y-3.5">
+                            <div class="flex items-center justify-between px-1">
+                                <h4 class="{{ analyticsSectionHeadingClass }}">{{ "Activity-type recovery fingerprints"|trans }}</h4>
+                                <span class="inline-flex items-center rounded-full bg-gray-200 px-2 py-0.5 text-xs font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-200">{{ activityTypeRecoveryFingerprints|length }}</span>
+                            </div>
+                            <div class="space-y-4">
+                                {% for fingerprint in activityTypeRecoveryFingerprints %}
+                                    {% set fingerprintProfilePillStyle = fingerprint.getProfile() == enum('App\\Domain\\Dashboard\\Widget\\TrainingLoad\\ActivityTypeRecoveryFingerprintProfile').BOUNCES_BACK ? bouncesBackPillStyle : (fingerprint.getProfile() == enum('App\\Domain\\Dashboard\\Widget\\TrainingLoad\\ActivityTypeRecoveryFingerprintProfile').NEEDS_BUFFER ? needsBufferPillStyle : mixedResponsePillStyle) %}
+                                    {% set fingerprintConfidencePillStyle = fingerprint.getSampleSize() >= 6 ? higherConfidencePillStyle : emergingConfidencePillStyle %}
+                                    <div class="{{ analyticsSectionCardClass }} space-y-2.5">
+                                        <div class="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+                                            <div>
+                                                <div class="text-sm font-semibold text-gray-800 dark:text-gray-100">{{ fingerprint.getActivityType()|trans }}</div>
+                                                <p class="mt-1 {{ analyticsSectionBodyClass }}">{{ fingerprint.getProfile().getDescription()|trans }}</p>
+                                            </div>
+                                            <div class="flex flex-wrap gap-1.5">
+                                                <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold shadow-sm" style="{{ fingerprintProfilePillStyle }}">{{ fingerprint.getProfile().getLabel()|trans }}</span>
+                                                <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold shadow-sm" style="{{ fingerprintConfidencePillStyle }}">{{ fingerprint.getConfidenceLabel()|trans }}</span>
+                                            </div>
+                                        </div>
+                                        <div class="flex flex-wrap md:flex-nowrap items-start gap-x-6 gap-y-2 {{ analyticsSectionMetaClass }}">
+                                            <div class="min-w-24 flex-1">
+                                                <div>{{ "Avg load"|trans }}</div>
+                                                <div class="mt-0.5 text-sm font-semibold text-gray-800 dark:text-gray-100">{{ fingerprint.getAverageLoad()|formatNumber(1) }}</div>
+                                            </div>
+                                            <div class="min-w-24 flex-1">
+                                                <div>{{ "Next-day HRV"|trans }}</div>
+                                                <div class="mt-0.5 text-sm font-semibold {{ fingerprint.getNextDayHrvDelta() is not null and fingerprint.getNextDayHrvDelta() >= 0 ? 'text-green-600 dark:text-green-400' : 'text-orange-500 dark:text-orange-300' }}">{{ fingerprint.getNextDayHrvDelta() is null ? 'n/a' : fingerprint.getNextDayHrvDelta()|formatNumber(1) }}</div>
+                                            </div>
+                                            <div class="min-w-24 flex-1">
+                                                <div>{{ "Sleep score"|trans }}</div>
+                                                <div class="mt-0.5 text-sm font-semibold {{ fingerprint.getNextDaySleepScoreDelta() is not null and fingerprint.getNextDaySleepScoreDelta() >= 0 ? 'text-green-600 dark:text-green-400' : 'text-orange-500 dark:text-orange-300' }}">{{ fingerprint.getNextDaySleepScoreDelta() is null ? 'n/a' : fingerprint.getNextDaySleepScoreDelta()|formatNumber(1) }}</div>
+                                            </div>
+                                            <div class="min-w-24 flex-1">
+                                                <div>{{ "Fatigue"|trans }}</div>
+                                                <div class="mt-0.5 text-sm font-semibold {{ fingerprint.getNextDayFatigueDelta() is not null and fingerprint.getNextDayFatigueDelta() <= 0 ? 'text-green-600 dark:text-green-400' : 'text-orange-500 dark:text-orange-300' }}">{{ fingerprint.getNextDayFatigueDelta() is null ? 'n/a' : fingerprint.getNextDayFatigueDelta()|formatNumber(1) }}</div>
+                                            </div>
+                                            <div class="min-w-20 flex-1">
+                                                <div>{{ "Samples"|trans }}</div>
+                                                <div class="mt-0.5 text-sm font-semibold text-gray-700 dark:text-gray-200">{{ fingerprint.getSampleSize() }}</div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endif %}
+                </div>
                 <div class="mt-4">
                     {% include 'html/dashboard/recovery-check-in-summary.html.twig' with {
                         'context': 'modal',
@@ -49,7 +139,112 @@
             <!-- Forecast Tab -->
             <div id="forecast" role="tabpanel" aria-labelledby="forecast-tab">
                 <div class="space-y-4">
-                    <p class="text-xs text-gray-500">{{ "Shows how your TSB (Form) and A:C Ratio will recover over time if you take complete rest days."|trans }}</p>
+                    <p class="text-xs text-gray-500">{{ "Shows how your TSB (Form) and A:C Ratio may evolve over the next 7 days across a few preset training scenarios."|trans }}</p>
+                    {% if trainingLoadPersonalization.isActive() %}
+                        <div class="p-4 border border-blue-300 rounded-lg bg-blue-50 shadow-xs">
+                            <div class="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+                                <div>
+                                    <h4 class="text-sm font-semibold text-blue-800">{{ trainingLoadPersonalization.getHeadline()|trans }}</h4>
+                                    <p class="mt-1 text-sm text-blue-800">{{ trainingLoadPersonalization.getSummary()|trans }}</p>
+                                </div>
+                                <div class="grid grid-cols-2 gap-4 text-xs text-blue-800 md:min-w-70">
+                                    <div>
+                                        <div>{{ "Readiness adjustment"|trans }}</div>
+                                        <div class="mt-1 text-lg font-bold">{{ trainingLoadPersonalization.getReadinessAdjustment() >= 0 ? '+' : '' }}{{ trainingLoadPersonalization.getReadinessAdjustment() }}</div>
+                                    </div>
+                                    <div>
+                                        <div>{{ "Forecast load modifier"|trans }}</div>
+                                        <div class="mt-1 text-lg font-bold">{{ ((trainingLoadPersonalization.getForecastLoadFactor() - 1) * 100)|formatNumber(0) }}%</div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    {% endif %}
+                    {% if recoveryTrendWarnings|length > 0 %}
+                        <div class="p-4 border border-gray-200 rounded-lg shadow-xs">
+                            <h4 class="text-sm font-semibold text-gray-700 mb-3">{{ "Recovery trend warnings"|trans }}</h4>
+                            <div class="space-y-3">
+                                {% for warning in recoveryTrendWarnings %}
+                                    <div class="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
+                                        <div class="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ warning.getPillColors() }}">
+                                                {{ warning.getLabel()|trans }}
+                                            </span>
+                                            <span class="text-sm text-gray-700 md:text-right">{{ warning.getDescription()|trans }}</span>
+                                        </div>
+                                    </div>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    {% endif %}
+                    {% if plannedSessionForecast.hasEstimates() %}
+                        <div class="p-4 border border-green-200 rounded-lg bg-green-50 shadow-xs">
+                            <div class="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+                                <div>
+                                    <h4 class="text-sm font-semibold text-green-800">{{ "Planned sessions forecast"|trans }}</h4>
+                                    <p class="mt-1 text-sm text-green-800">{{ "Your saved planned sessions are now included as their own forecast scenario for the next 7 days."|trans }}</p>
+                                </div>
+                                <div class="grid grid-cols-2 gap-4 text-xs text-green-800 md:min-w-70">
+                                    <div>
+                                        <div>{{ "Planned sessions"|trans }}</div>
+                                        <div class="mt-1 text-lg font-bold">{{ plannedSessionForecast.getEstimates()|length }}</div>
+                                    </div>
+                                    <div>
+                                        <div>{{ "Total planned load"|trans }}</div>
+                                        <div class="mt-1 text-lg font-bold">{{ plannedSessionForecast.getTotalProjectedLoad()|formatNumber(1) }}</div>
+                                    </div>
+                                </div>
+                            </div>
+                            {% if plannedSessionForecastProjection %}
+                                <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
+                                    <div class="p-4 border border-green-200 rounded-lg bg-white/80 shadow-xs">
+                                        <div class="text-xs text-gray-500">{{ "TSB positive in"|trans }}</div>
+                                        {% if plannedSessionForecastProjection.getDaysUntilTsbHealthy() %}
+                                            <div class="text-xl font-bold text-green-600">{{ plannedSessionForecastProjection.getDaysUntilTsbHealthy() }} {{ "day(s)"|trans }}</div>
+                                        {% elseif trainingMetrics.getCurrentTsb().getValue() > 0 %}
+                                            <div class="text-xl font-bold text-green-600">{{ "Now"|trans }}</div>
+                                        {% else %}
+                                            <div class="text-xl font-bold text-yellow-600">&gt; 7 {{ "days"|trans }}</div>
+                                        {% endif %}
+                                    </div>
+                                    <div class="p-4 border border-green-200 rounded-lg bg-white/80 shadow-xs">
+                                        <div class="text-xs text-gray-500">{{ "A:C optimal in"|trans }}</div>
+                                        {% if plannedSessionForecastProjection.getDaysUntilAcRatioHealthy() %}
+                                            <div class="text-xl font-bold text-green-600">{{ plannedSessionForecastProjection.getDaysUntilAcRatioHealthy() }} {{ "day(s)"|trans }}</div>
+                                        {% elseif trainingMetrics.getCurrentAcRatio().getValue() >= 0.8 and trainingMetrics.getCurrentAcRatio().getValue() <= 1.3 %}
+                                            <div class="text-xl font-bold text-green-600">{{ "Now"|trans }}</div>
+                                        {% else %}
+                                            <div class="text-xl font-bold text-yellow-600">&gt; 7 {{ "days"|trans }}</div>
+                                        {% endif %}
+                                    </div>
+                                </div>
+                            {% endif %}
+                            <div class="mt-4 border border-green-200 rounded-lg bg-white/80 relative overflow-x-auto">
+                                <table class="w-full text-sm text-left text-gray-500">
+                                    <thead class="text-xs text-gray-700 uppercase bg-green-100/70">
+                                        <tr>
+                                            <th scope="col" class="px-4 py-3">{{ "Day"|trans }}</th>
+                                            <th scope="col" class="px-4 py-3">{{ "Session"|trans }}</th>
+                                            <th scope="col" class="px-4 py-3">{{ "Based on"|trans }}</th>
+                                            <th scope="col" class="px-4 py-3">{{ "Projected load"|trans }}</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                    {% for estimate in plannedSessionForecast.getEstimates() %}
+                                        <tr class="bg-white border-b last:border-b-0">
+                                            <td class="px-4 py-3 font-medium text-gray-900">{{ estimate.getDay()|date("D j M") }}</td>
+                                            <td class="px-4 py-3 text-gray-700">
+                                                {{ estimate.getTitle() ?: (estimate.getActivityType()|trans) }}
+                                            </td>
+                                            <td class="px-4 py-3">{{ estimate.getEstimationSource().getLabel()|trans }}</td>
+                                            <td class="px-4 py-3 font-semibold text-gray-900">{{ estimate.getEstimatedLoad()|formatNumber(1) }}</td>
+                                        </tr>
+                                    {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    {% endif %}
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                         <div class="p-4 border border-gray-200 rounded-lg shadow-xs">
                             <h4 class="text-sm font-semibold text-gray-700 mb-2">{{ "Current Status"|trans }}</h4>
@@ -71,7 +266,7 @@
                             </div>
                         </div>
                         <div class="p-4 border border-gray-200 rounded-lg shadow-xs">
-                            <h4 class="text-sm font-semibold text-gray-700 mb-2">{{ "Recovery Timeline"|trans }}</h4>
+                            <h4 class="text-sm font-semibold text-gray-700 mb-2">{{ "Complete Rest Timeline"|trans }}</h4>
                             <div class="grid grid-cols-2 gap-4">
                                 <div>
                                     <div class="text-xs text-gray-500">{{ "TSB positive in"|trans }}</div>
@@ -96,43 +291,92 @@
                             </div>
                         </div>
                     </div>
-                    <div class="border border-gray-200 rounded-lg shadow-xs relative overflow-x-auto">
-                        <table class="w-full text-sm text-left text-gray-500">
-                            <thead class="text-xs text-gray-700 uppercase bg-gray-50">
-                                <tr>
-                                    <th scope="col" class="px-4 py-3">{{ "Day"|trans }}</th>
-                                    <th scope="col" class="px-4 py-3">{{ "TSB (Form)"|trans }}</th>
-                                    <th scope="col" class="px-4 py-3">{{ "Status"|trans }}</th>
-                                    <th scope="col" class="px-4 py-3">{{ "A:C Ratio"|trans }}</th>
-                                    <th scope="col" class="px-4 py-3">{{ "Status"|trans }}</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                            {% for item in trainingLoadForecast.getProjection() %}
-                                <tr class="bg-white border-b last:border-b-0">
-                                    {% set tsbStatus = item.tsb.getStatus() %}
-                                    {% set acRatioStatus = item.acRatio.getStatus() %}
-                                    <td class="px-4 py-3 font-medium text-gray-900">{{ item.day|date("M j") }}</td>
-                                    <td class="px-4 py-3">
-                                        <span class="font-semibold {{ tsbStatus.getTextColor() }}">{{ item.tsb.getValue() }}</span>
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ tsbStatus.getPillColors() }}">
-                                            {{ tsbStatus|trans }}
-                                        </span>
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        <span class="font-semibold {{ acRatioStatus.getTextColor() }}">{{ item.acRatio.getValue() }}</span>
-                                    </td>
-                                    <td class="px-4 py-3">
-                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ acRatioStatus.getPillColors() }}">
-                                            {{ acRatioStatus|trans }}
-                                        </span>
-                                    </td>
-                                </tr>
-                                {% endfor %}
-                            </tbody>
-                        </table>
+                    <div class="tabs tabs--default">
+                        <ul id="trainingLoadScenarioTab" data-tabs="#trainingLoadScenarioTabContent" role="tablist">
+                            {% for scenario in trainingLoadForecastScenarios %}
+                                <li role="presentation">
+                                    <a href="#" data-tabs-target="#trainingLoadScenario{{ loop.index }}" role="tab" aria-controls="trainingLoadScenario{{ loop.index }}">
+                                        {{ scenario.label|trans }}
+                                    </a>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    <div id="trainingLoadScenarioTabContent" class="space-y-4">
+                        {% for scenario in trainingLoadForecastScenarios %}
+                            <div id="trainingLoadScenario{{ loop.index }}" role="tabpanel" aria-labelledby="trainingLoadScenario{{ loop.index }}-tab" class="space-y-4">
+                                <div class="p-4 border border-gray-200 rounded-lg shadow-xs">
+                                    <div class="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+                                        <div>
+                                            <h4 class="text-sm font-semibold text-gray-700">{{ scenario.label|trans }}</h4>
+                                            <p class="text-xs text-gray-500 mt-1">{{ scenario.description|trans }}</p>
+                                        </div>
+                                        <div class="grid grid-cols-2 gap-4 md:min-w-70">
+                                            <div>
+                                                <div class="text-xs text-gray-500">{{ "TSB positive in"|trans }}</div>
+                                                {% if scenario.forecast.getDaysUntilTsbHealthy() %}
+                                                    <div class="text-lg font-bold text-green-600">{{ scenario.forecast.getDaysUntilTsbHealthy() }} {{ "day(s)"|trans }}</div>
+                                                {% elseif trainingMetrics.getCurrentTsb().getValue() > 0 %}
+                                                    <div class="text-lg font-bold text-green-600">{{ "Now"|trans }}</div>
+                                                {% else %}
+                                                    <div class="text-lg font-bold text-yellow-600">&gt; 7 {{ "days"|trans }}</div>
+                                                {% endif %}
+                                            </div>
+                                            <div>
+                                                <div class="text-xs text-gray-500">{{ "A:C optimal in"|trans }}</div>
+                                                {% if scenario.forecast.getDaysUntilAcRatioHealthy() %}
+                                                    <div class="text-lg font-bold text-green-600">{{ scenario.forecast.getDaysUntilAcRatioHealthy() }} {{ "day(s)"|trans }}</div>
+                                                {% elseif trainingMetrics.getCurrentAcRatio().getValue() >= 0.8 and trainingMetrics.getCurrentAcRatio().getValue() <= 1.3 %}
+                                                    <div class="text-lg font-bold text-green-600">{{ "Now"|trans }}</div>
+                                                {% else %}
+                                                    <div class="text-lg font-bold text-yellow-600">&gt; 7 {{ "days"|trans }}</div>
+                                                {% endif %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div class="border border-gray-200 rounded-lg shadow-xs relative overflow-x-auto">
+                                    <table class="w-full text-sm text-left text-gray-500">
+                                        <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                                            <tr>
+                                                <th scope="col" class="px-4 py-3">{{ "Day"|trans }}</th>
+                                                <th scope="col" class="px-4 py-3">{{ "Projected load"|trans }}</th>
+                                                <th scope="col" class="px-4 py-3">{{ "TSB (Form)"|trans }}</th>
+                                                <th scope="col" class="px-4 py-3">{{ "Status"|trans }}</th>
+                                                <th scope="col" class="px-4 py-3">{{ "A:C Ratio"|trans }}</th>
+                                                <th scope="col" class="px-4 py-3">{{ "Status"|trans }}</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                        {% for item in scenario.forecast.getProjection() %}
+                                            <tr class="bg-white border-b last:border-b-0">
+                                                {% set tsbStatus = item.tsb.getStatus() %}
+                                                {% set acRatioStatus = item.acRatio.getStatus() %}
+                                                <td class="px-4 py-3 font-medium text-gray-900">{{ item.day|date("M j") }}</td>
+                                                <td class="px-4 py-3">{{ item.projectedLoad|formatNumber(1) }}</td>
+                                                <td class="px-4 py-3">
+                                                    <span class="font-semibold {{ tsbStatus.getTextColor() }}">{{ item.tsb.getValue() }}</span>
+                                                </td>
+                                                <td class="px-4 py-3">
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ tsbStatus.getPillColors() }}">
+                                                        {{ tsbStatus|trans }}
+                                                    </span>
+                                                </td>
+                                                <td class="px-4 py-3">
+                                                    <span class="font-semibold {{ acRatioStatus.getTextColor() }}">{{ item.acRatio.getValue() }}</span>
+                                                </td>
+                                                <td class="px-4 py-3">
+                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ acRatioStatus.getPillColors() }}">
+                                                        {{ acRatioStatus|trans }}
+                                                    </span>
+                                                </td>
+                                            </tr>
+                                        {% endfor %}
+                                        </tbody>
+                                    </table>
+                                </div>
+                            </div>
+                        {% endfor %}
                     </div>
                 </div>
             </div>

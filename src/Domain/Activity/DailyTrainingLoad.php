@@ -2,10 +2,6 @@
 
 namespace App\Domain\Activity;
 
-use App\Domain\Athlete\AthleteRepository;
-use App\Domain\Ftp\FtpHistory;
-use App\Infrastructure\Exception\EntityNotFound;
-use App\Infrastructure\ValueObject\Measurement\Time\Seconds;
 use App\Infrastructure\ValueObject\Time\SerializableDateTime;
 
 final class DailyTrainingLoad
@@ -15,9 +11,7 @@ final class DailyTrainingLoad
 
     public function __construct(
         private readonly EnrichedActivities $enrichedActivities,
-        private readonly ActivityIntensity $activityIntensity,
-        private readonly FtpHistory $ftpHistory,
-        private readonly AthleteRepository $athleteRepository,
+        private readonly ActivityTrainingLoadCalculator $activityTrainingLoadCalculator,
     ) {
     }
 
@@ -36,26 +30,7 @@ final class DailyTrainingLoad
 
         /** @var Activity $activity */
         foreach ($activities as $activity) {
-            $movingTimeInSeconds = $activity->getMovingTimeInSeconds();
-            if (ActivityType::RIDE === $activity->getSportType()->getActivityType() && ($normalizedPower = $activity->getNormalizedPower())) {
-                try {
-                    $intensity = $this->activityIntensity->calculatePowerBased($activity->getId());
-                    $intensity /= 100;
-                    $ftp = $this->ftpHistory->find(ActivityType::RIDE, $activity->getStartDate())->getFtp();
-                    $load += ($movingTimeInSeconds * $normalizedPower * $intensity) / ($ftp->getValue() * 3600) * 100;
-
-                    continue;
-                } catch (CouldNotDetermineActivityIntensity|EntityNotFound) {
-                }
-            }
-
-            try {
-                $intensity = $this->activityIntensity->calculateHeartRateBased($activity->getId());
-                $intensity /= 100;
-                $bannisterKFactor = $this->athleteRepository->find()->isMale() ? 1.92 : 1.67;
-                $load += Seconds::from($movingTimeInSeconds)->toMinute()->toFloat() * $intensity * exp($bannisterKFactor * $intensity);
-            } catch (CouldNotDetermineActivityIntensity) {
-            }
+            $load += $this->activityTrainingLoadCalculator->calculate($activity);
         }
 
         self::$cachedLoad[$cacheKey] = (int) round($load);

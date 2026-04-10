@@ -7,6 +7,21 @@ export default class ModalManager {
         this.modalContent = this.modalSkeletonNode.querySelector('#modal-content');
         this.modalSpinner = this.modalSkeletonNode.querySelector('.spinner');
         this.modal = null;
+
+        this.modalContent.addEventListener('submit', (event) => {
+            const formNode = event.target.closest('form');
+            if (!formNode || formNode.hasAttribute('data-modal-submit-disabled')) {
+                return;
+            }
+
+            const method = ((event.submitter?.getAttribute('formmethod') ?? formNode.getAttribute('method')) || 'get').toUpperCase();
+            if (method !== 'POST') {
+                return;
+            }
+
+            event.preventDefault();
+            this.submitForm(formNode, event.submitter);
+        });
     }
 
     init(rootNode) {
@@ -24,17 +39,18 @@ export default class ModalManager {
 
     open(modalId) {
         this.close();
+        const fetchUrl = this.buildModalFetchUrl(modalId);
 
         // Show loading state.
         this.modalSpinner.classList.remove('hidden');
         this.modalSpinner.classList.add('flex');
 
         this.modal = new Modal(this.modalSkeletonNode, {
-            placement: 'bottom',
+            placement: 'center',
             closable: true,
             backdropClasses: 'bg-gray-900/50 fixed inset-0 z-1400',
             onShow: async () => {
-                const response = await fetch(modalId, {cache: 'no-store'});
+                const response = await fetch(fetchUrl, {cache: 'no-store'});
                 // Remove loading state.
                 this.modalSpinner.classList.add('hidden');
                 this.modalSpinner.classList.remove('flex');
@@ -77,6 +93,78 @@ export default class ModalManager {
         });
 
         this.modal.show();
+    }
+
+    buildModalFetchUrl(modalId) {
+        try {
+            const modalUrl = new URL(modalId, window.location.origin);
+            if (!modalUrl.searchParams.has('redirectTo')) {
+                modalUrl.searchParams.set('redirectTo', this.currentRedirectTarget());
+            }
+
+            return `${modalUrl.pathname}${modalUrl.search}${modalUrl.hash}`;
+        } catch {
+            return modalId;
+        }
+    }
+
+    currentRedirectTarget() {
+        const currentRoute = this.router.currentRoute();
+        const currentModal = location.hash.replace('#', '');
+
+        return currentModal ? `${currentRoute}#${currentModal}` : currentRoute;
+    }
+
+    async submitForm(formNode, submitter) {
+        const action = submitter?.getAttribute('formaction') ?? formNode.getAttribute('action') ?? window.location.href;
+        const method = ((submitter?.getAttribute('formmethod') ?? formNode.getAttribute('method')) || 'POST').toUpperCase();
+        const formData = new FormData(formNode);
+        const requestedRedirectTarget = formData.get('redirectTo');
+
+        if (submitter?.getAttribute('name')) {
+            formData.append(submitter.getAttribute('name'), submitter.getAttribute('value') ?? '');
+        }
+
+        const response = await fetch(action, {
+            method,
+            body: formData,
+            cache: 'no-store',
+            headers: {
+                'X-Requested-With': 'XMLHttpRequest',
+            },
+        });
+
+        if (response.redirected || (response.ok && typeof requestedRedirectTarget === 'string' && requestedRedirectTarget !== '')) {
+            const {route, modal} = this.resolveNavigationTarget(response.url, typeof requestedRedirectTarget === 'string' ? requestedRedirectTarget : null);
+            this.close();
+            this.router.navigateTo(route, modal, true);
+
+            return;
+        }
+
+        this.modalContent.innerHTML = await response.text();
+        const modalName = (action || '').replace(/^\/+/u, '').replaceAll('/', '-');
+        eventBus.emit(Events.MODAL_LOADED, {node: this.modalSkeletonNode, modalName});
+    }
+
+    resolveNavigationTarget(responseUrl, requestedRedirectTarget = null) {
+        const responseTarget = this.parseAppUrl(responseUrl);
+        const requestedTarget = requestedRedirectTarget ? this.parseAppUrl(requestedRedirectTarget) : null;
+
+        if (requestedTarget && responseTarget.route === requestedTarget.route && !responseTarget.modal && requestedTarget.modal) {
+            return requestedTarget;
+        }
+
+        return responseTarget;
+    }
+
+    parseAppUrl(url) {
+        const parsedUrl = new URL(url, window.location.origin);
+
+        return {
+            route: parsedUrl.pathname,
+            modal: parsedUrl.hash.replace('#', '') || null,
+        };
     }
 
     close() {
