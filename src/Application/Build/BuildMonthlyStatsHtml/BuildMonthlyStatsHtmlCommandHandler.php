@@ -70,21 +70,26 @@ final readonly class BuildMonthlyStatsHtmlCommandHandler implements CommandHandl
 
         $monthlyStats = $this->queryBus->ask(new FindMonthlyStats());
 
+        $currentMonth = Month::fromDate($now);
+        $firstMonthId = (string) $allMonths->getFirst()?->getId();
+        $lastMonthId = (string) $allMonths->getLast()?->getId();
+
         $this->buildStorage->write(
             'monthly-stats.html',
             $this->twig->load('html/calendar/monthly-stats.html.twig')->render([
-                'monthlyStatistics' => $monthlyStats,
                 'challenges' => $allChallenges,
-                'months' => $allMonths->reverse(),
-                'plannedSessionsByMonth' => $plannedSessionsByMonth,
-                'sportTypes' => $this->sportTypeRepository->findAll(),
-                'currentMonthId' => $now->format(Month::MONTH_ID_FORMAT),
-                'today' => $now,
+                'currentMonthStatistics' => $monthlyStats->getForMonth($currentMonth),
+                'currentMonthPlannedSessions' => $plannedSessionsByMonth[$currentMonth->getId()] ?? [],
+                'plannedSessionEstimatesById' => $plannedSessionEstimatesById,
+                'currentCalendar' => Calendar::create(
+                    month: $currentMonth,
+                    enrichedActivities: $this->enrichedActivities,
+                    plannedSessionsByDay: $plannedSessionsByDay,
+                ),
+                'currentMonthHasPrevious' => $currentMonth->getId() !== $firstMonthId,
+                'currentMonthHasNext' => $currentMonth->getId() !== $lastMonthId,
             ]),
         );
-
-        $firstMonthId = (string) $allMonths->getFirst()?->getId();
-        $lastMonthId = (string) $allMonths->getLast()?->getId();
 
         /** @var Month $month */
         foreach ($allMonths as $month) {

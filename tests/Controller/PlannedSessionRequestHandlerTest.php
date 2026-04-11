@@ -456,7 +456,7 @@ final class PlannedSessionRequestHandlerTest extends ContainerTestCase
         self::assertSame(5000, $records[0]->getWorkoutSteps()[1]['distanceInMeters']);
     }
 
-    public function testHandlePostPersistsSuggestedMatchWhenActivityExists(): void
+    public function testHandlePostPersistsConfirmedLinkWhenActivityExists(): void
     {
         $this->seedActivity('2026-04-12 08:00:00', 'Sunday long run', 5100);
         $this->expectPlannerRebuilds();
@@ -473,7 +473,7 @@ final class PlannedSessionRequestHandlerTest extends ContainerTestCase
 
         $records = $this->repository->findByDay(SerializableDateTime::fromString('2026-04-12 00:00:00'));
         self::assertCount(1, $records);
-        self::assertSame(PlannedSessionLinkStatus::SUGGESTED, $records[0]->getLinkStatus());
+        self::assertSame(PlannedSessionLinkStatus::LINKED, $records[0]->getLinkStatus());
         self::assertSame('activity-'.md5('2026-04-12 08:00:00Sunday long run'.SportType::RUN->value), (string) $records[0]->getLinkedActivityId());
     }
 

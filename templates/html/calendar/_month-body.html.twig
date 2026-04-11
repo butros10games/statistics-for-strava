@@ -1,0 +1,182 @@
+{% set plannedSessionCount = plannedSessionsForMonth|length %}
+{% set linkedPlannedSessionCount = plannedSessionsForMonth|filter(session => session.getLinkStatus().value == 'linked')|length %}
+{% set showPlannerSummaryCard = showPlannerSummaryCard ?? true %}
+{% set estimatedPlannedLoad = 0 %}
+{% for plannedSession in plannedSessionsForMonth %}
+    {% set estimatedPlannedLoad = estimatedPlannedLoad + (plannedSessionEstimatesById[plannedSession.getId() ~ ''] ?? 0) %}
+{% endfor %}
+
+<div class="space-y-4">
+    {% if showPlannerSummaryCard %}
+    <div class="rounded-lg border border-gray-200 bg-white p-4 shadow-xs">
+        <div class="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+            <div>
+                <div class="text-sm font-semibold text-gray-800">{{ "Training planner"|trans }}</div>
+                <p class="mt-1 text-sm text-gray-600">{{ "Plan sessions directly inside the training calendar and keep them linked with completed activities automatically."|trans }}</p>
+                <div class="mt-3 flex flex-wrap gap-2 text-xs text-gray-700">
+                    <span class="badge-pill">{{ plannedSessionCount }} {{ "Planned sessions"|trans }}</span>
+                    <span class="badge-pill">{{ linkedPlannedSessionCount }} {{ "Auto-linked"|trans }}</span>
+                    <span class="badge-pill">{{ estimatedPlannedLoad|formatNumber(0) }} {{ "Total planned load"|trans }}</span>
+                </div>
+            </div>
+            <div class="flex flex-wrap gap-2">
+                <a href="#" data-model-content-url="/planned-session?day={{ calendar.getMonth().getId() }}-01" class="inline-flex items-center rounded-lg bg-strava-orange px-3 py-2 text-sm font-medium text-white hover:bg-orange-600 focus:ring-4 focus:outline-hidden focus:ring-orange-300">
+                    {{ "Create session"|trans }}
+                </a>
+            </div>
+        </div>
+    </div>
+    {% endif %}
+    <div class="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_20rem]">
+        <div class="flex flex-col">
+            <div class="grid grid-cols-7 gap-px leading-6 font-semibold text-xs text-center border border-b-0">
+                <div class="py-2 bg-white">
+                    {{ "Mon"|trans }}
+                </div>
+                <div class="py-2 bg-white">
+                    {{ "Tue"|trans }}
+                </div>
+                <div class="py-2 bg-white">
+                    {{ "Wed"|trans }}
+                </div>
+                <div class="py-2 bg-white">
+                    {{ "Thu"|trans }}
+                </div>
+                <div class="py-2 bg-white">
+                    {{ "Fri"|trans }}
+                </div>
+                <div class="py-2 bg-white">
+                    {{ "Sat"|trans }}
+                </div>
+                <div class="py-2 bg-white">
+                    {{ "Sun"|trans }}
+                </div>
+            </div>
+            <div class="grid grid-cols-7 gap-px leading-6 text-xs w-full bg-gray-200 border">
+                {#
+                class="bg-emerald-600/10 border-l-emerald-600"
+                class="bg-orange-500/10 border-l-orange-500"
+                class="bg-yellow-300/10 border-l-yellow-300"
+                class="bg-blue-600/10 border-l-blue-600"
+                class="bg-red-600/10 border-l-red-600"
+                class="bg-gray-600/10 border-l-gray-600"
+                #}
+                {% for day in calendar.getDays() %}
+                    <div class="py-2 px-3 {{ day.isCurrentMonth ? 'bg-white' : 'bg-gray-100' }}">
+                        <div class="flex items-center justify-between gap-2">
+                            <div class="text-right text-gray-400">
+                                {{ day.getDayNumber() }}
+                            </div>
+                            {% if day.isCurrentMonth %}
+                                <a href="#" data-model-content-url="/planned-session?day={{ day.getDate().format('Y-m-d') }}" class="inline-flex rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-strava-orange hover:bg-gray-200">
+                                    + {{ "Session"|trans }}
+                                </a>
+                            {% endif %}
+                        </div>
+                        <div class="mt-2 h-28 overflow-y-auto space-y-2">
+                            {% set linkedActivityIds = [] %}
+                            {% if day.getPlannedSessions() is not empty %}
+                                <ul class="space-y-1">
+                                    {% for plannedSession in day.getPlannedSessions() %}
+                                        {% set plannedColor = plannedSession.getActivityType().getColor() %}
+                                        {% set plannedTitle = plannedSession.getTitle() ?: (plannedSession.getActivityType()|trans) %}
+                                        {% set plannedLinkStatus = plannedSession.getLinkStatus().value %}
+                                        {% set linkedActivity = null %}
+                                        {% if plannedLinkStatus == 'linked' and plannedSession.getLinkedActivityId() is not null %}
+                                            {% set linkedActivityId = plannedSession.getLinkedActivityId() ~ '' %}
+                                            {% set linkedActivityIds = linkedActivityIds|merge([linkedActivityId]) %}
+                                            {% set linkedActivity = (day.getActivities()|filter(activity => activity.getId() ~ '' == linkedActivityId))|first %}
+                                        {% endif %}
+                                        <li class="rounded-md border-l-2 border-l-{{ plannedColor }} bg-{{ plannedColor }}/[.10] px-1.5 py-1">
+                                            {% if linkedActivity %}
+                                                <div class="min-w-0 truncate">
+                                                    {{ linkedActivity|activityLink(truncate: true) }}
+                                                </div>
+                                                <a href="#" data-model-content-url="/planned-session?plannedSessionId={{ plannedSession.getId() }}" class="mt-0.5 inline-flex min-w-0 max-w-full items-center gap-1 text-[10px] text-gray-500 hover:text-blue-600 hover:underline" title="{{ 'Edit planned session'|trans }}">
+                                                    {{ svg('calendar', 'size-2.5 shrink-0 text-strava-orange') }}
+                                                    <span class="truncate">{{ plannedTitle }}</span>
+                                                </a>
+                                            {% else %}
+                                                <a href="#" data-model-content-url="/planned-session?plannedSessionId={{ plannedSession.getId() }}" class="flex min-w-0 items-center gap-1 font-medium text-blue-600 hover:underline" title="{{ 'Edit planned session'|trans }}">
+                                                    {{ svg('calendar', 'size-3 shrink-0 text-strava-orange') }}
+                                                    <span class="truncate">{{ plannedTitle }}</span>
+                                                </a>
+                                                <div class="mt-0.5 flex flex-wrap items-center gap-x-1 gap-y-0.5 text-[10px] text-gray-500">
+                                                    <span>{{ plannedSession.getActivityType()|trans }}</span>
+                                                    <span>·</span>
+                                                    <span>{{ plannedLinkStatus|replace({'_': ' '})|title }}</span>
+                                                </div>
+                                            {% endif %}
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            {% endif %}
+                            {% if not day.getActivities().isEmpty() %}
+                                <ul class="space-y-1">
+                                    {% for activity in day.getActivities() %}
+                                        {% if (activity.getId() ~ '') not in linkedActivityIds %}
+                                            {% set color = activity.getSportType().getActivityType().getColor() %}
+                                            <li class="truncate rounded-md border-l-2 border-l-{{ color }} bg-{{ color }}/[.1] px-1.5 py-1">
+                                                {{ activity|activityLink(truncate: true) }}
+                                            </li>
+                                        {% endif %}
+                                    {% endfor %}
+                                </ul>
+                            {% endif %}
+                        </div>
+                    </div>
+                {% endfor %}
+            </div>
+        </div>
+        <aside class="flex h-full min-h-0 flex-col rounded-xl border border-gray-200 bg-white p-4 shadow-xs">
+            <div class="flex shrink-0 items-center justify-between gap-2">
+                <div>
+                    <h4 class="text-sm font-semibold text-gray-900">{{ "Month planner"|trans }}</h4>
+                    <p class="mt-1 text-xs text-gray-500">{{ "Review every planned session for this month in one place."|trans }}</p>
+                </div>
+                <a href="#" data-model-content-url="/planned-session?day={{ calendar.getMonth().getId() }}-01" class="inline-flex rounded-lg border border-gray-300 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50">
+                    {{ "Create session"|trans }}
+                </a>
+            </div>
+            <div class="mt-4 flex-1 min-h-0 overflow-y-auto pr-1">
+                {% if plannedSessionsForMonth is empty %}
+                    <div class="rounded-lg border border-dashed border-gray-300 bg-white p-4 text-sm text-gray-500">
+                        {{ "No planned sessions yet for this month."|trans }}
+                    </div>
+                {% else %}
+                    <div class="flex flex-col gap-2">
+                        {% for plannedSession in plannedSessionsForMonth %}
+                            {% set plannedColor = plannedSession.getActivityType().getColor() %}
+                            {% set plannedTitle = plannedSession.getTitle() ?: (plannedSession.getActivityType()|trans) %}
+                            {% set linkStatusClasses = plannedSession.getLinkStatus().value == 'linked'
+                                ? 'bg-green-50 text-green-700 ring-green-200'
+                                : (plannedSession.getLinkStatus().value == 'suggested'
+                                    ? 'bg-amber-50 text-amber-700 ring-amber-200'
+                                    : 'bg-gray-100 text-gray-600 ring-gray-200') %}
+                            <div class="overflow-hidden rounded-xl border border-gray-200 border-l-4 border-l-{{ plannedColor }} bg-white shadow-xs transition-colors hover:border-gray-300 min-h-[9rem]">
+                                <div class="flex h-full min-h-[9rem] flex-col justify-between bg-{{ plannedColor }}/[.08] px-3 py-2.5">
+                                    <div class="flex items-start justify-between gap-3">
+                                        <div class="min-w-0">
+                                            <a href="#" data-model-content-url="/planned-session?plannedSessionId={{ plannedSession.getId() }}" class="flex items-center gap-2 text-sm font-medium text-blue-600 hover:underline" title="{{ 'Edit planned session'|trans }}">
+                                                <span class="inline-flex size-7 shrink-0 items-center justify-center rounded-full bg-white ring-1 ring-gray-200">
+                                                    {{ svg('calendar', 'size-3.5') }}
+                                                </span>
+                                                <span class="truncate">{{ plannedTitle }}</span>
+                                            </a>
+                                        </div>
+                                        <span class="inline-flex shrink-0 rounded-full px-2 py-1 text-[10px] font-semibold uppercase ring-1 {{ linkStatusClasses }}">{{ plannedSession.getLinkStatus().value|replace({'_': ' '})|title }}</span>
+                                    </div>
+                                    <div class="mt-4 flex flex-wrap items-center gap-x-1 gap-y-0.5 text-xs text-gray-500">
+                                        <span>{{ plannedSession.getDay().format('D d M') }}</span>
+                                        <span>·</span>
+                                        <span>{{ plannedSession.getActivityType()|trans }}</span>
+                                    </div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+            </div>
+        </aside>
+    </div>
+</div>

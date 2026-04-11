@@ -52,6 +52,6 @@ class BuildMonthlyStatsHtmlCommandHandlerTest extends BuildAppFilesTestCase
 
         self::assertTrue($buildStorage->fileExists('month/month-2023-11.html'));
         self::assertStringContainsString('Future long ride', $buildStorage->read('month/month-2023-11.html'));
-        self::assertStringContainsString('Open current month', $buildStorage->read('monthly-stats.html'));
+        self::assertStringContainsString('Training calendar', $buildStorage->read('monthly-stats.html'));
     }
 }

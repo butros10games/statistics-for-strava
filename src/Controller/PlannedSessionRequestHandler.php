@@ -112,10 +112,10 @@ final readonly class PlannedSessionRequestHandler
         );
 
         if (($existing?->getLinkStatus() ?? PlannedSessionLinkStatus::UNLINKED) !== PlannedSessionLinkStatus::LINKED) {
-            $suggestedActivity = $this->plannedSessionActivityMatcher->findSuggestedMatch($plannedSession);
-            $plannedSession = null === $suggestedActivity
+            $matchedActivity = $this->plannedSessionActivityMatcher->findSuggestedMatch($plannedSession);
+            $plannedSession = null === $matchedActivity
                 ? $plannedSession->withoutLink($now)
-                : $plannedSession->withSuggestedLink($suggestedActivity->getId(), $now);
+                : $plannedSession->withConfirmedLink($matchedActivity->getId(), $now);
         }
 
         $this->repository->upsert($plannedSession);
