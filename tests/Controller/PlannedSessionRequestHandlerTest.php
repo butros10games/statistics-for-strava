@@ -13,8 +13,11 @@ use App\Domain\Activity\ActivityType;
 use App\Domain\Activity\ActivityWithRawData;
 use App\Domain\Activity\DbalActivityRepository;
 use App\Domain\Activity\SportType\SportType;
+use App\Domain\Athlete\Athlete;
+use App\Domain\Athlete\AthleteRepository;
 use App\Domain\TrainingPlanner\PlannedSessionActivityMatcher;
 use App\Domain\TrainingPlanner\DbalPlannedSessionRepository;
+use App\Domain\TrainingPlanner\PlannedSessionEstimationSource;
 use App\Domain\TrainingPlanner\PlannedSessionForecastBuilder;
 use App\Domain\TrainingPlanner\PlannedSessionId;
 use App\Domain\TrainingPlanner\PlannedSessionLinkStatus;
@@ -99,6 +102,46 @@ final class PlannedSessionRequestHandlerTest extends ContainerTestCase
         self::assertSame('Sunday long run', $records[0]->getTitle());
         self::assertSame(78.5, $records[0]->getTargetLoad());
         self::assertSame(5130, $records[0]->getTargetDurationInSeconds());
+        self::assertSame(PlannedSessionEstimationSource::MANUAL_TARGET_LOAD, $records[0]->getEstimationSource());
+    }
+
+    public function testHandlePostKeepsWorkoutEstimateSourceWhenManualOverrideIsDisabled(): void
+    {
+        $this->expectPlannerRebuilds();
+
+        $response = $this->requestHandler->handle(new Request(
+            request: [
+                'day' => '2026-04-12',
+                'title' => 'Controlled run',
+                'activityType' => 'Run',
+                'targetLoad' => '55.0',
+                'targetDurationInMinutes' => '40',
+                'manualTargetLoadOverride' => '0',
+                'workoutSteps' => [[
+                    'itemId' => 'steady-run',
+                    'parentBlockId' => '',
+                    'type' => 'steady',
+                    'label' => 'Steady effort',
+                    'repetitions' => '1',
+                    'targetType' => 'heartRate',
+                    'conditionType' => 'holdTarget',
+                    'durationInMinutes' => '40',
+                    'durationInSecondsPart' => '',
+                    'distanceInMeters' => '',
+                    'targetPace' => '',
+                    'targetPower' => '',
+                    'targetHeartRate' => '150',
+                ]],
+            ],
+            server: ['REQUEST_METHOD' => 'POST'],
+        ));
+
+        self::assertEquals(new RedirectResponse('/dashboard', Response::HTTP_FOUND), $response);
+
+        $records = $this->repository->findByDay(SerializableDateTime::fromString('2026-04-12 00:00:00'));
+        self::assertCount(1, $records);
+        self::assertSame(55.0, $records[0]->getTargetLoad());
+        self::assertSame(PlannedSessionEstimationSource::WORKOUT_TARGETS, $records[0]->getEstimationSource());
     }
 
     public function testHandlePostRedirectsToRequestedLocation(): void
@@ -497,6 +540,7 @@ final class PlannedSessionRequestHandlerTest extends ContainerTestCase
     {
         parent::setUp();
 
+        $this->seedAthlete();
         $this->repository = new DbalPlannedSessionRepository($this->getConnection());
         $this->requestHandler = new PlannedSessionRequestHandler(
             repository: $this->repository,
@@ -508,6 +552,17 @@ final class PlannedSessionRequestHandlerTest extends ContainerTestCase
             clock: $this->getContainer()->get(\App\Infrastructure\Time\Clock\Clock::class),
             twig: $this->getContainer()->get(Environment::class),
         );
+    }
+
+    private function seedAthlete(): void
+    {
+        $this->getContainer()->get(AthleteRepository::class)->save(Athlete::create([
+            'id' => 100,
+            'birthDate' => '1989-08-14',
+            'firstname' => 'Robin',
+            'lastname' => 'Ingelbrecht',
+            'sex' => 'M',
+        ]));
     }
 
     private function seedActivity(string $startDate, string $name, int $movingTimeInSeconds, SportType $sportType = SportType::RUN): void

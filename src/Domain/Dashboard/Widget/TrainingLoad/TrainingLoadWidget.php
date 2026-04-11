@@ -165,6 +165,7 @@ final readonly class TrainingLoadWidget implements Widget
                         trainingMetrics: $trainingMetrics,
                         now: $now,
                         translator: $this->translator,
+                        plannedSessionForecastProjection: $plannedSessionForecastProjection,
                     )->build()
                 ),
                 'trainingMetrics' => $trainingMetrics,

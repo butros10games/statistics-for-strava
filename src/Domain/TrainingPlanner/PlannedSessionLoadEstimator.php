@@ -8,18 +8,24 @@ use App\Domain\Activity\Activity;
 use App\Domain\Activity\ActivityRepository;
 use App\Domain\Activity\ActivityType;
 use App\Domain\Athlete\AthleteRepository;
+use App\Domain\Ftp\FtpHistory;
+use App\Infrastructure\Exception\EntityNotFound;
 
 final class PlannedSessionLoadEstimator
 {
     private const int RECENT_ACTIVITY_SAMPLE_LIMIT = 12;
+    private const int EFFORT_MATCH_NEAREST_SAMPLE_COUNT = 3;
 
     /** @var array<string, ?float> */
     private array $historicalLoadPerHourByActivityType = [];
+    /** @var array<string, list<array{effort: float, loadPerHour: float}>> */
+    private array $effortLoadPerHourSamplesByKey = [];
     private ?float $globalHistoricalLoadPerHour = null;
 
     public function __construct(
         private readonly ActivityRepository $activityRepository,
         private readonly AthleteRepository $athleteRepository,
+        private readonly FtpHistory $ftpHistory,
     ) {
     }
 
@@ -33,11 +39,20 @@ final class PlannedSessionLoadEstimator
             );
         }
 
-        if (null !== $plannedSession->getTargetLoad()) {
+        if (PlannedSessionEstimationSource::MANUAL_TARGET_LOAD === $plannedSession->getEstimationSource()
+            && null !== $plannedSession->getTargetLoad()) {
             return PlannedSessionLoadEstimate::create(
                 plannedSession: $plannedSession,
                 estimatedLoad: $plannedSession->getTargetLoad(),
                 estimationSource: PlannedSessionEstimationSource::MANUAL_TARGET_LOAD,
+            );
+        }
+
+        if (null !== ($estimatedLoad = $this->estimateFromWorkoutTargets($plannedSession))) {
+            return PlannedSessionLoadEstimate::create(
+                plannedSession: $plannedSession,
+                estimatedLoad: $estimatedLoad,
+                estimationSource: PlannedSessionEstimationSource::WORKOUT_TARGETS,
             );
         }
 
@@ -75,6 +90,42 @@ final class PlannedSessionLoadEstimator
         return $this->globalHistoricalLoadPerHour = $this->calculateAverageLoadPerHour(iterator_to_array($this->activityRepository->findAll()));
     }
 
+    /**
+     * @return list<array{effort: float, loadPerHour: float}>
+     */
+    public function getPowerLoadPerHourSamplesForActivityType(ActivityType $activityType): array
+    {
+        return $this->getEffortLoadPerHourSamples($activityType, 'power');
+    }
+
+    /**
+     * @return list<array{effort: float, loadPerHour: float}>
+     */
+    public function getPaceLoadPerHourSamplesForActivityType(ActivityType $activityType): array
+    {
+        return $this->getEffortLoadPerHourSamples($activityType, 'pace');
+    }
+
+    /**
+     * @return list<array{setOn: string, ftp: int}>
+     */
+    public function getFtpHistoryForActivityType(ActivityType $activityType): array
+    {
+        if (!$activityType->supportsPowerData()) {
+            return [];
+        }
+
+        $history = [];
+        foreach ($this->ftpHistory->findAll($activityType) as $ftp) {
+            $history[] = [
+                'setOn' => $ftp->getSetOn()->format('Y-m-d'),
+                'ftp' => $ftp->getFtp()->getValue(),
+            ];
+        }
+
+        return $history;
+    }
+
     private function estimateFromTemplate(PlannedSession $plannedSession): ?float
     {
         $templateActivityId = $plannedSession->getTemplateActivityId();
@@ -102,6 +153,20 @@ final class PlannedSessionLoadEstimator
         return round($estimatedLoad, 1);
     }
 
+    private function estimateFromWorkoutTargets(PlannedSession $plannedSession): ?float
+    {
+        if (!$plannedSession->hasWorkoutSteps()) {
+            return null;
+        }
+
+        $estimatedLoad = $this->estimateWorkoutSequenceLoad($plannedSession, $plannedSession->getWorkoutSteps());
+        if (null === $estimatedLoad || $estimatedLoad <= 0) {
+            return null;
+        }
+
+        return round($estimatedLoad, 1);
+    }
+
     private function estimateFromDurationAndIntensity(PlannedSession $plannedSession): ?float
     {
         $targetDurationInSeconds = $plannedSession->getTargetDurationInSeconds();
@@ -120,6 +185,337 @@ final class PlannedSessionLoadEstimator
         $estimatedLoad = ($targetDurationInSeconds / 3600) * $historicalLoadPerHour * $this->getIntensityMultiplier($targetIntensity);
 
         return round($estimatedLoad, 1);
+    }
+
+    /**
+     * @param list<array{itemId: string, parentBlockId: ?string, type: string, label: ?string, repetitions: int, targetType: ?string, conditionType: ?string, durationInSeconds: ?int, distanceInMeters: ?int, targetPace: ?string, targetPower: ?int, targetHeartRate: ?int, recoveryAfterInSeconds: ?int}> $workoutSteps
+     */
+    private function estimateWorkoutSequenceLoad(PlannedSession $plannedSession, array $workoutSteps, ?string $parentBlockId = null): ?float
+    {
+        $totalEstimatedLoad = 0.0;
+
+        foreach ($workoutSteps as $workoutStep) {
+            if (($workoutStep['parentBlockId'] ?? null) !== $parentBlockId) {
+                continue;
+            }
+
+            $stepType = PlannedSessionStepType::tryFrom($workoutStep['type']) ?? PlannedSessionStepType::INTERVAL;
+            if ($stepType->isContainer()) {
+                $childLoad = $this->estimateWorkoutSequenceLoad($plannedSession, $workoutSteps, $workoutStep['itemId']);
+                if (null === $childLoad) {
+                    return null;
+                }
+
+                $totalEstimatedLoad += max(1, $workoutStep['repetitions']) * $childLoad;
+
+                continue;
+            }
+
+            $stepLoad = $this->estimateWorkoutStepLoad($plannedSession, $workoutStep);
+            if (null === $stepLoad) {
+                return null;
+            }
+
+            $totalEstimatedLoad += max(1, $workoutStep['repetitions']) * $stepLoad;
+        }
+
+        return $totalEstimatedLoad;
+    }
+
+    /**
+     * @param array{type: string, targetType: ?string, conditionType: ?string, durationInSeconds: ?int, distanceInMeters: ?int, targetPace: ?string, targetPower: ?int, targetHeartRate: ?int} $workoutStep
+     */
+    private function estimateWorkoutStepLoad(PlannedSession $plannedSession, array $workoutStep): ?float
+    {
+        $estimatedStepDurationInSeconds = $this->estimateWorkoutStepDurationInSeconds($workoutStep);
+        if (null === $estimatedStepDurationInSeconds || $estimatedStepDurationInSeconds <= 0) {
+            return null;
+        }
+
+        $activityType = $plannedSession->getActivityType();
+        if (ActivityType::RIDE === $activityType && null !== ($workoutStep['targetPower'] ?? null) && $workoutStep['targetPower'] > 0) {
+            $loadPerHour = $this->estimateLoadPerHourFromTargetPower($activityType, $plannedSession->getDay(), $workoutStep['targetPower']);
+            if (null !== $loadPerHour) {
+                return round(($estimatedStepDurationInSeconds / 3600) * $loadPerHour, 1);
+            }
+        }
+
+        if (ActivityType::RUN === $activityType && null !== ($workoutStep['targetPace'] ?? null)) {
+            $loadPerHour = $this->estimateLoadPerHourFromTargetPace($activityType, $workoutStep['targetPace']);
+            if (null !== $loadPerHour) {
+                return round(($estimatedStepDurationInSeconds / 3600) * $loadPerHour, 1);
+            }
+        }
+
+        if (null !== ($workoutStep['targetHeartRate'] ?? null) && $workoutStep['targetHeartRate'] > 0) {
+            $heartRateLoad = $this->estimateLoadFromTargetHeartRate(
+                targetHeartRate: $workoutStep['targetHeartRate'],
+                durationInSeconds: $estimatedStepDurationInSeconds,
+                on: $plannedSession->getDay(),
+            );
+            if (null !== $heartRateLoad) {
+                return $heartRateLoad;
+            }
+        }
+
+        $fallbackLoadPerHour = $this->estimateFallbackWorkoutStepLoadPerHour($plannedSession, $workoutStep);
+        if (null === $fallbackLoadPerHour) {
+            return null;
+        }
+
+        return round(($estimatedStepDurationInSeconds / 3600) * $fallbackLoadPerHour, 1);
+    }
+
+    /**
+     * @param array{type: string, targetType: ?string, conditionType: ?string, durationInSeconds: ?int, distanceInMeters: ?int, targetPace: ?string, targetPower: ?int, targetHeartRate: ?int} $workoutStep
+     */
+    private function estimateWorkoutStepDurationInSeconds(array $workoutStep): ?int
+    {
+        $targetType = PlannedSessionStepTargetType::tryFrom((string) ($workoutStep['targetType'] ?? ''));
+        if (PlannedSessionStepTargetType::HEART_RATE === $targetType) {
+            return $workoutStep['durationInSeconds'] ?? null;
+        }
+
+        if (null !== ($workoutStep['durationInSeconds'] ?? null) && $workoutStep['durationInSeconds'] > 0) {
+            return $workoutStep['durationInSeconds'];
+        }
+
+        if (null === ($workoutStep['distanceInMeters'] ?? null) || $workoutStep['distanceInMeters'] <= 0) {
+            return null;
+        }
+
+        $secondsPerMeter = $this->parsePaceSecondsPerMeter($workoutStep['targetPace'] ?? null);
+        if (null === $secondsPerMeter) {
+            return null;
+        }
+
+        return (int) round($secondsPerMeter * $workoutStep['distanceInMeters']);
+    }
+
+    private function estimateLoadPerHourFromTargetPower(ActivityType $activityType, \DateTimeImmutable $day, int $targetPower): ?float
+    {
+        if ($targetPower <= 0) {
+            return null;
+        }
+
+        if (ActivityType::RIDE === $activityType) {
+            try {
+                $ftp = $this->ftpHistory->find(ActivityType::RIDE, $day)->getFtp()->getValue();
+                if ($ftp > 0) {
+                    $intensityFactor = $this->clamp($targetPower / $ftp, 0.35, 1.8);
+
+                    return round(($intensityFactor ** 2) * 100, 1);
+                }
+            } catch (EntityNotFound) {
+            }
+        }
+
+        return $this->estimateLoadPerHourFromEffortSamples(
+            targetEffort: (float) $targetPower,
+            samples: $this->getPowerLoadPerHourSamplesForActivityType($activityType),
+            higherEffortIsHarder: true,
+        );
+    }
+
+    private function estimateLoadPerHourFromTargetPace(ActivityType $activityType, ?string $targetPace): ?float
+    {
+        $secondsPerMeter = $this->parsePaceSecondsPerMeter($targetPace);
+        if (null === $secondsPerMeter) {
+            return null;
+        }
+
+        return $this->estimateLoadPerHourFromEffortSamples(
+            targetEffort: $secondsPerMeter * 1000,
+            samples: $this->getPaceLoadPerHourSamplesForActivityType($activityType),
+            higherEffortIsHarder: false,
+        );
+    }
+
+    private function estimateLoadFromTargetHeartRate(int $targetHeartRate, int $durationInSeconds, \DateTimeImmutable $on): ?float
+    {
+        $athlete = $this->athleteRepository->find();
+        $restingHeartRate = $athlete->getRestingHeartRateFormula($on);
+        $maxHeartRate = $athlete->getMaxHeartRate($on);
+        if ($maxHeartRate <= $restingHeartRate) {
+            return null;
+        }
+
+        $intensity = ($targetHeartRate - $restingHeartRate) / ($maxHeartRate - $restingHeartRate);
+        $intensity = max(0.0, min(1.5, $intensity));
+        $bannisterKFactor = $athlete->isMale() ? 1.92 : 1.67;
+
+        return round(($durationInSeconds / 60) * $intensity * exp($bannisterKFactor * $intensity), 1);
+    }
+
+    /**
+     * @param array{type: string, targetType: ?string, conditionType: ?string, durationInSeconds: ?int, distanceInMeters: ?int, targetPace: ?string, targetPower: ?int, targetHeartRate: ?int} $workoutStep
+     */
+    private function estimateFallbackWorkoutStepLoadPerHour(PlannedSession $plannedSession, array $workoutStep): ?float
+    {
+        $historicalLoadPerHour = $this->getHistoricalLoadPerHourForActivityType($plannedSession->getActivityType())
+            ?? $this->getGlobalHistoricalLoadPerHour();
+        if (null === $historicalLoadPerHour) {
+            return null;
+        }
+
+        $sessionIntensityMultiplier = null === $plannedSession->getTargetIntensity()
+            ? null
+            : $this->getIntensityMultiplier($plannedSession->getTargetIntensity());
+        $stepType = PlannedSessionStepType::tryFrom($workoutStep['type'] ?? '') ?? PlannedSessionStepType::INTERVAL;
+        $defaultMultiplier = match ($stepType) {
+            PlannedSessionStepType::RECOVERY => 0.65,
+            PlannedSessionStepType::WARMUP, PlannedSessionStepType::COOLDOWN => 0.8,
+            PlannedSessionStepType::INTERVAL => 1.15,
+            default => 1.0,
+        };
+
+        $multiplier = match (true) {
+            null === $sessionIntensityMultiplier => $defaultMultiplier,
+            PlannedSessionStepType::RECOVERY === $stepType => min($sessionIntensityMultiplier, $defaultMultiplier),
+            PlannedSessionStepType::WARMUP === $stepType, PlannedSessionStepType::COOLDOWN === $stepType => min($sessionIntensityMultiplier, $defaultMultiplier),
+            PlannedSessionStepType::INTERVAL === $stepType => max($sessionIntensityMultiplier, $defaultMultiplier),
+            default => $sessionIntensityMultiplier,
+        };
+
+        return round($historicalLoadPerHour * $multiplier, 1);
+    }
+
+    /**
+     * @param list<array{effort: float, loadPerHour: float}> $samples
+     */
+    private function estimateLoadPerHourFromEffortSamples(float $targetEffort, array $samples, bool $higherEffortIsHarder): ?float
+    {
+        if ($targetEffort <= 0 || [] === $samples) {
+            return null;
+        }
+
+        usort(
+            $samples,
+            fn (array $left, array $right): int => $this->compareEffortDistance($targetEffort, $left['effort'], $right['effort']),
+        );
+
+        $nearestSamples = array_slice($samples, 0, self::EFFORT_MATCH_NEAREST_SAMPLE_COUNT);
+        $weightedLoadPerHour = 0.0;
+        $weightedEffort = 0.0;
+        $totalWeight = 0.0;
+
+        foreach ($nearestSamples as $sample) {
+            $distance = $this->calculateRelativeEffortDistance($targetEffort, $sample['effort']);
+            $weight = 1 / max(0.05, $distance + 0.05);
+
+            $weightedLoadPerHour += $sample['loadPerHour'] * $weight;
+            $weightedEffort += $sample['effort'] * $weight;
+            $totalWeight += $weight;
+        }
+
+        if ($totalWeight <= 0.0) {
+            return null;
+        }
+
+        $referenceLoadPerHour = $weightedLoadPerHour / $totalWeight;
+        $referenceEffort = $weightedEffort / $totalWeight;
+        $effortRatio = $higherEffortIsHarder
+            ? $targetEffort / max(1.0, $referenceEffort)
+            : $referenceEffort / max(1.0, $targetEffort);
+
+        return round($referenceLoadPerHour * $this->clamp($effortRatio, 0.75, 1.35), 1);
+    }
+
+    private function compareEffortDistance(float $targetEffort, float $leftEffort, float $rightEffort): int
+    {
+        return $this->calculateRelativeEffortDistance($targetEffort, $leftEffort) <=> $this->calculateRelativeEffortDistance($targetEffort, $rightEffort);
+    }
+
+    private function calculateRelativeEffortDistance(float $targetEffort, float $sampleEffort): float
+    {
+        if ($targetEffort <= 0 || $sampleEffort <= 0) {
+            return INF;
+        }
+
+        return abs(log($targetEffort / $sampleEffort));
+    }
+
+    /**
+     * @return list<array{effort: float, loadPerHour: float}>
+     */
+    private function getEffortLoadPerHourSamples(ActivityType $activityType, string $metric): array
+    {
+        $cacheKey = sprintf('%s.%s', $activityType->value, $metric);
+        if (array_key_exists($cacheKey, $this->effortLoadPerHourSamplesByKey)) {
+            return $this->effortLoadPerHourSamplesByKey[$cacheKey];
+        }
+
+        $samples = [];
+        foreach ($this->getRecentActivitiesForType($activityType) as $activity) {
+            if ($activity->getMovingTimeInSeconds() <= 0) {
+                continue;
+            }
+
+            $load = $this->estimateActivityLoad($activity);
+            if (null === $load || $load <= 0) {
+                continue;
+            }
+
+            $effort = match ($metric) {
+                'power' => $activity->getNormalizedPower() ?? $activity->getAveragePower(),
+                'pace' => $activity->getPaceInSecPerKm()->toFloat(),
+                default => null,
+            };
+            if (!is_numeric($effort) || $effort <= 0) {
+                continue;
+            }
+
+            $samples[] = [
+                'effort' => (float) $effort,
+                'loadPerHour' => round($load / ($activity->getMovingTimeInSeconds() / 3600), 1),
+            ];
+
+            if (count($samples) >= self::RECENT_ACTIVITY_SAMPLE_LIMIT) {
+                break;
+            }
+        }
+
+        return $this->effortLoadPerHourSamplesByKey[$cacheKey] = $samples;
+    }
+
+    /**
+     * @return list<Activity>
+     */
+    private function getRecentActivitiesForType(ActivityType $activityType): array
+    {
+        $activities = array_values(array_filter(
+            iterator_to_array($this->activityRepository->findAll()),
+            static fn (Activity $activity): bool => $activity->getSportType()->getActivityType() === $activityType,
+        ));
+
+        usort(
+            $activities,
+            static fn (Activity $left, Activity $right): int => $right->getStartDate() <=> $left->getStartDate(),
+        );
+
+        return $activities;
+    }
+
+    private function parsePaceSecondsPerMeter(?string $targetPace): ?float
+    {
+        if (null === $targetPace) {
+            return null;
+        }
+
+        if (!preg_match('/^\s*(\d+):(\d{2})(?:\s*\/\s*(km|mi))?\s*$/i', $targetPace, $matches)) {
+            return null;
+        }
+
+        $seconds = ((int) $matches[1] * 60) + (int) $matches[2];
+        $unit = strtolower($matches[3] ?? 'km');
+        $meters = 'mi' === $unit ? 1609.344 : 1000.0;
+
+        return $seconds / $meters;
+    }
+
+    private function clamp(float $value, float $min, float $max): float
+    {
+        return max($min, min($max, $value));
     }
 
     /**

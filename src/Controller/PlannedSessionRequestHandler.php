@@ -75,6 +75,23 @@ final readonly class PlannedSessionRequestHandler
         $templateActivityId = $this->nullableActivityId($request->request->getString('templateActivityId'));
         $workoutSteps = $this->parseWorkoutSteps($request, $activityType);
         $targetDurationInSeconds = $this->resolveTargetDurationInSeconds($requestedTargetDurationInSeconds, $workoutSteps);
+        $hasManualTargetLoadOverride = $this->resolveManualTargetLoadOverride($request, $targetLoad);
+        $estimationSource = $this->determineEstimationSource(
+            day: $day,
+            activityType: $activityType,
+            title: $title,
+            notes: $notes,
+            targetLoad: $targetLoad,
+            targetDurationInSeconds: $targetDurationInSeconds,
+            targetIntensity: $targetIntensity,
+            templateActivityId: $templateActivityId,
+            workoutSteps: $workoutSteps,
+            linkedActivityId: $existing?->getLinkedActivityId(),
+            linkStatus: $existing?->getLinkStatus() ?? PlannedSessionLinkStatus::UNLINKED,
+            createdAt: $existing?->getCreatedAt() ?? $now,
+            updatedAt: $now,
+            manualTargetLoadOverride: $hasManualTargetLoadOverride,
+        );
 
         $plannedSession = PlannedSession::create(
             plannedSessionId: $existing?->getId() ?? PlannedSessionId::random(),
@@ -87,7 +104,7 @@ final readonly class PlannedSessionRequestHandler
             targetIntensity: $targetIntensity,
             templateActivityId: $templateActivityId,
             workoutSteps: $workoutSteps,
-            estimationSource: $this->determineEstimationSource($targetLoad, $targetDurationInSeconds, $targetIntensity, $templateActivityId),
+            estimationSource: $estimationSource,
             linkedActivityId: $existing?->getLinkedActivityId(),
             linkStatus: $existing?->getLinkStatus() ?? PlannedSessionLinkStatus::UNLINKED,
             createdAt: $existing?->getCreatedAt() ?? $now,
@@ -219,9 +236,10 @@ final readonly class PlannedSessionRequestHandler
         [$matchedActivity, $plannedSessionMatchStatus] = $this->resolveMatchedActivity($plannedSession);
         $plannerOutlookForecast = $this->plannedSessionForecastBuilder->build($today, self::PLANNER_OUTLOOK_HORIZON);
         $templateActivities = $this->buildTemplateActivityOptions($plannedSession?->getTemplateActivityId());
-        $plannedSessionEstimatedLoad = null === $plannedSession
+        $plannedSessionLoadEstimate = null === $plannedSession
             ? null
-            : $this->plannedSessionLoadEstimator->estimate($plannedSession)?->getEstimatedLoad();
+            : $this->plannedSessionLoadEstimator->estimate($plannedSession);
+        $plannedSessionEstimatedLoad = $plannedSessionLoadEstimate?->getEstimatedLoad();
 
         return new Response($this->twig->render('html/dashboard/planned-session.html.twig', [
             'plannedSession' => null === $plannedSession ? null : $this->toViewRecord($plannedSession),
@@ -239,8 +257,9 @@ final readonly class PlannedSessionRequestHandler
             'templateActivities' => $templateActivities,
             'selectedTemplateActivity' => $this->resolveTemplateActivity($plannedSession?->getTemplateActivityId()),
             'plannedSessionEstimatedLoad' => $plannedSessionEstimatedLoad,
+            'plannedSessionEstimatedSourceLabel' => $plannedSessionLoadEstimate?->getEstimationSource()->getLabel(),
             'plannedSessionEstimationContext' => $this->buildPlannerEstimationContext(),
-            'plannedSessionHasManualTargetLoad' => null !== $plannedSession?->getTargetLoad(),
+            'plannedSessionHasManualTargetLoad' => PlannedSessionEstimationSource::MANUAL_TARGET_LOAD === $plannedSession?->getEstimationSource(),
             'plannedSessionWorkoutPreview' => $this->buildWorkoutPreviewRows($plannedSession?->getWorkoutSteps() ?? [], $plannedSession?->getActivityType() ?? ActivityType::RUN),
             'plannerOutlookForecast' => $plannerOutlookForecast,
             'plannerOutlookProjectedDayCount' => $this->countProjectedDays($plannerOutlookForecast),
@@ -254,14 +273,23 @@ final readonly class PlannedSessionRequestHandler
      *     loadPerHourByActivityType: array<string, ?float>,
      *     globalLoadPerHour: ?float,
      *     intensityMultipliers: array<string, float>,
+     *     effortLoadPerHourSamples: array<string, array{power: list<array{effort: float, loadPerHour: float}>, pace: list<array{effort: float, loadPerHour: float}>}>,
+     *     ftpHistoryByActivityType: array<string, list<array{setOn: string, ftp: int}>>,
      *     labels: array<string, string>
      * }
      */
     private function buildPlannerEstimationContext(): array
     {
         $loadPerHourByActivityType = [];
+        $effortLoadPerHourSamples = [];
+        $ftpHistoryByActivityType = [];
         foreach (ActivityType::cases() as $activityType) {
             $loadPerHourByActivityType[$activityType->value] = $this->plannedSessionLoadEstimator->getHistoricalLoadPerHourForActivityType($activityType);
+            $effortLoadPerHourSamples[$activityType->value] = [
+                'power' => $this->plannedSessionLoadEstimator->getPowerLoadPerHourSamplesForActivityType($activityType),
+                'pace' => $this->plannedSessionLoadEstimator->getPaceLoadPerHourSamplesForActivityType($activityType),
+            ];
+            $ftpHistoryByActivityType[$activityType->value] = $this->plannedSessionLoadEstimator->getFtpHistoryForActivityType($activityType);
         }
 
         $intensityMultipliers = [];
@@ -273,10 +301,13 @@ final readonly class PlannedSessionRequestHandler
             'loadPerHourByActivityType' => $loadPerHourByActivityType,
             'globalLoadPerHour' => $this->plannedSessionLoadEstimator->getGlobalHistoricalLoadPerHour(),
             'intensityMultipliers' => $intensityMultipliers,
+            'effortLoadPerHourSamples' => $effortLoadPerHourSamples,
+            'ftpHistoryByActivityType' => $ftpHistoryByActivityType,
             'labels' => [
                 'estimatedPrefix' => 'Est.',
                 'manualTargetLoad' => PlannedSessionEstimationSource::MANUAL_TARGET_LOAD->getLabel(),
                 'durationIntensity' => PlannedSessionEstimationSource::DURATION_INTENSITY->getLabel(),
+                'workoutTargets' => PlannedSessionEstimationSource::WORKOUT_TARGETS->getLabel(),
                 'template' => PlannedSessionEstimationSource::TEMPLATE->getLabel(),
                 'durationDerived' => 'Duration derived from workout steps.',
                 'durationPending' => 'Duration stays manual until every set has a time target or a calculable distance target.',
@@ -806,14 +837,67 @@ final readonly class PlannedSessionRequestHandler
         ], $matchStatus];
     }
 
-    private function determineEstimationSource(?float $targetLoad, ?int $targetDurationInSeconds, ?PlannedSessionIntensity $targetIntensity, ?ActivityId $templateActivityId): PlannedSessionEstimationSource
+    /**
+     * @param list<array{itemId: string, parentBlockId: ?string, type: string, label: ?string, repetitions: int, targetType: ?string, conditionType: ?string, durationInSeconds: ?int, distanceInMeters: ?int, targetPace: ?string, targetPower: ?int, targetHeartRate: ?int, recoveryAfterInSeconds: ?int}> $workoutSteps
+     */
+    private function determineEstimationSource(
+        SerializableDateTime $day,
+        ActivityType $activityType,
+        ?string $title,
+        ?string $notes,
+        ?float $targetLoad,
+        ?int $targetDurationInSeconds,
+        ?PlannedSessionIntensity $targetIntensity,
+        ?ActivityId $templateActivityId,
+        array $workoutSteps,
+        ?ActivityId $linkedActivityId,
+        PlannedSessionLinkStatus $linkStatus,
+        SerializableDateTime $createdAt,
+        SerializableDateTime $updatedAt,
+        bool $manualTargetLoadOverride,
+    ): PlannedSessionEstimationSource
     {
-        return match (true) {
-            null !== $templateActivityId => PlannedSessionEstimationSource::TEMPLATE,
-            null !== $targetLoad => PlannedSessionEstimationSource::MANUAL_TARGET_LOAD,
-            null !== $targetDurationInSeconds && null !== $targetIntensity => PlannedSessionEstimationSource::DURATION_INTENSITY,
-            default => PlannedSessionEstimationSource::UNKNOWN,
-        };
+        if ($manualTargetLoadOverride && null !== $targetLoad) {
+            return PlannedSessionEstimationSource::MANUAL_TARGET_LOAD;
+        }
+
+        $estimate = $this->plannedSessionLoadEstimator->estimate(PlannedSession::create(
+            plannedSessionId: PlannedSessionId::random(),
+            day: $day,
+            activityType: $activityType,
+            title: $title,
+            notes: $notes,
+            targetLoad: null,
+            targetDurationInSeconds: $targetDurationInSeconds,
+            targetIntensity: $targetIntensity,
+            templateActivityId: $templateActivityId,
+            workoutSteps: $workoutSteps,
+            estimationSource: PlannedSessionEstimationSource::UNKNOWN,
+            linkedActivityId: $linkedActivityId,
+            linkStatus: $linkStatus,
+            createdAt: $createdAt,
+            updatedAt: $updatedAt,
+        ));
+
+        return $estimate?->getEstimationSource() ?? PlannedSessionEstimationSource::UNKNOWN;
+    }
+
+    private function resolveManualTargetLoadOverride(Request $request, ?float $targetLoad): bool
+    {
+        if ($request->request->has('manualTargetLoadOverride')) {
+            return $this->parseBooleanValue($request->request->getString('manualTargetLoadOverride'));
+        }
+
+        return null !== $targetLoad;
+    }
+
+    private function parseBooleanValue(?string $value): bool
+    {
+        if (null === $value) {
+            return false;
+        }
+
+        return in_array(strtolower(trim($value)), ['1', 'true', 'yes', 'on'], true);
     }
 
     private function nullableString(?string $value): ?string

@@ -228,7 +228,7 @@
         <div class="text-xs font-semibold uppercase tracking-wide text-gray-500">{{ "Targets & estimation"|trans }}</div>
         <span data-planned-session-estimate-badge data-planned-session-form-id="planned-session-form-{{ uniqueId }}" class="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-800 whitespace-nowrap{% if plannedSessionEstimatedLoad is null or not plannedSession %} hidden{% endif %}">
             {% if plannedSessionEstimatedLoad is not null and plannedSession %}
-                {{ "Est."|trans }} {{ plannedSessionEstimatedLoad|formatNumber(1) }} · {{ plannedSession.estimationSource|trans }}
+                {{ "Est."|trans }} {{ plannedSessionEstimatedLoad|formatNumber(1) }} · {{ (plannedSessionEstimatedSourceLabel ?? plannedSession.estimationSource)|trans }}
             {% endif %}
         </span>
     </div>
@@ -281,9 +281,10 @@
             <input type="hidden" name="plannedSessionId" value="{{ plannedSession.plannedSessionId }}" />
         {% endif %}
         <input type="hidden" name="redirectTo" value="{{ redirectTarget }}" />
+        <input type="hidden" name="manualTargetLoadOverride" value="{{ plannedSessionHasManualTargetLoad ? '1' : '0' }}" data-planned-session-manual-target-load-input />
 
         {# ── Workout Steps Editor ── #}
-        <div class="rounded-lg border border-gray-200 bg-gray-50 shadow-xs" data-workout-editor>
+        <div class="rounded-lg border border-gray-200 bg-gray-50 shadow-xs" data-workout-editor data-workout-preview-block-label="{{ 'Repeat block'|trans|e('html_attr') }}" data-workout-preview-repeats-label="{{ 'repeats'|trans|e('html_attr') }}">
             <div class="flex items-center justify-between px-4 py-3 border-b border-gray-200 bg-white rounded-t-lg">
                 <div>
                     <div class="text-xs font-semibold uppercase tracking-wide text-gray-500">{{ "Workout"|trans }}</div>
@@ -440,13 +441,12 @@
         </div>
 
         {# ── Structured Session Preview (Timeline) ── #}
-        {% if plannedSessionWorkoutPreview is not empty %}
-            <div class="rounded-lg border border-gray-200 bg-white shadow-xs">
+        <div class="rounded-lg border border-gray-200 bg-white shadow-xs{% if plannedSessionWorkoutPreview is empty %} hidden{% endif %}" data-workout-structured-preview>
                 <div class="px-4 py-2.5 border-b border-gray-100">
                     <div class="text-[10px] font-semibold uppercase tracking-wide text-gray-500">{{ "Structured preview"|trans }}</div>
                 </div>
                 <div class="px-4 py-3">
-                    <div class="planned-session-timeline">
+                    <div class="planned-session-timeline" data-workout-structured-preview-timeline>
                         {% for previewRow in plannedSessionWorkoutPreview %}
                             <div class="planned-session-timeline-item" style="{% if previewRow.depth > 0 %}margin-left: {{ previewRow.depth * 1.25 }}rem{% endif %}">
                                 <div class="planned-session-timeline-dot"></div>
@@ -458,8 +458,7 @@
                         {% endfor %}
                     </div>
                 </div>
-            </div>
-        {% endif %}
+        </div>
 
         {# ── Notes ── #}
         <div class="rounded-lg border border-gray-200 bg-white shadow-xs">

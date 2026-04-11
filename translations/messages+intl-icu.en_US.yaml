@@ -575,6 +575,7 @@ workouts: workouts
 Latest: Latest
 'Manual target load': 'Manual target load'
 'Not estimated yet': 'Not estimated yet'
+'Workout target estimate': 'Workout target estimate'
 'No estimated planned sessions in the next {days} days yet.': 'No estimated planned sessions in the next {days} days yet.'
 'Planned session': 'Planned session'
 'Planner outlook': 'Planner outlook'

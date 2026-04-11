@@ -49,6 +49,14 @@ const formatDuration = (seconds) => {
     return m > 0 ? h + 'h ' + m + 'm' : h + 'h';
 };
 
+const formatChartNumber = (value) => {
+    if (value === undefined || value === null || Number.isNaN(Number(value))) {
+        return '-';
+    }
+
+    return Number.isInteger(Number(value)) ? `${Number(value)}` : Number(value).toFixed(1);
+};
+
 export const registerEchartsCallbacks = () => {
     window.statisticsForStrava.callbacks = {
         formatSeconds,
@@ -92,6 +100,46 @@ export const registerEchartsCallbacks = () => {
             return '<b>' + duration + '</b><br/>' + params.map(
                 p => p.marker + ' ' + p.seriesName + ': <b>' + p.value[1] + 'w</b>'
             ).join('<br/>');
+        },
+        formatTrainingLoadTooltip: (params) => {
+            if (!Array.isArray(params)) params = [params];
+            if (params.length === 0) {
+                return '';
+            }
+
+            const seriesOrder = ['CTL (Fitness)', 'ATL (Fatigue)', 'TSB (Form)', 'Daily load'];
+            const seriesNameMap = {
+                __forecast_ctl: 'CTL (Fitness)',
+                __forecast_atl: 'ATL (Fatigue)',
+                __forecast_tsb: 'TSB (Form)',
+                __forecast_load: 'Daily load',
+            };
+            const preferredEntries = new Map();
+
+            params.forEach((param) => {
+                if (param.value === undefined || param.value === null || param.value === '') {
+                    return;
+                }
+
+                const finalDisplayName = seriesNameMap[param.seriesName] ?? param.seriesName;
+                const isForecast = Object.prototype.hasOwnProperty.call(seriesNameMap, param.seriesName);
+                const existing = preferredEntries.get(finalDisplayName);
+
+                if (!existing || isForecast) {
+                    preferredEntries.set(finalDisplayName, param);
+                }
+            });
+
+            const axisLabel = params[0].axisValueLabel ?? params[0].name ?? '';
+            const rows = seriesOrder
+                .filter((label) => preferredEntries.has(label))
+                .map((label) => {
+                    const param = preferredEntries.get(label);
+
+                    return `${param.marker} ${label}: <strong>${formatChartNumber(param.value)}</strong>`;
+                });
+
+            return [axisLabel, ...rows].join('<br/>');
         },
         symbolSize: (params) => {
             return (params[2] / 100) * 15 + 5;

@@ -338,6 +338,7 @@ export default class WorkoutEditor {
             return;
         }
 
+        this.setManualTargetLoadOverride(editorNode.closest('[data-planned-session-form]'), false);
         const stepNode = this.createNodeFromTemplate(editorNode, stepTemplate);
         stepNode.dataset.parentBlockId = parentBlockId;
         targetContainer.appendChild(stepNode);
@@ -351,11 +352,13 @@ export default class WorkoutEditor {
             return;
         }
 
+        this.setManualTargetLoadOverride(editorNode.closest('[data-planned-session-form]'), false);
         topLevelDropzone.appendChild(this.createNodeFromTemplate(editorNode, blockTemplate));
         this.refreshEditor(editorNode);
     }
 
     removeItem(editorNode, itemNode) {
+        this.setManualTargetLoadOverride(editorNode.closest('[data-planned-session-form]'), false);
         if (itemNode.matches('[data-workout-block]')) {
             const blockStepsNode = itemNode.querySelector('[data-workout-block-steps]');
             if (blockStepsNode) {
@@ -370,6 +373,7 @@ export default class WorkoutEditor {
     }
 
     duplicateItem(editorNode, itemNode) {
+        this.setManualTargetLoadOverride(editorNode.closest('[data-planned-session-form]'), false);
         const cloneNode = itemNode.cloneNode(true);
         this.assignFreshItemIds(editorNode, cloneNode);
         itemNode.after(cloneNode);
@@ -402,6 +406,7 @@ export default class WorkoutEditor {
         });
         this.reindexEditor(editorNode);
         this.refreshPlannerAutofill(editorNode);
+        this.refreshStructuredPreview(editorNode);
     }
 
     refreshTargetFields(stepNode) {
@@ -482,7 +487,7 @@ export default class WorkoutEditor {
         const loadInput = this.getPlannerField(formNode, '[data-planned-session-target-load]');
         if (loadInput) {
             const updateManualState = () => {
-                formNode.dataset.plannedSessionManualTargetLoad = loadInput.value.trim() === '' ? 'false' : 'true';
+                this.setManualTargetLoadOverride(formNode, loadInput.value.trim() !== '');
                 refresh();
             };
 
@@ -498,14 +503,20 @@ export default class WorkoutEditor {
             this.getPlannerField(formNode, '[data-planned-session-target-duration-minutes]'),
             this.getPlannerField(formNode, '[data-planned-session-target-duration-seconds]'),
         ].filter(Boolean).forEach((fieldNode) => {
-            fieldNode.addEventListener('change', refresh);
+            const clearManualOverrideAndRefresh = () => {
+                this.setManualTargetLoadOverride(formNode, false);
+                refresh();
+            };
+
+            fieldNode.addEventListener('change', clearManualOverrideAndRefresh);
             if (fieldNode.matches('input')) {
-                fieldNode.addEventListener('input', refresh);
+                fieldNode.addEventListener('input', clearManualOverrideAndRefresh);
             }
         });
 
         if (activityTypeField) {
             activityTypeField.addEventListener('change', () => {
+                this.setManualTargetLoadOverride(formNode, false);
                 editorNode.querySelectorAll('[data-workout-step]').forEach((stepNode) => this.refreshTargetFields(stepNode));
                 editorNode.querySelectorAll('[data-workout-block]').forEach((blockNode) => this.refreshBlockSummary(blockNode));
                 refresh();
@@ -543,7 +554,7 @@ export default class WorkoutEditor {
                 estimatedLoad: this.parseNullableFloat(loadInput?.value),
                 sourceLabel: this.getPlannerEstimationContext(formNode).labels?.manualTargetLoad ?? 'Manual target load',
             }
-            : this.estimatePlannerLoad(formNode, effectiveDurationInSeconds);
+            : this.estimatePlannerLoad(formNode, effectiveDurationInSeconds, workoutItems);
 
         if (!estimate?.estimatedLoad && estimate?.estimatedLoad !== 0) {
             estimate = null;
@@ -628,12 +639,13 @@ export default class WorkoutEditor {
         return document.querySelector(`${selector}[form="${formNode.id}"]`) ?? formNode.querySelector(selector);
     }
 
-    estimatePlannerLoad(formNode, effectiveDurationInSeconds) {
+    estimatePlannerLoad(formNode, effectiveDurationInSeconds, workoutItems = []) {
         const context = this.getPlannerEstimationContext(formNode);
         const templateSelect = this.getPlannerField(formNode, '[data-planned-session-template-activity]');
         const selectedTemplateOption = templateSelect?.selectedOptions?.[0] ?? null;
         const templateLoad = this.parseNullableFloat(selectedTemplateOption?.dataset.estimatedLoad);
         const templateMovingTimeInSeconds = this.parseNullableInteger(selectedTemplateOption?.dataset.movingTimeSeconds);
+        const activityTypeValue = this.getPlannerField(formNode, '[data-planned-session-activity-type]')?.value ?? '';
 
         if (templateSelect?.value && templateLoad !== null) {
             let estimatedLoad = templateLoad;
@@ -648,6 +660,16 @@ export default class WorkoutEditor {
             };
         }
 
+        if (Array.isArray(workoutItems) && workoutItems.length > 0) {
+            const workoutEstimatedLoad = this.estimateWorkoutSequenceLoad(formNode, workoutItems, activityTypeValue);
+            if (workoutEstimatedLoad !== null) {
+                return {
+                    estimatedLoad: this.roundToSingleDecimal(workoutEstimatedLoad),
+                    sourceLabel: context.labels?.workoutTargets ?? 'Workout target estimate',
+                };
+            }
+        }
+
         if (effectiveDurationInSeconds === null || effectiveDurationInSeconds <= 0) {
             return null;
         }
@@ -657,7 +679,6 @@ export default class WorkoutEditor {
             return null;
         }
 
-        const activityTypeValue = this.getPlannerField(formNode, '[data-planned-session-activity-type]')?.value ?? '';
         const loadPerHour = context.loadPerHourByActivityType?.[activityTypeValue] ?? context.globalLoadPerHour ?? null;
         const intensityMultiplier = context.intensityMultipliers?.[intensityValue] ?? null;
         if (!Number.isFinite(loadPerHour) || !Number.isFinite(intensityMultiplier)) {
@@ -668,6 +689,209 @@ export default class WorkoutEditor {
             estimatedLoad: this.roundToSingleDecimal((effectiveDurationInSeconds / 3600) * loadPerHour * intensityMultiplier),
             sourceLabel: context.labels?.durationIntensity ?? 'Duration and intensity estimate',
         };
+    }
+
+    estimateWorkoutSequenceLoad(formNode, workoutItems, activityTypeValue, parentBlockId = null) {
+        let totalEstimatedLoad = 0;
+
+        for (const workoutItem of workoutItems) {
+            if ((workoutItem.parentBlockId ?? null) !== parentBlockId) {
+                continue;
+            }
+
+            if (workoutItem.type === 'repeatBlock') {
+                const childEstimatedLoad = this.estimateWorkoutSequenceLoad(formNode, workoutItems, activityTypeValue, workoutItem.itemId);
+                if (childEstimatedLoad === null) {
+                    return null;
+                }
+
+                totalEstimatedLoad += Math.max(1, workoutItem.repetitions ?? 1) * childEstimatedLoad;
+
+                continue;
+            }
+
+            const stepEstimatedLoad = this.estimateWorkoutStepLoad(formNode, workoutItem, activityTypeValue);
+            if (stepEstimatedLoad === null) {
+                return null;
+            }
+
+            totalEstimatedLoad += Math.max(1, workoutItem.repetitions ?? 1) * stepEstimatedLoad;
+        }
+
+        return totalEstimatedLoad;
+    }
+
+    estimateWorkoutStepLoad(formNode, workoutStep, activityTypeValue) {
+        const estimatedStepDurationInSeconds = this.estimateWorkoutStepDurationInSeconds(workoutStep);
+        if (estimatedStepDurationInSeconds === null || estimatedStepDurationInSeconds <= 0) {
+            return null;
+        }
+
+        if (activityTypeValue === 'Ride' && Number.isFinite(workoutStep.targetPower) && workoutStep.targetPower > 0) {
+            const loadPerHour = this.estimateLoadPerHourFromPowerTarget(formNode, activityTypeValue, workoutStep.targetPower);
+            if (loadPerHour !== null) {
+                return (estimatedStepDurationInSeconds / 3600) * loadPerHour;
+            }
+        }
+
+        if (activityTypeValue === 'Run' && workoutStep.targetPace) {
+            const loadPerHour = this.estimateLoadPerHourFromPaceTarget(formNode, activityTypeValue, workoutStep.targetPace);
+            if (loadPerHour !== null) {
+                return (estimatedStepDurationInSeconds / 3600) * loadPerHour;
+            }
+        }
+
+        const fallbackLoadPerHour = this.estimateFallbackWorkoutStepLoadPerHour(formNode, workoutStep, activityTypeValue);
+        if (fallbackLoadPerHour === null) {
+            return null;
+        }
+
+        return (estimatedStepDurationInSeconds / 3600) * fallbackLoadPerHour;
+    }
+
+    estimateFallbackWorkoutStepLoadPerHour(formNode, workoutStep, activityTypeValue) {
+        const context = this.getPlannerEstimationContext(formNode);
+        const historicalLoadPerHour = context.loadPerHourByActivityType?.[activityTypeValue] ?? context.globalLoadPerHour ?? null;
+        if (!Number.isFinite(historicalLoadPerHour)) {
+            return null;
+        }
+
+        const intensityValue = this.getPlannerField(formNode, '[data-planned-session-intensity]')?.value ?? '';
+        const sessionIntensityMultiplier = Number.isFinite(context.intensityMultipliers?.[intensityValue])
+            ? context.intensityMultipliers[intensityValue]
+            : null;
+        const defaultMultiplier = this.getDefaultWorkoutStepIntensityMultiplier(workoutStep.type);
+
+        let multiplier = defaultMultiplier;
+        if (sessionIntensityMultiplier !== null) {
+            switch (workoutStep.type) {
+            case 'recovery':
+            case 'warmup':
+            case 'cooldown':
+                multiplier = Math.min(sessionIntensityMultiplier, defaultMultiplier);
+                break;
+            case 'interval':
+                multiplier = Math.max(sessionIntensityMultiplier, defaultMultiplier);
+                break;
+            default:
+                multiplier = sessionIntensityMultiplier;
+                break;
+            }
+        }
+
+        return this.roundToSingleDecimal(historicalLoadPerHour * multiplier);
+    }
+
+    getDefaultWorkoutStepIntensityMultiplier(stepType) {
+        switch (stepType) {
+        case 'recovery':
+            return 0.65;
+        case 'warmup':
+        case 'cooldown':
+            return 0.8;
+        case 'interval':
+            return 1.15;
+        default:
+            return 1.0;
+        }
+    }
+
+    estimateLoadPerHourFromPowerTarget(formNode, activityTypeValue, targetPower) {
+        if (!Number.isFinite(targetPower) || targetPower <= 0) {
+            return null;
+        }
+
+        if (activityTypeValue === 'Ride') {
+            const ftp = this.getFtpForActivityTypeOnDay(formNode, activityTypeValue);
+            if (Number.isFinite(ftp) && ftp > 0) {
+                const intensityFactor = this.clamp(targetPower / ftp, 0.35, 1.8);
+
+                return this.roundToSingleDecimal((intensityFactor ** 2) * 100);
+            }
+        }
+
+        const samples = this.getPlannerEstimationContext(formNode).effortLoadPerHourSamples?.[activityTypeValue]?.power ?? [];
+
+        return this.estimateLoadPerHourFromEffortSamples(targetPower, samples, true);
+    }
+
+    estimateLoadPerHourFromPaceTarget(formNode, activityTypeValue, targetPace) {
+        const secondsPerMeter = this.parsePaceSecondsPerMeter(targetPace);
+        if (secondsPerMeter === null) {
+            return null;
+        }
+
+        const samples = this.getPlannerEstimationContext(formNode).effortLoadPerHourSamples?.[activityTypeValue]?.pace ?? [];
+
+        return this.estimateLoadPerHourFromEffortSamples(secondsPerMeter * 1000, samples, false);
+    }
+
+    estimateLoadPerHourFromEffortSamples(targetEffort, samples, higherEffortIsHarder) {
+        if (!Number.isFinite(targetEffort) || targetEffort <= 0 || !Array.isArray(samples) || samples.length === 0) {
+            return null;
+        }
+
+        const nearestSamples = [...samples]
+            .filter((sample) => Number.isFinite(sample?.effort) && sample.effort > 0 && Number.isFinite(sample?.loadPerHour) && sample.loadPerHour > 0)
+            .sort((left, right) => this.calculateRelativeEffortDistance(targetEffort, left.effort) - this.calculateRelativeEffortDistance(targetEffort, right.effort))
+            .slice(0, 3);
+        if (nearestSamples.length === 0) {
+            return null;
+        }
+
+        let weightedLoadPerHour = 0;
+        let weightedEffort = 0;
+        let totalWeight = 0;
+
+        nearestSamples.forEach((sample) => {
+            const distance = this.calculateRelativeEffortDistance(targetEffort, sample.effort);
+            const weight = 1 / Math.max(0.05, distance + 0.05);
+
+            weightedLoadPerHour += sample.loadPerHour * weight;
+            weightedEffort += sample.effort * weight;
+            totalWeight += weight;
+        });
+
+        if (totalWeight <= 0) {
+            return null;
+        }
+
+        const referenceLoadPerHour = weightedLoadPerHour / totalWeight;
+        const referenceEffort = weightedEffort / totalWeight;
+        const effortRatio = higherEffortIsHarder
+            ? targetEffort / Math.max(1, referenceEffort)
+            : referenceEffort / Math.max(1, targetEffort);
+
+        return this.roundToSingleDecimal(referenceLoadPerHour * this.clamp(effortRatio, 0.75, 1.35));
+    }
+
+    calculateRelativeEffortDistance(targetEffort, sampleEffort) {
+        if (!Number.isFinite(targetEffort) || !Number.isFinite(sampleEffort) || targetEffort <= 0 || sampleEffort <= 0) {
+            return Number.POSITIVE_INFINITY;
+        }
+
+        return Math.abs(Math.log(targetEffort / sampleEffort));
+    }
+
+    getFtpForActivityTypeOnDay(formNode, activityTypeValue) {
+        const context = this.getPlannerEstimationContext(formNode);
+        const ftpEntries = context.ftpHistoryByActivityType?.[activityTypeValue];
+        const selectedDayValue = this.getPlannerField(formNode, 'input[name="day"]')?.value ?? '';
+        if (!Array.isArray(ftpEntries) || !selectedDayValue) {
+            return null;
+        }
+
+        let matchedFtp = null;
+        ftpEntries.forEach((entry) => {
+            const ftpValue = Number(entry?.ftp);
+            if (!entry?.setOn || !Number.isFinite(ftpValue) || entry.setOn > selectedDayValue) {
+                return;
+            }
+
+            matchedFtp = ftpValue;
+        });
+
+        return matchedFtp;
     }
 
     updatePlannerEstimateDisplay(formNode, estimate, state) {
@@ -937,8 +1161,25 @@ export default class WorkoutEditor {
         return Math.round(value * 10) / 10;
     }
 
+    clamp(value, min, max) {
+        return Math.max(min, Math.min(max, value));
+    }
+
     formatLoadValue(value) {
         return this.roundToSingleDecimal(value).toFixed(1);
+    }
+
+    setManualTargetLoadOverride(formNode, isManualOverride) {
+        if (!formNode) {
+            return;
+        }
+
+        formNode.dataset.plannedSessionManualTargetLoad = isManualOverride ? 'true' : 'false';
+
+        const manualTargetLoadInput = formNode.querySelector('[data-planned-session-manual-target-load-input]');
+        if (manualTargetLoadInput) {
+            manualTargetLoadInput.value = isManualOverride ? '1' : '0';
+        }
     }
 
     initPlannerOutlookToggles(rootNode) {
@@ -1007,6 +1248,110 @@ export default class WorkoutEditor {
         if (toggleLabelNode) {
             toggleLabelNode.textContent = toggleLabel;
         }
+    }
+
+    refreshStructuredPreview(editorNode) {
+        const formNode = editorNode.closest('[data-planned-session-form]');
+        const previewSectionNode = formNode?.querySelector('[data-workout-structured-preview]');
+        const previewTimelineNode = previewSectionNode?.querySelector('[data-workout-structured-preview-timeline]');
+        if (!previewSectionNode || !previewTimelineNode) {
+            return;
+        }
+
+        const previewRows = this.buildStructuredPreviewRows(this.getTopLevelDropzone(editorNode), editorNode);
+        previewTimelineNode.replaceChildren();
+
+        if (previewRows.length === 0) {
+            previewSectionNode.classList.add('hidden');
+
+            return;
+        }
+
+        previewRows.forEach((previewRow) => {
+            previewTimelineNode.appendChild(this.createStructuredPreviewRow(previewRow));
+        });
+
+        previewSectionNode.classList.remove('hidden');
+    }
+
+    buildStructuredPreviewRows(containerNode, editorNode, depth = 0) {
+        if (!containerNode) {
+            return [];
+        }
+
+        const previewRows = [];
+        Array.from(containerNode.children)
+            .filter((childNode) => childNode.matches('[data-workout-item]'))
+            .forEach((itemNode) => {
+                if (itemNode.matches('[data-workout-block]')) {
+                    previewRows.push({
+                        headline: this.getStructuredPreviewBlockHeadline(itemNode, editorNode),
+                        meta: `${this.parsePositiveInteger(itemNode.querySelector('[data-workout-block-reps-input]')?.value, 1)} ${editorNode.dataset.workoutPreviewRepeatsLabel ?? 'repeats'}`,
+                        depth,
+                    });
+
+                    previewRows.push(...this.buildStructuredPreviewRows(itemNode.querySelector('[data-workout-block-steps]'), editorNode, depth + 1));
+
+                    return;
+                }
+
+                previewRows.push({
+                    headline: this.getStructuredPreviewStepHeadline(itemNode),
+                    meta: this.getStructuredPreviewStepMeta(itemNode),
+                    depth,
+                });
+            });
+
+        return previewRows;
+    }
+
+    getStructuredPreviewBlockHeadline(blockNode, editorNode) {
+        return blockNode.querySelector('input[name$="[label]"]')?.value?.trim()
+            || editorNode.dataset.workoutPreviewBlockLabel
+            || 'Repeat block';
+    }
+
+    getStructuredPreviewStepHeadline(stepNode) {
+        const label = stepNode.querySelector('input[name$="[label]"]')?.value?.trim();
+        const typeLabel = stepNode.querySelector('select[name$="[type]"] option:checked')?.textContent?.trim() ?? 'Set';
+
+        return label ? `${typeLabel} · ${label}` : typeLabel;
+    }
+
+    getStructuredPreviewStepMeta(stepNode) {
+        const repetitions = this.parsePositiveInteger(stepNode.querySelector('input[name$="[repetitions]"]')?.value, 1);
+        const targetSummary = this.describeWorkoutTarget(stepNode);
+
+        return [repetitions > 1 ? `${repetitions}x` : null, targetSummary].filter(Boolean).join(' · ');
+    }
+
+    createStructuredPreviewRow(previewRow) {
+        const rowNode = document.createElement('div');
+        rowNode.className = 'planned-session-timeline-item';
+        if (previewRow.depth > 0) {
+            rowNode.style.marginLeft = `${previewRow.depth * 1.25}rem`;
+        }
+
+        const dotNode = document.createElement('div');
+        dotNode.className = 'planned-session-timeline-dot';
+
+        const contentNode = document.createElement('div');
+        contentNode.className = 'min-w-0';
+
+        const headlineNode = document.createElement('div');
+        headlineNode.className = 'text-xs font-medium text-gray-800 leading-tight';
+        headlineNode.textContent = previewRow.headline;
+
+        const metaNode = document.createElement('div');
+        metaNode.className = 'text-[10px] text-gray-500';
+        metaNode.textContent = previewRow.meta;
+
+        contentNode.appendChild(headlineNode);
+        contentNode.appendChild(metaNode);
+        rowNode.appendChild(dotNode);
+        rowNode.appendChild(contentNode);
+
+        return rowNode;
     }
 
     describeWorkoutItem(itemNode) {
@@ -1339,6 +1684,10 @@ export default class WorkoutEditor {
     }
 
     refreshDependentSummaries(targetNode, editorNode) {
+        if (targetNode.closest('[data-workout-item]')) {
+            this.setManualTargetLoadOverride(editorNode.closest('[data-planned-session-form]'), false);
+        }
+
         const blockNode = targetNode.closest('[data-workout-block]');
         if (blockNode) {
             this.refreshBlockSummary(blockNode);
@@ -1354,6 +1703,7 @@ export default class WorkoutEditor {
         }
 
         this.refreshPlannerAutofill(editorNode);
+        this.refreshStructuredPreview(editorNode);
     }
 
     showDropIndicator(editorNode, dropzone, referenceNode) {

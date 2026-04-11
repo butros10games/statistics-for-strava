@@ -8,7 +8,7 @@ use App\Infrastructure\ValueObject\Time\SerializableDateTime;
 
 final class TrainingLoadForecastProjection
 {
-    /** @var array<int, array{day: SerializableDateTime, projectedLoad: float, tsb: TSB, acRatio: AcRatio}> */
+    /** @var array<int, array{day: SerializableDateTime, projectedLoad: float, ctl: float, atl: float, tsb: TSB, acRatio: AcRatio}> */
     private array $forecast = [];
     private ?int $daysUntilTsbHealthy = null;
     private ?int $daysUntilAcRatioHealthy = null;
@@ -90,6 +90,8 @@ final class TrainingLoadForecastProjection
             $this->forecast[] = [
                 'day' => $this->now->modify(sprintf('+ %d days', $day)),
                 'projectedLoad' => $projectedLoad,
+                'ctl' => round($ctl, 1),
+                'atl' => round($atl, 1),
                 'tsb' => TSB::of($tsb),
                 'acRatio' => AcRatio::of($acRatio),
             ];
@@ -97,7 +99,7 @@ final class TrainingLoadForecastProjection
     }
 
     /**
-     * @return array<int, array{day: SerializableDateTime, projectedLoad: float, tsb: TSB, acRatio: AcRatio}>
+     * @return array<int, array{day: SerializableDateTime, projectedLoad: float, ctl: float, atl: float, tsb: TSB, acRatio: AcRatio}>
      */
     public function getProjection(): array
     {

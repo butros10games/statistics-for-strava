@@ -1,12 +1,19 @@
 {% autoescape false %}
+    {% set currentTsb = trainingMetrics.getCurrentTsb() %}
+    {% set currentAcRatio = trainingMetrics.getCurrentAcRatio() %}
+    {% set currentMonotony = trainingMetrics.getCurrentMonotony() %}
+    {% set tsbColor = currentTsb.getStatus().getTextColor() %}
+    {% set acColor = currentAcRatio.getStatus().getTextColor() %}
+    {% set monotonyColor = currentMonotony > 2.0 ? 'text-red-600' : (currentMonotony > 1.5 ? 'text-yellow-600' : 'text-green-600') %}
+
     <!-- Modal header -->
     <div class="modal-header flex items-center justify-between">
         <h3>
-            <span> {{ "Training Load Analysis"|trans }}</span>
+            <span>{{ "Training Load Analysis"|trans }}</span>
         </h3>
         <div class="flex items-center gap-2">
             <a href="{{ relativeUrl('api/exports/training-advisor.json') }}" download="training-advisor.json"
-               class="inline-flex items-center gap-2 rounded-lg border border-blue-200 px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50">
+               class="inline-flex items-center gap-2 rounded-lg border border-blue-200 px-3 py-2 text-sm font-medium text-blue-700 hover:bg-blue-50 dark:border-blue-800 dark:text-blue-400 dark:hover:bg-blue-900/30">
                 {{ "Export for AI feedback"|trans }}
             </a>
             <button type="button" class="close">
@@ -20,113 +27,165 @@
     <!-- Modal body -->
     <div class="modal-body space-y-4">
         <!-- Tabs -->
-        <div class="tabs tabs--default">
-            <ul id="trainingLoadTab" data-tabs="#trainingLoadTabContent" role="tablist">
-                <li role="presentation">
-                    <a href="#" data-tabs-target="#history" role="tab" aria-controls="history">
-                        {{ "History (6 weeks)"|trans }}
-                    </a>
-                </li>
-                <li role="presentation">
-                    <a href="#" data-tabs-target="#forecast" role="tab" aria-controls="forecast">
-                        {{ "Recovery forecast"|trans }}
-                    </a>
-                </li>
-            </ul>
-        </div>
+        <ul class="tabs tabs--menu-item" id="trainingLoadTab" data-tabs="#trainingLoadTabContent" role="tablist">
+            <li role="presentation">
+                <a href="#" data-tabs-target="#tl-overview" role="tab" aria-controls="tl-overview">
+                    {{ "Overview"|trans }}
+                </a>
+            </li>
+            <li role="presentation">
+                <a href="#" data-tabs-target="#tl-insights" role="tab" aria-controls="tl-insights">
+                    {{ "Insights"|trans }}
+                </a>
+            </li>
+            <li role="presentation">
+                <a href="#" data-tabs-target="#tl-forecast" role="tab" aria-controls="tl-forecast">
+                    {{ "Forecast"|trans }}
+                </a>
+            </li>
+        </ul>
         <div id="trainingLoadTabContent">
-            <!-- Metrics Tab -->
-            <div id="history" role="tabpanel" aria-labelledby="history-tab">
-                <div class="h-120" data-echarts-options='{{ trainingLoadChart }}'></div>
-                <div class="mt-4 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                    {% include 'html/dashboard/training-metrics.html.twig' with {'trainingMetrics': trainingMetrics, 'context': 'modal' } %}
-                </div>
-                {% set analyticsSectionCardClass = 'rounded-xl border border-gray-200 bg-gray-100 px-3 py-3 shadow-xs dark:border-gray-700 dark:bg-gray-800/80' %}
-                {% set analyticsSectionHeadingClass = 'text-sm font-medium text-gray-500 dark:text-gray-400' %}
-                {% set analyticsSectionBodyClass = 'text-sm text-gray-600 dark:text-gray-300' %}
-                {% set analyticsSectionMetaClass = 'text-xs text-gray-500 dark:text-gray-400' %}
-                {% set strongSignalPillStyle = 'background-color: #DBEAFE; color: #1D4ED8;' %}
-                {% set moderateSignalPillStyle = 'background-color: var(--color-gray-200); color: var(--color-gray-700);' %}
-                {% set bouncesBackPillStyle = 'background-color: #D1FAE5; color: #065F46;' %}
-                {% set mixedResponsePillStyle = 'background-color: var(--color-gray-200); color: var(--color-gray-700);' %}
-                {% set needsBufferPillStyle = 'background-color: #FEF3C7; color: #9A3412;' %}
-                {% set higherConfidencePillStyle = 'background-color: #DBEAFE; color: #1D4ED8;' %}
-                {% set emergingConfidencePillStyle = 'background-color: var(--color-gray-200); color: var(--color-gray-700);' %}
-                <div class="mt-4 space-y-5">
-                    {% if correlationInsights|length > 0 %}
-                        <div class="space-y-3.5">
-                            <div class="flex items-center justify-between px-1">
-                                <h4 class="{{ analyticsSectionHeadingClass }}">{{ "Correlation insights (90 days)"|trans }}</h4>
-                                <span class="inline-flex items-center rounded-full bg-gray-200 px-2 py-0.5 text-xs font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-200">{{ correlationInsights|length }}</span>
-                            </div>
-                            <div class="space-y-3.5">
-                                {% for insight in correlationInsights %}
-                                    <div class="{{ analyticsSectionCardClass }} space-y-2">
-                                        <div class="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
-                                            <div>
-                                                <div class="text-sm font-semibold text-gray-800 dark:text-gray-100">{{ insight.getTitle()|trans }}</div>
-                                                <p class="mt-1 {{ analyticsSectionBodyClass }}">{{ insight.getSummary()|trans }}</p>
-                                            </div>
-                                            <span class="inline-flex items-center self-start rounded-full px-2 py-0.5 text-xs font-semibold shadow-sm" style="{{ insight.getCorrelation()|abs >= 0.55 ? strongSignalPillStyle : moderateSignalPillStyle }}">{{ insight.getStrengthLabel()|trans }}</span>
-                                        </div>
-                                        <div class="flex flex-wrap gap-x-4 gap-y-1 {{ analyticsSectionMetaClass }}">
-                                            <span>{{ "Correlation"|trans }} {{ insight.getCorrelation()|formatNumber(2) }}</span>
-                                            <span>{{ "Samples"|trans }} {{ insight.getSampleSize() }}</span>
+            {# ═══════════════════════════════════════════════════ #}
+            {# ══ TAB 1: OVERVIEW ══════════════════════════════ #}
+            {# ═══════════════════════════════════════════════════ #}
+            <div id="tl-overview" role="tabpanel" aria-labelledby="tl-overview-tab">
+                {# ── Readiness hero card ── #}
+                {% if readinessScore %}
+                    {% set readinessColor = readinessScore.getStatus().getTextColor() %}
+                    {% set topPositiveReadinessFactors = readinessAssessment ? readinessAssessment.getTopPositiveFactors(2) : [] %}
+                    {% set topNegativeReadinessFactors = readinessAssessment ? readinessAssessment.getTopNegativeFactors(2) : [] %}
+                    <div class="rounded-xl border border-gray-200 bg-gray-100 p-5 shadow-xs border-l-4 {{ readinessColor|replace({'text-': 'border-l-'}) }}">
+                        <div class="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                            <div class="flex-1">
+                                <div class="flex items-center gap-1.5 mb-2">
+                                    <h4 class="text-sm font-medium text-gray-500">{{ "Readiness"|trans }}</h4>
+                                    <button class="hidden lg:block" data-popover-target="popover-readiness-modal" data-popover-placement="right" type="button">
+                                        <svg class="w-4 h-4 text-gray-400 hover:text-gray-500" aria-hidden="true" fill="currentColor" viewBox="0 0 20 20" xmlns="http://www.w3.org/2000/svg"><path fill-rule="evenodd" d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-8-3a1 1 0 00-.867.5 1 1 0 11-1.731-1A3 3 0 0113 8a3.001 3.001 0 01-2 2.83V11a1 1 0 11-2 0v-1a1 1 0 011-1 1 1 0 100-2zm0 8a1 1 0 100-2 1 1 0 000 2z" clip-rule="evenodd"></path></svg>
+                                    </button>
+                                    <div data-popover id="popover-readiness-modal" role="tooltip" class="hidden lg:block max-w-100 text-xs">
+                                        <div class="p-2 space-y-2">
+                                            <p>{{ "A research-informed readiness score that blends load balance, monotony, individualized HRV/sleep baselines, and your latest morning recovery check-in."|trans }}</p>
+                                            <ul class="space-y-2">
+                                                {% for readinessStatus in enum('App\\Domain\\Dashboard\\Widget\\TrainingLoad\\ReadinessStatus').cases() %}
+                                                    <li><span class="{{ readinessStatus.getTextColor() }} font-semibold">{{ readinessStatus.getRange() }}</span>: {{ readinessStatus|trans }} - {{ readinessStatus|transDescription }}</li>
+                                                {% endfor %}
+                                            </ul>
                                         </div>
                                     </div>
-                                {% endfor %}
-                            </div>
-                        </div>
-                    {% endif %}
-                    {% if activityTypeRecoveryFingerprints|length > 0 %}
-                        <div class="space-y-3.5">
-                            <div class="flex items-center justify-between px-1">
-                                <h4 class="{{ analyticsSectionHeadingClass }}">{{ "Activity-type recovery fingerprints"|trans }}</h4>
-                                <span class="inline-flex items-center rounded-full bg-gray-200 px-2 py-0.5 text-xs font-medium text-gray-600 dark:bg-gray-700 dark:text-gray-200">{{ activityTypeRecoveryFingerprints|length }}</span>
-                            </div>
-                            <div class="space-y-4">
-                                {% for fingerprint in activityTypeRecoveryFingerprints %}
-                                    {% set fingerprintProfilePillStyle = fingerprint.getProfile() == enum('App\\Domain\\Dashboard\\Widget\\TrainingLoad\\ActivityTypeRecoveryFingerprintProfile').BOUNCES_BACK ? bouncesBackPillStyle : (fingerprint.getProfile() == enum('App\\Domain\\Dashboard\\Widget\\TrainingLoad\\ActivityTypeRecoveryFingerprintProfile').NEEDS_BUFFER ? needsBufferPillStyle : mixedResponsePillStyle) %}
-                                    {% set fingerprintConfidencePillStyle = fingerprint.getSampleSize() >= 6 ? higherConfidencePillStyle : emergingConfidencePillStyle %}
-                                    <div class="{{ analyticsSectionCardClass }} space-y-2.5">
-                                        <div class="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
-                                            <div>
-                                                <div class="text-sm font-semibold text-gray-800 dark:text-gray-100">{{ fingerprint.getActivityType()|trans }}</div>
-                                                <p class="mt-1 {{ analyticsSectionBodyClass }}">{{ fingerprint.getProfile().getDescription()|trans }}</p>
-                                            </div>
-                                            <div class="flex flex-wrap gap-1.5">
-                                                <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold shadow-sm" style="{{ fingerprintProfilePillStyle }}">{{ fingerprint.getProfile().getLabel()|trans }}</span>
-                                                <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold shadow-sm" style="{{ fingerprintConfidencePillStyle }}">{{ fingerprint.getConfidenceLabel()|trans }}</span>
-                                            </div>
-                                        </div>
-                                        <div class="flex flex-wrap md:flex-nowrap items-start gap-x-6 gap-y-2 {{ analyticsSectionMetaClass }}">
-                                            <div class="min-w-24 flex-1">
-                                                <div>{{ "Avg load"|trans }}</div>
-                                                <div class="mt-0.5 text-sm font-semibold text-gray-800 dark:text-gray-100">{{ fingerprint.getAverageLoad()|formatNumber(1) }}</div>
-                                            </div>
-                                            <div class="min-w-24 flex-1">
-                                                <div>{{ "Next-day HRV"|trans }}</div>
-                                                <div class="mt-0.5 text-sm font-semibold {{ fingerprint.getNextDayHrvDelta() is not null and fingerprint.getNextDayHrvDelta() >= 0 ? 'text-green-600 dark:text-green-400' : 'text-orange-500 dark:text-orange-300' }}">{{ fingerprint.getNextDayHrvDelta() is null ? 'n/a' : fingerprint.getNextDayHrvDelta()|formatNumber(1) }}</div>
-                                            </div>
-                                            <div class="min-w-24 flex-1">
-                                                <div>{{ "Sleep score"|trans }}</div>
-                                                <div class="mt-0.5 text-sm font-semibold {{ fingerprint.getNextDaySleepScoreDelta() is not null and fingerprint.getNextDaySleepScoreDelta() >= 0 ? 'text-green-600 dark:text-green-400' : 'text-orange-500 dark:text-orange-300' }}">{{ fingerprint.getNextDaySleepScoreDelta() is null ? 'n/a' : fingerprint.getNextDaySleepScoreDelta()|formatNumber(1) }}</div>
-                                            </div>
-                                            <div class="min-w-24 flex-1">
-                                                <div>{{ "Fatigue"|trans }}</div>
-                                                <div class="mt-0.5 text-sm font-semibold {{ fingerprint.getNextDayFatigueDelta() is not null and fingerprint.getNextDayFatigueDelta() <= 0 ? 'text-green-600 dark:text-green-400' : 'text-orange-500 dark:text-orange-300' }}">{{ fingerprint.getNextDayFatigueDelta() is null ? 'n/a' : fingerprint.getNextDayFatigueDelta()|formatNumber(1) }}</div>
-                                            </div>
-                                            <div class="min-w-20 flex-1">
-                                                <div>{{ "Samples"|trans }}</div>
-                                                <div class="mt-0.5 text-sm font-semibold text-gray-700 dark:text-gray-200">{{ fingerprint.getSampleSize() }}</div>
-                                            </div>
+                                </div>
+                                <div class="flex items-baseline gap-3 mb-2">
+                                    <div class="text-3xl font-bold {{ readinessColor }}">{{ readinessScore.getValue()|formatNumber(0) }}<span class="text-lg text-gray-500 font-normal">/100</span></div>
+                                    <span class="inline-flex items-center rounded-full px-2.5 py-0.5 text-xs font-medium {{ readinessColor }} bg-gray-200">{{ readinessScore.getStatus()|trans }}</span>
+                                </div>
+                                <div class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
+                                    {% if latestWellnessHrv is not null %}
+                                        <span>{{ "HRV"|trans }} {{ latestWellnessHrv|formatNumber(1) }}{% if wellnessHrvBaseline is not null %} / {{ wellnessHrvBaseline|formatNumber(1) }}{% endif %} ms</span>
+                                    {% endif %}
+                                    {% if latestWellnessSleepScore is not null %}
+                                        <span>{{ "Sleep score"|trans }} {{ latestWellnessSleepScore }}</span>
+                                    {% endif %}
+                                    {% if latestRecoveryCheckIn %}
+                                        <span>{{ "Fatigue"|trans }} {{ latestRecoveryCheckIn.fatigue }}/5</span>
+                                        <span>{{ "Stress"|trans }} {{ latestRecoveryCheckIn.stress }}/5</span>
+                                    {% endif %}
+                                </div>
+                                {% if topPositiveReadinessFactors or topNegativeReadinessFactors %}
+                                    <div class="mt-3 space-y-2">
+                                        <div class="text-[11px] uppercase tracking-wide text-gray-400">{{ "Top drivers"|trans }}</div>
+                                        <div class="flex flex-wrap gap-2">
+                                            {% for factor in topPositiveReadinessFactors %}
+                                                <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300">{{ factor.getLabel()|trans }} +{{ factor.getValue()|formatNumber(0) }}</span>
+                                            {% endfor %}
+                                            {% for factor in topNegativeReadinessFactors %}
+                                                <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-amber-100 text-amber-900 dark:bg-amber-900/40 dark:text-amber-300">{{ factor.getLabel()|trans }} {{ factor.getValue()|formatNumber(0) }}</span>
+                                            {% endfor %}
                                         </div>
                                     </div>
-                                {% endfor %}
+                                {% endif %}
+                                {% if readinessMismatchInsight %}
+                                    <div class="mt-3 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs">
+                                        <div class="font-semibold text-gray-700">{{ readinessMismatchInsight.getTitle()|trans }}</div>
+                                        <div class="mt-1 text-gray-500">{{ readinessMismatchInsight.getSummary()|trans }}</div>
+                                    </div>
+                                {% endif %}
+                            </div>
+                            {# ── Quick metrics alongside readiness (desktop) ── #}
+                            <div class="max-md:hidden grid grid-cols-3 gap-3 md:min-w-72 lg:min-w-80">
+                                <div class="rounded-lg border border-gray-200 bg-white p-3 text-center">
+                                    <div class="text-[11px] uppercase tracking-wide text-gray-400">{{ "CTL"|trans }}</div>
+                                    <div class="text-xl font-bold text-gray-800 mt-1">{{ trainingMetrics.getCurrentCtl()|formatNumber(1) }}</div>
+                                </div>
+                                <div class="rounded-lg border border-gray-200 bg-white p-3 text-center">
+                                    <div class="text-[11px] uppercase tracking-wide text-gray-400">{{ "ATL"|trans }}</div>
+                                    <div class="text-xl font-bold text-gray-800 mt-1">{{ trainingMetrics.getCurrentAtl()|formatNumber(1) }}</div>
+                                </div>
+                                <div class="rounded-lg border border-gray-200 bg-white p-3 text-center">
+                                    <div class="text-[11px] uppercase tracking-wide text-gray-400">{{ "TSB"|trans }}</div>
+                                    <div class="text-xl font-bold {{ tsbColor }} mt-1">{{ currentTsb.getValue()|formatNumber(1) }}</div>
+                                </div>
+                                <div class="rounded-lg border border-gray-200 bg-white p-3 text-center">
+                                    <div class="text-[11px] uppercase tracking-wide text-gray-400">{{ "A:C"|trans }}</div>
+                                    <div class="text-xl font-bold {{ acColor }} mt-1">{{ currentAcRatio.getValue()|formatNumber(2) }}</div>
+                                </div>
+                                <div class="rounded-lg border border-gray-200 bg-white p-3 text-center">
+                                    <div class="text-[11px] uppercase tracking-wide text-gray-400">{{ "Monotony"|trans }}</div>
+                                    <div class="text-xl font-bold {{ monotonyColor }} mt-1">{{ currentMonotony|formatNumber(2) }}</div>
+                                </div>
+                                <div class="rounded-lg border border-gray-200 bg-white p-3 text-center">
+                                    <div class="text-[11px] uppercase tracking-wide text-gray-400">{{ "Rest"|trans }}</div>
+                                    <div class="text-xl font-bold text-gray-800 mt-1">{{ restDaysInLast7Days }}/7</div>
+                                </div>
                             </div>
                         </div>
-                    {% endif %}
+                    </div>
+                {% endif %}
+
+                {# ── Compact metric strip (mobile only — shown below readiness card) ── #}
+                <div class="md:hidden mt-4 grid grid-cols-3 gap-2">
+                    <div class="rounded-lg border border-gray-200 bg-gray-100 p-2.5 text-center">
+                        <div class="text-[10px] uppercase tracking-wide text-gray-400">{{ "CTL"|trans }}</div>
+                        <div class="text-lg font-bold text-gray-800">{{ trainingMetrics.getCurrentCtl()|formatNumber(1) }}</div>
+                    </div>
+                    <div class="rounded-lg border border-gray-200 bg-gray-100 p-2.5 text-center">
+                        <div class="text-[10px] uppercase tracking-wide text-gray-400">{{ "ATL"|trans }}</div>
+                        <div class="text-lg font-bold text-gray-800">{{ trainingMetrics.getCurrentAtl()|formatNumber(1) }}</div>
+                    </div>
+                    <div class="rounded-lg border border-gray-200 bg-gray-100 p-2.5 text-center">
+                        <div class="text-[10px] uppercase tracking-wide text-gray-400">{{ "TSB"|trans }}</div>
+                        <div class="text-lg font-bold {{ tsbColor }}">{{ currentTsb.getValue()|formatNumber(1) }}</div>
+                    </div>
+                    <div class="rounded-lg border border-gray-200 bg-gray-100 p-2.5 text-center">
+                        <div class="text-[10px] uppercase tracking-wide text-gray-400">{{ "A:C"|trans }}</div>
+                        <div class="text-lg font-bold {{ acColor }}">{{ currentAcRatio.getValue()|formatNumber(2) }}</div>
+                    </div>
+                    <div class="rounded-lg border border-gray-200 bg-gray-100 p-2.5 text-center">
+                        <div class="text-[10px] uppercase tracking-wide text-gray-400">{{ "Monotony"|trans }}</div>
+                        <div class="text-lg font-bold {{ monotonyColor }}">{{ currentMonotony|formatNumber(2) }}</div>
+                    </div>
+                    <div class="rounded-lg border border-gray-200 bg-gray-100 p-2.5 text-center">
+                        <div class="text-[10px] uppercase tracking-wide text-gray-400">{{ "Rest"|trans }}</div>
+                        <div class="text-lg font-bold text-gray-800">{{ restDaysInLast7Days }}/7</div>
+                    </div>
                 </div>
+
+                {# ── Recovery trend warnings (inline alert) ── #}
+                {% if recoveryTrendWarnings|length > 0 %}
+                    <div class="mt-4 space-y-2">
+                        {% for warning in recoveryTrendWarnings %}
+                            <div class="flex items-center gap-3 rounded-lg border border-gray-200 bg-gray-50 px-4 py-2.5">
+                                <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ warning.getPillColors() }}">
+                                    {{ warning.getLabel()|trans }}
+                                </span>
+                                <span class="text-sm text-gray-700">{{ warning.getDescription()|trans }}</span>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                {# ── Training Load chart ── #}
+                <div class="mt-4 h-120" data-echarts-options='{{ trainingLoadChart }}'></div>
+
+                {# ── Recovery check-in ── #}
                 <div class="mt-4">
                     {% include 'html/dashboard/recovery-check-in-summary.html.twig' with {
                         'context': 'modal',
@@ -136,55 +195,191 @@
                     } %}
                 </div>
             </div>
-            <!-- Forecast Tab -->
-            <div id="forecast" role="tabpanel" aria-labelledby="forecast-tab">
-                <div class="space-y-4">
-                    <p class="text-xs text-gray-500">{{ "Shows how your TSB (Form) and A:C Ratio may evolve over the next 7 days across a few preset training scenarios."|trans }}</p>
-                    {% if trainingLoadPersonalization.isActive() %}
-                        <div class="p-4 border border-blue-300 rounded-lg bg-blue-50 shadow-xs">
-                            <div class="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
-                                <div>
-                                    <h4 class="text-sm font-semibold text-blue-800">{{ trainingLoadPersonalization.getHeadline()|trans }}</h4>
-                                    <p class="mt-1 text-sm text-blue-800">{{ trainingLoadPersonalization.getSummary()|trans }}</p>
+
+            {# ═══════════════════════════════════════════════════ #}
+            {# ══ TAB 2: INSIGHTS ══════════════════════════════ #}
+            {# ═══════════════════════════════════════════════════ #}
+            <div id="tl-insights" role="tabpanel" aria-labelledby="tl-insights-tab">
+                {% set cardClass = 'rounded-xl border border-gray-200 bg-gray-100 px-3 py-3 shadow-xs' %}
+                {% set strongSignalPillClass = 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' %}
+                {% set moderateSignalPillClass = 'bg-gray-200 text-gray-700' %}
+                {% set bouncesBackPillClass = 'bg-green-100 text-green-800 dark:bg-green-900/40 dark:text-green-300' %}
+                {% set mixedResponsePillClass = 'bg-gray-200 text-gray-700' %}
+                {% set needsBufferPillClass = 'bg-amber-100 text-amber-800 dark:bg-amber-900/40 dark:text-amber-300' %}
+                {% set higherConfidencePillClass = 'bg-blue-100 text-blue-700 dark:bg-blue-900/40 dark:text-blue-300' %}
+                {% set emergingConfidencePillClass = 'bg-gray-200 text-gray-700' %}
+
+                {% if correlationInsights|length == 0 and activityTypeRecoveryFingerprints|length == 0 %}
+                    <div class="py-12 text-center">
+                        <div class="text-sm text-gray-500">{{ "Not enough data to generate insights yet. Keep training and logging activities to unlock correlation analysis and recovery fingerprints."|trans }}</div>
+                    </div>
+                {% else %}
+                    <div class="space-y-6">
+                        {# ── Correlation insights ── #}
+                        {% if correlationInsights|length > 0 %}
+                            <div class="space-y-3.5">
+                                <div class="flex items-center justify-between px-1">
+                                    <h4 class="text-sm font-medium text-gray-500">{{ "Correlation insights (90 days)"|trans }}</h4>
+                                    <span class="inline-flex items-center rounded-full bg-gray-200 px-2 py-0.5 text-xs font-medium text-gray-600">{{ correlationInsights|length }}</span>
                                 </div>
-                                <div class="grid grid-cols-2 gap-4 text-xs text-blue-800 md:min-w-70">
-                                    <div>
-                                        <div>{{ "Readiness adjustment"|trans }}</div>
-                                        <div class="mt-1 text-lg font-bold">{{ trainingLoadPersonalization.getReadinessAdjustment() >= 0 ? '+' : '' }}{{ trainingLoadPersonalization.getReadinessAdjustment() }}</div>
-                                    </div>
-                                    <div>
-                                        <div>{{ "Forecast load modifier"|trans }}</div>
-                                        <div class="mt-1 text-lg font-bold">{{ ((trainingLoadPersonalization.getForecastLoadFactor() - 1) * 100)|formatNumber(0) }}%</div>
-                                    </div>
+                                <div class="space-y-3">
+                                    {% for insight in correlationInsights %}
+                                        <div class="{{ cardClass }} space-y-2">
+                                            <div class="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+                                                <div>
+                                                    <div class="text-sm font-semibold text-gray-800">{{ insight.getTitle()|trans }}</div>
+                                                    <p class="mt-1 text-sm text-gray-600">{{ insight.getSummary()|trans }}</p>
+                                                </div>
+                                                <span class="inline-flex items-center self-start rounded-full px-2 py-0.5 text-xs font-semibold shadow-sm {{ insight.getCorrelation()|abs >= 0.55 ? strongSignalPillClass : moderateSignalPillClass }}">{{ insight.getStrengthLabel()|trans }}</span>
+                                            </div>
+                                            <div class="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500">
+                                                <span>{{ "Correlation"|trans }} {{ insight.getCorrelation()|formatNumber(2) }}</span>
+                                                <span>{{ "Samples"|trans }} {{ insight.getSampleSize() }}</span>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
                                 </div>
                             </div>
-                        </div>
-                    {% endif %}
-                    {% if recoveryTrendWarnings|length > 0 %}
-                        <div class="p-4 border border-gray-200 rounded-lg shadow-xs">
-                            <h4 class="text-sm font-semibold text-gray-700 mb-3">{{ "Recovery trend warnings"|trans }}</h4>
-                            <div class="space-y-3">
-                                {% for warning in recoveryTrendWarnings %}
-                                    <div class="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3">
-                                        <div class="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
-                                            <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ warning.getPillColors() }}">
-                                                {{ warning.getLabel()|trans }}
-                                            </span>
-                                            <span class="text-sm text-gray-700 md:text-right">{{ warning.getDescription()|trans }}</span>
+                        {% endif %}
+
+                        {# ── Activity-type recovery fingerprints ── #}
+                        {% if activityTypeRecoveryFingerprints|length > 0 %}
+                            <div class="space-y-3.5">
+                                <div class="flex items-center justify-between px-1">
+                                    <h4 class="text-sm font-medium text-gray-500">{{ "Activity-type recovery fingerprints"|trans }}</h4>
+                                    <span class="inline-flex items-center rounded-full bg-gray-200 px-2 py-0.5 text-xs font-medium text-gray-600">{{ activityTypeRecoveryFingerprints|length }}</span>
+                                </div>
+                                <div class="space-y-3">
+                                    {% for fingerprint in activityTypeRecoveryFingerprints %}
+                                        {% set fingerprintProfilePillClass = fingerprint.getProfile() == enum('App\\Domain\\Dashboard\\Widget\\TrainingLoad\\ActivityTypeRecoveryFingerprintProfile').BOUNCES_BACK ? bouncesBackPillClass : (fingerprint.getProfile() == enum('App\\Domain\\Dashboard\\Widget\\TrainingLoad\\ActivityTypeRecoveryFingerprintProfile').NEEDS_BUFFER ? needsBufferPillClass : mixedResponsePillClass) %}
+                                        {% set fingerprintConfidencePillClass = fingerprint.getSampleSize() >= 6 ? higherConfidencePillClass : emergingConfidencePillClass %}
+                                        <div class="{{ cardClass }} space-y-2.5">
+                                            <div class="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+                                                <div>
+                                                    <div class="text-sm font-semibold text-gray-800">{{ fingerprint.getActivityType()|trans }}</div>
+                                                    <p class="mt-1 text-sm text-gray-600">{{ fingerprint.getProfile().getDescription()|trans }}</p>
+                                                </div>
+                                                <div class="flex flex-wrap gap-1.5">
+                                                    <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold shadow-sm {{ fingerprintProfilePillClass }}">{{ fingerprint.getProfile().getLabel()|trans }}</span>
+                                                    <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-semibold shadow-sm {{ fingerprintConfidencePillClass }}">{{ fingerprint.getConfidenceLabel()|trans }}</span>
+                                                </div>
+                                            </div>
+                                            <div class="flex flex-wrap md:flex-nowrap items-start gap-x-6 gap-y-2 text-xs text-gray-500">
+                                                <div class="min-w-24 flex-1">
+                                                    <div>{{ "Avg load"|trans }}</div>
+                                                    <div class="mt-0.5 text-sm font-semibold text-gray-800">{{ fingerprint.getAverageLoad()|formatNumber(1) }}</div>
+                                                </div>
+                                                <div class="min-w-24 flex-1">
+                                                    <div>{{ "Next-day HRV"|trans }}</div>
+                                                    <div class="mt-0.5 text-sm font-semibold {{ fingerprint.getNextDayHrvDelta() is not null and fingerprint.getNextDayHrvDelta() >= 0 ? 'text-green-600 dark:text-green-400' : 'text-orange-500 dark:text-orange-300' }}">{{ fingerprint.getNextDayHrvDelta() is null ? 'n/a' : fingerprint.getNextDayHrvDelta()|formatNumber(1) }}</div>
+                                                </div>
+                                                <div class="min-w-24 flex-1">
+                                                    <div>{{ "Sleep score"|trans }}</div>
+                                                    <div class="mt-0.5 text-sm font-semibold {{ fingerprint.getNextDaySleepScoreDelta() is not null and fingerprint.getNextDaySleepScoreDelta() >= 0 ? 'text-green-600 dark:text-green-400' : 'text-orange-500 dark:text-orange-300' }}">{{ fingerprint.getNextDaySleepScoreDelta() is null ? 'n/a' : fingerprint.getNextDaySleepScoreDelta()|formatNumber(1) }}</div>
+                                                </div>
+                                                <div class="min-w-24 flex-1">
+                                                    <div>{{ "Fatigue"|trans }}</div>
+                                                    <div class="mt-0.5 text-sm font-semibold {{ fingerprint.getNextDayFatigueDelta() is not null and fingerprint.getNextDayFatigueDelta() <= 0 ? 'text-green-600 dark:text-green-400' : 'text-orange-500 dark:text-orange-300' }}">{{ fingerprint.getNextDayFatigueDelta() is null ? 'n/a' : fingerprint.getNextDayFatigueDelta()|formatNumber(1) }}</div>
+                                                </div>
+                                                <div class="min-w-20 flex-1">
+                                                    <div>{{ "Samples"|trans }}</div>
+                                                    <div class="mt-0.5 text-sm font-semibold text-gray-700">{{ fingerprint.getSampleSize() }}</div>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        {% endif %}
+
+                        {# ── Personalization card ── #}
+                        {% if trainingLoadPersonalization.isActive() %}
+                            <div class="space-y-3.5">
+                                <div class="flex items-center justify-between px-1">
+                                    <h4 class="text-sm font-medium text-gray-500">{{ "Personalization"|trans }}</h4>
+                                </div>
+                                <div class="p-4 border border-blue-200 rounded-xl bg-gray-50 shadow-xs dark:border-blue-800">
+                                    <div class="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
+                                        <div>
+                                            <h4 class="text-sm font-semibold text-blue-800 dark:text-blue-300">{{ trainingLoadPersonalization.getHeadline()|trans }}</h4>
+                                            <p class="mt-1 text-sm text-blue-800 dark:text-blue-300">{{ trainingLoadPersonalization.getSummary()|trans }}</p>
+                                        </div>
+                                        <div class="grid grid-cols-2 gap-4 text-xs text-blue-800 dark:text-blue-300 md:min-w-56">
+                                            <div>
+                                                <div>{{ "Readiness adjustment"|trans }}</div>
+                                                <div class="mt-1 text-lg font-bold">{{ trainingLoadPersonalization.getReadinessAdjustment() >= 0 ? '+' : '' }}{{ trainingLoadPersonalization.getReadinessAdjustment() }}</div>
+                                            </div>
+                                            <div>
+                                                <div>{{ "Forecast load modifier"|trans }}</div>
+                                                <div class="mt-1 text-lg font-bold">{{ ((trainingLoadPersonalization.getForecastLoadFactor() - 1) * 100)|formatNumber(0) }}%</div>
+                                            </div>
                                         </div>
                                     </div>
-                                {% endfor %}
+                                </div>
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endif %}
+            </div>
+
+            {# ═══════════════════════════════════════════════════ #}
+            {# ══ TAB 3: FORECAST ══════════════════════════════ #}
+            {# ═══════════════════════════════════════════════════ #}
+            <div id="tl-forecast" role="tabpanel" aria-labelledby="tl-forecast-tab">
+                <div class="space-y-4">
+                    {# ── Current status + Rest timeline ── #}
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div class="rounded-xl border border-gray-200 bg-gray-100 p-4 shadow-xs">
+                            <h4 class="text-sm font-semibold text-gray-700 mb-3">{{ "Current Status"|trans }}</h4>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <div class="text-xs text-gray-500">{{ "TSB (Form)"|trans }}</div>
+                                    <div class="text-xl font-bold {{ tsbColor }}">{{ currentTsb.getValue()|formatNumber(1) }}</div>
+                                    <div class="text-xs text-gray-500">{{ currentTsb.getStatus()|trans }}</div>
+                                </div>
+                                <div>
+                                    <div class="text-xs text-gray-500">{{ "A:C Ratio"|trans }}</div>
+                                    <div class="text-xl font-bold {{ acColor }}">{{ currentAcRatio.getValue()|formatNumber(2) }}</div>
+                                    <div class="text-xs text-gray-500">{{ currentAcRatio.getStatus()|trans }}</div>
+                                </div>
                             </div>
                         </div>
-                    {% endif %}
+                        <div class="rounded-xl border border-gray-200 bg-gray-100 p-4 shadow-xs">
+                            <h4 class="text-sm font-semibold text-gray-700 mb-3">{{ "Complete Rest Timeline"|trans }}</h4>
+                            <div class="grid grid-cols-2 gap-4">
+                                <div>
+                                    <div class="text-xs text-gray-500">{{ "TSB positive in"|trans }}</div>
+                                    {% if trainingLoadForecast.getDaysUntilTsbHealthy() %}
+                                        <div class="text-xl font-bold text-green-600 dark:text-green-400">{{ trainingLoadForecast.getDaysUntilTsbHealthy() }} {{ "day(s)"|trans }}</div>
+                                    {% elseif trainingMetrics.getCurrentTsb().getValue() > 0 %}
+                                        <div class="text-xl font-bold text-green-600 dark:text-green-400">{{ "Now"|trans }}</div>
+                                    {% else %}
+                                        <div class="text-xl font-bold text-yellow-600 dark:text-yellow-400">&gt; 7 {{ "days"|trans }}</div>
+                                    {% endif %}
+                                </div>
+                                <div>
+                                    <div class="text-xs text-gray-500">{{ "A:C optimal in"|trans }}</div>
+                                    {% if trainingLoadForecast.getDaysUntilAcRatioHealthy() %}
+                                        <div class="text-xl font-bold text-green-600 dark:text-green-400">{{ trainingLoadForecast.getDaysUntilAcRatioHealthy() }} {{ "day(s)"|trans }}</div>
+                                    {% elseif trainingMetrics.getCurrentAcRatio().getValue() >= 0.8 and trainingMetrics.getCurrentAcRatio().getValue() <= 1.3 %}
+                                        <div class="text-xl font-bold text-green-600 dark:text-green-400">{{ "Now"|trans }}</div>
+                                    {% else %}
+                                        <div class="text-xl font-bold text-yellow-600 dark:text-yellow-400">&gt; 7 {{ "days"|trans }}</div>
+                                    {% endif %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {# ── Planned sessions forecast ── #}
                     {% if plannedSessionForecast.hasEstimates() %}
-                        <div class="p-4 border border-green-200 rounded-lg bg-green-50 shadow-xs">
+                        <div class="p-4 border border-green-200 rounded-xl bg-gray-50 shadow-xs dark:border-green-800">
                             <div class="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
                                 <div>
-                                    <h4 class="text-sm font-semibold text-green-800">{{ "Planned sessions forecast"|trans }}</h4>
-                                    <p class="mt-1 text-sm text-green-800">{{ "Your saved planned sessions are now included as their own forecast scenario for the next 7 days."|trans }}</p>
+                                    <h4 class="text-sm font-semibold text-green-800 dark:text-green-400">{{ "Planned sessions forecast"|trans }}</h4>
+                                    <p class="mt-1 text-sm text-green-800 dark:text-green-400">{{ "Your saved planned sessions are now included as their own forecast scenario for the next 7 days."|trans }}</p>
                                 </div>
-                                <div class="grid grid-cols-2 gap-4 text-xs text-green-800 md:min-w-70">
+                                <div class="grid grid-cols-2 gap-4 text-xs text-green-800 dark:text-green-400 md:min-w-56">
                                     <div>
                                         <div>{{ "Planned sessions"|trans }}</div>
                                         <div class="mt-1 text-lg font-bold">{{ plannedSessionForecast.getEstimates()|length }}</div>
@@ -197,31 +392,31 @@
                             </div>
                             {% if plannedSessionForecastProjection %}
                                 <div class="mt-4 grid grid-cols-1 md:grid-cols-2 gap-4">
-                                    <div class="p-4 border border-green-200 rounded-lg bg-white/80 shadow-xs">
+                                    <div class="p-3 border border-green-200 rounded-lg bg-gray-100 shadow-xs dark:border-green-700">
                                         <div class="text-xs text-gray-500">{{ "TSB positive in"|trans }}</div>
                                         {% if plannedSessionForecastProjection.getDaysUntilTsbHealthy() %}
-                                            <div class="text-xl font-bold text-green-600">{{ plannedSessionForecastProjection.getDaysUntilTsbHealthy() }} {{ "day(s)"|trans }}</div>
+                                            <div class="text-xl font-bold text-green-600 dark:text-green-400">{{ plannedSessionForecastProjection.getDaysUntilTsbHealthy() }} {{ "day(s)"|trans }}</div>
                                         {% elseif trainingMetrics.getCurrentTsb().getValue() > 0 %}
-                                            <div class="text-xl font-bold text-green-600">{{ "Now"|trans }}</div>
+                                            <div class="text-xl font-bold text-green-600 dark:text-green-400">{{ "Now"|trans }}</div>
                                         {% else %}
-                                            <div class="text-xl font-bold text-yellow-600">&gt; 7 {{ "days"|trans }}</div>
+                                            <div class="text-xl font-bold text-yellow-600 dark:text-yellow-400">&gt; 7 {{ "days"|trans }}</div>
                                         {% endif %}
                                     </div>
-                                    <div class="p-4 border border-green-200 rounded-lg bg-white/80 shadow-xs">
+                                    <div class="p-3 border border-green-200 rounded-lg bg-gray-100 shadow-xs dark:border-green-700">
                                         <div class="text-xs text-gray-500">{{ "A:C optimal in"|trans }}</div>
                                         {% if plannedSessionForecastProjection.getDaysUntilAcRatioHealthy() %}
-                                            <div class="text-xl font-bold text-green-600">{{ plannedSessionForecastProjection.getDaysUntilAcRatioHealthy() }} {{ "day(s)"|trans }}</div>
+                                            <div class="text-xl font-bold text-green-600 dark:text-green-400">{{ plannedSessionForecastProjection.getDaysUntilAcRatioHealthy() }} {{ "day(s)"|trans }}</div>
                                         {% elseif trainingMetrics.getCurrentAcRatio().getValue() >= 0.8 and trainingMetrics.getCurrentAcRatio().getValue() <= 1.3 %}
-                                            <div class="text-xl font-bold text-green-600">{{ "Now"|trans }}</div>
+                                            <div class="text-xl font-bold text-green-600 dark:text-green-400">{{ "Now"|trans }}</div>
                                         {% else %}
-                                            <div class="text-xl font-bold text-yellow-600">&gt; 7 {{ "days"|trans }}</div>
+                                            <div class="text-xl font-bold text-yellow-600 dark:text-yellow-400">&gt; 7 {{ "days"|trans }}</div>
                                         {% endif %}
                                     </div>
                                 </div>
                             {% endif %}
-                            <div class="mt-4 border border-green-200 rounded-lg bg-white/80 relative overflow-x-auto">
+                            <div class="mt-4 border border-green-200 rounded-lg bg-gray-50 relative overflow-x-auto dark:border-green-700">
                                 <table class="w-full text-sm text-left text-gray-500">
-                                    <thead class="text-xs text-gray-700 uppercase bg-green-100/70">
+                                    <thead class="text-xs text-gray-700 uppercase bg-gray-100">
                                         <tr>
                                             <th scope="col" class="px-4 py-3">{{ "Day"|trans }}</th>
                                             <th scope="col" class="px-4 py-3">{{ "Session"|trans }}</th>
@@ -245,138 +440,97 @@
                             </div>
                         </div>
                     {% endif %}
-                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="p-4 border border-gray-200 rounded-lg shadow-xs">
-                            <h4 class="text-sm font-semibold text-gray-700 mb-2">{{ "Current Status"|trans }}</h4>
-                            <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <div class="text-xs text-gray-500">{{ "TSB (Form)"|trans }}</div>
-                                    {% set currentTsb = trainingMetrics.getCurrentTsb() %}
-                                    <div class="text-xl font-bold {{ currentTsb.getStatus().getTextColor() }}">
-                                        {{ currentTsb.getValue()|formatNumber(1) }}
-                                    </div>
-                                </div>
-                                <div>
-                                    <div class="text-xs text-gray-500">{{ "A:C Ratio"|trans }}</div>
-                                    {% set currentAcRatio = trainingMetrics.getCurrentAcRatio() %}
-                                    <div class="text-xl font-bold {{ currentAcRatio.getStatus().getTextColor() }}">
-                                        {{ currentAcRatio.getValue()|formatNumber(2) }}
-                                    </div>
-                                </div>
-                            </div>
+
+                    {# ── Scenario tabs ── #}
+                    <div>
+                        <p class="text-xs text-gray-500 mb-3">{{ "Shows how your TSB (Form) and A:C Ratio may evolve over the next 7 days across a few preset training scenarios."|trans }}</p>
+                        <div class="tabs tabs--default">
+                            <ul id="trainingLoadScenarioTab" data-tabs="#trainingLoadScenarioTabContent" role="tablist">
+                                {% for scenario in trainingLoadForecastScenarios %}
+                                    <li role="presentation">
+                                        <a href="#" data-tabs-target="#trainingLoadScenario{{ loop.index }}" role="tab" aria-controls="trainingLoadScenario{{ loop.index }}">
+                                            {{ scenario.label|trans }}
+                                        </a>
+                                    </li>
+                                {% endfor %}
+                            </ul>
                         </div>
-                        <div class="p-4 border border-gray-200 rounded-lg shadow-xs">
-                            <h4 class="text-sm font-semibold text-gray-700 mb-2">{{ "Complete Rest Timeline"|trans }}</h4>
-                            <div class="grid grid-cols-2 gap-4">
-                                <div>
-                                    <div class="text-xs text-gray-500">{{ "TSB positive in"|trans }}</div>
-                                    {% if trainingLoadForecast.getDaysUntilTsbHealthy() %}
-                                        <div class="text-xl font-bold text-green-600">{{ trainingLoadForecast.getDaysUntilTsbHealthy() }} {{ "day(s)"|trans }}</div>
-                                    {% elseif trainingMetrics.getCurrentTsb().getValue() > 0 %}
-                                        <div class="text-xl font-bold text-green-600">{{ "Now"|trans }}</div>
-                                    {% else %}
-                                        <div class="text-xl font-bold text-yellow-600">&gt; 7 {{ "days"|trans }}</div>
-                                    {% endif %}
-                                </div>
-                                <div>
-                                    <div class="text-xs text-gray-500">{{ "A:C optimal in"|trans }}</div>
-                                    {% if trainingLoadForecast.getDaysUntilAcRatioHealthy() %}
-                                        <div class="text-xl font-bold text-green-600">{{ trainingLoadForecast.getDaysUntilAcRatioHealthy() }} {{ "day(s)"|trans }}</div>
-                                    {% elseif trainingMetrics.getCurrentAcRatio().getValue() >= 0.8 and trainingMetrics.getCurrentAcRatio().getValue() <= 1.3 %}
-                                        <div class="text-xl font-bold text-green-600">{{ "Now"|trans }}</div>
-                                    {% else %}
-                                        <div class="text-xl font-bold text-yellow-600">&gt; 7 {{ "days"|trans }}</div>
-                                    {% endif %}
-                                </div>
-                            </div>
-                        </div>
-                    </div>
-                    <div class="tabs tabs--default">
-                        <ul id="trainingLoadScenarioTab" data-tabs="#trainingLoadScenarioTabContent" role="tablist">
+                        <div id="trainingLoadScenarioTabContent" class="space-y-4">
                             {% for scenario in trainingLoadForecastScenarios %}
-                                <li role="presentation">
-                                    <a href="#" data-tabs-target="#trainingLoadScenario{{ loop.index }}" role="tab" aria-controls="trainingLoadScenario{{ loop.index }}">
-                                        {{ scenario.label|trans }}
-                                    </a>
-                                </li>
-                            {% endfor %}
-                        </ul>
-                    </div>
-                    <div id="trainingLoadScenarioTabContent" class="space-y-4">
-                        {% for scenario in trainingLoadForecastScenarios %}
-                            <div id="trainingLoadScenario{{ loop.index }}" role="tabpanel" aria-labelledby="trainingLoadScenario{{ loop.index }}-tab" class="space-y-4">
-                                <div class="p-4 border border-gray-200 rounded-lg shadow-xs">
-                                    <div class="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
-                                        <div>
-                                            <h4 class="text-sm font-semibold text-gray-700">{{ scenario.label|trans }}</h4>
-                                            <p class="text-xs text-gray-500 mt-1">{{ scenario.description|trans }}</p>
-                                        </div>
-                                        <div class="grid grid-cols-2 gap-4 md:min-w-70">
+                                <div id="trainingLoadScenario{{ loop.index }}" role="tabpanel" aria-labelledby="trainingLoadScenario{{ loop.index }}-tab" class="space-y-4">
+                                    <div class="p-4 border border-gray-200 rounded-lg shadow-xs">
+                                        <div class="flex flex-col gap-2 md:flex-row md:items-start md:justify-between">
                                             <div>
-                                                <div class="text-xs text-gray-500">{{ "TSB positive in"|trans }}</div>
-                                                {% if scenario.forecast.getDaysUntilTsbHealthy() %}
-                                                    <div class="text-lg font-bold text-green-600">{{ scenario.forecast.getDaysUntilTsbHealthy() }} {{ "day(s)"|trans }}</div>
-                                                {% elseif trainingMetrics.getCurrentTsb().getValue() > 0 %}
-                                                    <div class="text-lg font-bold text-green-600">{{ "Now"|trans }}</div>
-                                                {% else %}
-                                                    <div class="text-lg font-bold text-yellow-600">&gt; 7 {{ "days"|trans }}</div>
-                                                {% endif %}
+                                                <h4 class="text-sm font-semibold text-gray-700">{{ scenario.label|trans }}</h4>
+                                                <p class="text-xs text-gray-500 mt-1">{{ scenario.description|trans }}</p>
                                             </div>
-                                            <div>
-                                                <div class="text-xs text-gray-500">{{ "A:C optimal in"|trans }}</div>
-                                                {% if scenario.forecast.getDaysUntilAcRatioHealthy() %}
-                                                    <div class="text-lg font-bold text-green-600">{{ scenario.forecast.getDaysUntilAcRatioHealthy() }} {{ "day(s)"|trans }}</div>
-                                                {% elseif trainingMetrics.getCurrentAcRatio().getValue() >= 0.8 and trainingMetrics.getCurrentAcRatio().getValue() <= 1.3 %}
-                                                    <div class="text-lg font-bold text-green-600">{{ "Now"|trans }}</div>
-                                                {% else %}
-                                                    <div class="text-lg font-bold text-yellow-600">&gt; 7 {{ "days"|trans }}</div>
-                                                {% endif %}
+                                            <div class="grid grid-cols-2 gap-4 md:min-w-56">
+                                                <div>
+                                                    <div class="text-xs text-gray-500">{{ "TSB positive in"|trans }}</div>
+                                                    {% if scenario.forecast.getDaysUntilTsbHealthy() %}
+                                                        <div class="text-lg font-bold text-green-600 dark:text-green-400">{{ scenario.forecast.getDaysUntilTsbHealthy() }} {{ "day(s)"|trans }}</div>
+                                                    {% elseif trainingMetrics.getCurrentTsb().getValue() > 0 %}
+                                                        <div class="text-lg font-bold text-green-600 dark:text-green-400">{{ "Now"|trans }}</div>
+                                                    {% else %}
+                                                        <div class="text-lg font-bold text-yellow-600 dark:text-yellow-400">&gt; 7 {{ "days"|trans }}</div>
+                                                    {% endif %}
+                                                </div>
+                                                <div>
+                                                    <div class="text-xs text-gray-500">{{ "A:C optimal in"|trans }}</div>
+                                                    {% if scenario.forecast.getDaysUntilAcRatioHealthy() %}
+                                                        <div class="text-lg font-bold text-green-600 dark:text-green-400">{{ scenario.forecast.getDaysUntilAcRatioHealthy() }} {{ "day(s)"|trans }}</div>
+                                                    {% elseif trainingMetrics.getCurrentAcRatio().getValue() >= 0.8 and trainingMetrics.getCurrentAcRatio().getValue() <= 1.3 %}
+                                                        <div class="text-lg font-bold text-green-600 dark:text-green-400">{{ "Now"|trans }}</div>
+                                                    {% else %}
+                                                        <div class="text-lg font-bold text-yellow-600 dark:text-yellow-400">&gt; 7 {{ "days"|trans }}</div>
+                                                    {% endif %}
+                                                </div>
                                             </div>
                                         </div>
                                     </div>
+                                    <div class="border border-gray-200 rounded-lg shadow-xs relative overflow-x-auto">
+                                        <table class="w-full text-sm text-left text-gray-500">
+                                            <thead class="text-xs text-gray-700 uppercase bg-gray-50">
+                                                <tr>
+                                                    <th scope="col" class="px-4 py-3">{{ "Day"|trans }}</th>
+                                                    <th scope="col" class="px-4 py-3">{{ "Projected load"|trans }}</th>
+                                                    <th scope="col" class="px-4 py-3">{{ "TSB (Form)"|trans }}</th>
+                                                    <th scope="col" class="px-4 py-3">{{ "Status"|trans }}</th>
+                                                    <th scope="col" class="px-4 py-3">{{ "A:C Ratio"|trans }}</th>
+                                                    <th scope="col" class="px-4 py-3">{{ "Status"|trans }}</th>
+                                                </tr>
+                                            </thead>
+                                            <tbody>
+                                            {% for item in scenario.forecast.getProjection() %}
+                                                <tr class="bg-white border-b last:border-b-0">
+                                                    {% set tsbStatus = item.tsb.getStatus() %}
+                                                    {% set acRatioStatus = item.acRatio.getStatus() %}
+                                                    <td class="px-4 py-3 font-medium text-gray-900">{{ item.day|date("M j") }}</td>
+                                                    <td class="px-4 py-3">{{ item.projectedLoad|formatNumber(1) }}</td>
+                                                    <td class="px-4 py-3">
+                                                        <span class="font-semibold {{ tsbStatus.getTextColor() }}">{{ item.tsb.getValue() }}</span>
+                                                    </td>
+                                                    <td class="px-4 py-3">
+                                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ tsbStatus.getPillColors() }}">
+                                                            {{ tsbStatus|trans }}
+                                                        </span>
+                                                    </td>
+                                                    <td class="px-4 py-3">
+                                                        <span class="font-semibold {{ acRatioStatus.getTextColor() }}">{{ item.acRatio.getValue() }}</span>
+                                                    </td>
+                                                    <td class="px-4 py-3">
+                                                        <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ acRatioStatus.getPillColors() }}">
+                                                            {{ acRatioStatus|trans }}
+                                                        </span>
+                                                    </td>
+                                                </tr>
+                                            {% endfor %}
+                                            </tbody>
+                                        </table>
+                                    </div>
                                 </div>
-                                <div class="border border-gray-200 rounded-lg shadow-xs relative overflow-x-auto">
-                                    <table class="w-full text-sm text-left text-gray-500">
-                                        <thead class="text-xs text-gray-700 uppercase bg-gray-50">
-                                            <tr>
-                                                <th scope="col" class="px-4 py-3">{{ "Day"|trans }}</th>
-                                                <th scope="col" class="px-4 py-3">{{ "Projected load"|trans }}</th>
-                                                <th scope="col" class="px-4 py-3">{{ "TSB (Form)"|trans }}</th>
-                                                <th scope="col" class="px-4 py-3">{{ "Status"|trans }}</th>
-                                                <th scope="col" class="px-4 py-3">{{ "A:C Ratio"|trans }}</th>
-                                                <th scope="col" class="px-4 py-3">{{ "Status"|trans }}</th>
-                                            </tr>
-                                        </thead>
-                                        <tbody>
-                                        {% for item in scenario.forecast.getProjection() %}
-                                            <tr class="bg-white border-b last:border-b-0">
-                                                {% set tsbStatus = item.tsb.getStatus() %}
-                                                {% set acRatioStatus = item.acRatio.getStatus() %}
-                                                <td class="px-4 py-3 font-medium text-gray-900">{{ item.day|date("M j") }}</td>
-                                                <td class="px-4 py-3">{{ item.projectedLoad|formatNumber(1) }}</td>
-                                                <td class="px-4 py-3">
-                                                    <span class="font-semibold {{ tsbStatus.getTextColor() }}">{{ item.tsb.getValue() }}</span>
-                                                </td>
-                                                <td class="px-4 py-3">
-                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ tsbStatus.getPillColors() }}">
-                                                        {{ tsbStatus|trans }}
-                                                    </span>
-                                                </td>
-                                                <td class="px-4 py-3">
-                                                    <span class="font-semibold {{ acRatioStatus.getTextColor() }}">{{ item.acRatio.getValue() }}</span>
-                                                </td>
-                                                <td class="px-4 py-3">
-                                                    <span class="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium {{ acRatioStatus.getPillColors() }}">
-                                                        {{ acRatioStatus|trans }}
-                                                    </span>
-                                                </td>
-                                            </tr>
-                                        {% endfor %}
-                                        </tbody>
-                                    </table>
-                                </div>
-                            </div>
-                        {% endfor %}
+                            {% endfor %}
+                        </div>
                     </div>
                 </div>
             </div>

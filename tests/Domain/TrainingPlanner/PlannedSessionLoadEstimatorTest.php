@@ -17,6 +17,7 @@ use App\Domain\TrainingPlanner\PlannedSessionId;
 use App\Domain\TrainingPlanner\PlannedSessionIntensity;
 use App\Domain\TrainingPlanner\PlannedSessionLinkStatus;
 use App\Domain\TrainingPlanner\PlannedSessionLoadEstimator;
+use App\Infrastructure\ValueObject\Measurement\Velocity\KmPerHour;
 use App\Infrastructure\ValueObject\Time\SerializableDateTime;
 use App\Tests\ContainerTestCase;
 use App\Tests\Domain\Activity\ActivityBuilder;
@@ -34,6 +35,7 @@ final class PlannedSessionLoadEstimatorTest extends ContainerTestCase
 
         $this->seedAthlete();
         $this->seedRideActivities();
+        $this->seedRunActivities();
 
         $this->plannedSessionLoadEstimator = $this->getContainer()->get(PlannedSessionLoadEstimator::class);
         $this->athleteRepository = $this->getContainer()->get(AthleteRepository::class);
@@ -99,18 +101,148 @@ final class PlannedSessionLoadEstimatorTest extends ContainerTestCase
         self::assertGreaterThan($easyEstimate->getEstimatedLoad(), $hardEstimate->getEstimatedLoad());
     }
 
+    public function testWorkoutRidePowerTargetsIncreaseEstimatedLoad(): void
+    {
+        $easyRide = $this->createPlannedSession(
+            day: '2026-04-10 00:00:00',
+            activityType: ActivityType::RIDE,
+            workoutSteps: [[
+                'itemId' => 'ride-easy-step',
+                'parentBlockId' => null,
+                'type' => 'steady',
+                'repetitions' => 1,
+                'targetType' => 'time',
+                'conditionType' => null,
+                'durationInSeconds' => 3600,
+                'distanceInMeters' => null,
+                'targetPace' => null,
+                'targetPower' => 150,
+                'targetHeartRate' => null,
+                'recoveryAfterInSeconds' => null,
+            ]],
+        );
+        $hardRide = $this->createPlannedSession(
+            day: '2026-04-10 00:00:00',
+            activityType: ActivityType::RIDE,
+            workoutSteps: [[
+                'itemId' => 'ride-hard-step',
+                'parentBlockId' => null,
+                'type' => 'steady',
+                'repetitions' => 1,
+                'targetType' => 'time',
+                'conditionType' => null,
+                'durationInSeconds' => 3600,
+                'distanceInMeters' => null,
+                'targetPace' => null,
+                'targetPower' => 260,
+                'targetHeartRate' => null,
+                'recoveryAfterInSeconds' => null,
+            ]],
+        );
+
+        $easyEstimate = $this->plannedSessionLoadEstimator->estimate($easyRide);
+        $hardEstimate = $this->plannedSessionLoadEstimator->estimate($hardRide);
+
+        self::assertNotNull($easyEstimate);
+        self::assertNotNull($hardEstimate);
+        self::assertSame(PlannedSessionEstimationSource::WORKOUT_TARGETS, $easyEstimate->getEstimationSource());
+        self::assertSame(PlannedSessionEstimationSource::WORKOUT_TARGETS, $hardEstimate->getEstimationSource());
+        self::assertGreaterThan($easyEstimate->getEstimatedLoad(), $hardEstimate->getEstimatedLoad());
+    }
+
+    public function testWorkoutRunPaceTargetsIncreaseEstimatedLoad(): void
+    {
+        $easyRun = $this->createPlannedSession(
+            day: '2026-04-10 00:00:00',
+            activityType: ActivityType::RUN,
+            workoutSteps: [[
+                'itemId' => 'run-easy-step',
+                'parentBlockId' => null,
+                'type' => 'steady',
+                'repetitions' => 1,
+                'targetType' => 'time',
+                'conditionType' => null,
+                'durationInSeconds' => 1800,
+                'distanceInMeters' => null,
+                'targetPace' => '6:00/km',
+                'targetPower' => null,
+                'targetHeartRate' => null,
+                'recoveryAfterInSeconds' => null,
+            ]],
+        );
+        $hardRun = $this->createPlannedSession(
+            day: '2026-04-10 00:00:00',
+            activityType: ActivityType::RUN,
+            workoutSteps: [[
+                'itemId' => 'run-hard-step',
+                'parentBlockId' => null,
+                'type' => 'steady',
+                'repetitions' => 1,
+                'targetType' => 'time',
+                'conditionType' => null,
+                'durationInSeconds' => 1800,
+                'distanceInMeters' => null,
+                'targetPace' => '4:00/km',
+                'targetPower' => null,
+                'targetHeartRate' => null,
+                'recoveryAfterInSeconds' => null,
+            ]],
+        );
+
+        $easyEstimate = $this->plannedSessionLoadEstimator->estimate($easyRun);
+        $hardEstimate = $this->plannedSessionLoadEstimator->estimate($hardRun);
+
+        self::assertNotNull($easyEstimate);
+        self::assertNotNull($hardEstimate);
+        self::assertSame(PlannedSessionEstimationSource::WORKOUT_TARGETS, $easyEstimate->getEstimationSource());
+        self::assertSame(PlannedSessionEstimationSource::WORKOUT_TARGETS, $hardEstimate->getEstimationSource());
+        self::assertGreaterThan($easyEstimate->getEstimatedLoad(), $hardEstimate->getEstimatedLoad());
+    }
+
+    public function testEstimatedTargetLoadDoesNotBlockWorkoutTargetEstimation(): void
+    {
+        $plannedSession = $this->createPlannedSession(
+            day: '2026-04-10 00:00:00',
+            activityType: ActivityType::RIDE,
+            targetLoad: 74.2,
+            estimationSource: PlannedSessionEstimationSource::WORKOUT_TARGETS,
+            workoutSteps: [[
+                'itemId' => 'ride-hard-step',
+                'parentBlockId' => null,
+                'type' => 'steady',
+                'repetitions' => 1,
+                'targetType' => 'time',
+                'conditionType' => null,
+                'durationInSeconds' => 3600,
+                'distanceInMeters' => null,
+                'targetPace' => null,
+                'targetPower' => 260,
+                'targetHeartRate' => null,
+                'recoveryAfterInSeconds' => null,
+            ]],
+        );
+
+        $estimate = $this->plannedSessionLoadEstimator->estimate($plannedSession);
+
+        self::assertNotNull($estimate);
+        self::assertSame(PlannedSessionEstimationSource::WORKOUT_TARGETS, $estimate->getEstimationSource());
+        self::assertNotSame(74.2, $estimate->getEstimatedLoad());
+    }
+
     private function createPlannedSession(
         string $day,
         ?float $targetLoad = null,
         ?int $targetDurationInSeconds = null,
         ?PlannedSessionIntensity $targetIntensity = null,
         ?ActivityId $templateActivityId = null,
+        ActivityType $activityType = ActivityType::RIDE,
         PlannedSessionEstimationSource $estimationSource = PlannedSessionEstimationSource::UNKNOWN,
+        array $workoutSteps = [],
     ): PlannedSession {
         return PlannedSession::create(
             plannedSessionId: PlannedSessionId::random(),
             day: SerializableDateTime::fromString($day),
-            activityType: ActivityType::RIDE,
+            activityType: $activityType,
             title: 'Planned ride',
             notes: null,
             targetLoad: $targetLoad,
@@ -122,6 +254,7 @@ final class PlannedSessionLoadEstimatorTest extends ContainerTestCase
             linkStatus: PlannedSessionLinkStatus::UNLINKED,
             createdAt: SerializableDateTime::fromString('2026-04-07 08:00:00'),
             updatedAt: SerializableDateTime::fromString('2026-04-07 08:00:00'),
+            workoutSteps: $workoutSteps,
         );
     }
 
@@ -148,6 +281,7 @@ final class PlannedSessionLoadEstimatorTest extends ContainerTestCase
                 ->withSportType(SportType::RIDE)
                 ->withStartDateTime(SerializableDateTime::fromString('2026-03-28 10:00:00'))
                 ->withMovingTimeInSeconds(5400)
+                ->withAveragePower(180)
                 ->withAverageHeartRate(146)
                 ->build(),
             ActivityBuilder::fromDefaults()
@@ -156,6 +290,7 @@ final class PlannedSessionLoadEstimatorTest extends ContainerTestCase
                 ->withSportType(SportType::RIDE)
                 ->withStartDateTime(SerializableDateTime::fromString('2026-03-30 10:00:00'))
                 ->withMovingTimeInSeconds(3600)
+                ->withAveragePower(155)
                 ->withAverageHeartRate(138)
                 ->build(),
             ActivityBuilder::fromDefaults()
@@ -164,7 +299,51 @@ final class PlannedSessionLoadEstimatorTest extends ContainerTestCase
                 ->withSportType(SportType::RIDE)
                 ->withStartDateTime(SerializableDateTime::fromString('2026-04-01 10:00:00'))
                 ->withMovingTimeInSeconds(4500)
+                ->withAveragePower(245)
                 ->withAverageHeartRate(152)
+                ->build(),
+        ];
+
+        foreach ($activities as $activity) {
+            $activityRepository->add(ActivityWithRawData::fromState(
+                activity: $activity,
+                rawData: [],
+            ));
+        }
+    }
+
+    private function seedRunActivities(): void
+    {
+        /** @var ActivityRepository $activityRepository */
+        $activityRepository = $this->getContainer()->get(ActivityRepository::class);
+
+        $activities = [
+            ActivityBuilder::fromDefaults()
+                ->withActivityId(ActivityId::fromUnprefixed('910001'))
+                ->withName('Easy run')
+                ->withSportType(SportType::RUN)
+                ->withStartDateTime(SerializableDateTime::fromString('2026-03-27 07:00:00'))
+                ->withMovingTimeInSeconds(3600)
+                ->withAverageSpeed(KmPerHour::from(10.0))
+                ->withAverageHeartRate(132)
+                ->build(),
+            ActivityBuilder::fromDefaults()
+                ->withActivityId(ActivityId::fromUnprefixed('910002'))
+                ->withName('Steady run')
+                ->withSportType(SportType::RUN)
+                ->withStartDateTime(SerializableDateTime::fromString('2026-03-31 07:00:00'))
+                ->withMovingTimeInSeconds(3000)
+                ->withAverageSpeed(KmPerHour::from(12.0))
+                ->withAverageHeartRate(150)
+                ->build(),
+            ActivityBuilder::fromDefaults()
+                ->withActivityId(ActivityId::fromUnprefixed('910003'))
+                ->withName('Hard run')
+                ->withSportType(SportType::RUN)
+                ->withStartDateTime(SerializableDateTime::fromString('2026-04-02 07:00:00'))
+                ->withMovingTimeInSeconds(2400)
+                ->withAverageSpeed(KmPerHour::from(15.0))
+                ->withAverageHeartRate(170)
                 ->build(),
         ];
 
