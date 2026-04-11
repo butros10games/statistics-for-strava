@@ -1,5 +1,5 @@
 {% autoescape false %}
-    <div class="flex items-center justify-between gap-3 mb-6">
+    <div class="flex items-center justify-between gap-3 mb-5">
         <h3 class="text-lg font-semibold">{{ "Training Load Analysis"|trans }}</h3>
         <div class="flex items-center gap-2">
             <a href="{{ relativeUrl('api/exports/training-advisor.json') }}" download="training-advisor.json"
@@ -12,13 +12,11 @@
             </a>
         </div>
     </div>
-    <div class="grid grid-cols-2 lg:grid-cols-4 gap-3">
-        {% include 'html/dashboard/training-metrics.html.twig' with {
-            'trainingMetrics': trainingMetrics,
-            'timeInHeartRateZonesForLast30Days': timeInHeartRateZonesForLast30Days,
-            'context': 'page'
-        } %}
-    </div>
+    {% include 'html/dashboard/training-metrics.html.twig' with {
+        'trainingMetrics': trainingMetrics,
+        'timeInHeartRateZonesForLast30Days': timeInHeartRateZonesForLast30Days,
+        'context': 'page'
+    } %}
     <div class="mt-4">
         {% include 'html/dashboard/recovery-check-in-summary.html.twig' with {
             'context': 'page',

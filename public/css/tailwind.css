@@ -151,6 +151,19 @@
             background-color: #ff6b6b;
         }
     }
+
+    @keyframes gauge-fill {
+        from {
+            stroke-dasharray: 0 283;
+        }
+    }
+
+    @keyframes metric-fade-in {
+        from {
+            opacity: 0;
+            transform: translateY(6px);
+        }
+    }
 }
 
 @layer components {
