@@ -9,20 +9,30 @@ use App\Domain\Activity\Activity;
 use App\Domain\Activity\ActivityTrainingLoadCalculator;
 use App\Domain\Activity\EnrichedActivities;
 use App\Domain\Dashboard\Widget\TrainingLoad\IntegratedDailyLoadCalculator;
+use App\Domain\Dashboard\Widget\TrainingLoad\ReadinessScore;
 use App\Domain\Dashboard\Widget\TrainingLoad\ReadinessFactor;
 use App\Domain\Dashboard\Widget\TrainingLoad\ReadinessAssessment;
 use App\Domain\Dashboard\Widget\TrainingLoad\AcRatio;
 use App\Domain\Dashboard\Widget\TrainingLoad\TSB;
 use App\Domain\Dashboard\Widget\TrainingLoad\TrainingLoadChart;
+use App\Domain\Dashboard\Widget\TrainingLoad\TrainingLoadForecastConfidence;
 use App\Domain\Dashboard\Widget\TrainingLoad\TrainingLoadForecastProjection;
 use App\Domain\Dashboard\Widget\TrainingLoad\TrainingMetrics;
 use App\Domain\Dashboard\Widget\TrainingLoad\WellnessReadinessCalculator;
+use App\Domain\Ftp\FtpHistory;
 use App\Domain\Dashboard\Widget\Wellness\FindWellnessMetrics\FindWellnessMetricsResponse;
+use App\Domain\Performance\PerformanceAnchor\PerformanceAnchorHistory;
 use App\Domain\TrainingPlanner\PlannedSession;
 use App\Domain\TrainingPlanner\PlannedSessionForecastBuilder;
 use App\Domain\TrainingPlanner\PlannedSessionLoadEstimate;
 use App\Domain\TrainingPlanner\PlannedSessionLoadEstimator;
 use App\Domain\TrainingPlanner\PlannedSessionRepository;
+use App\Domain\TrainingPlanner\RaceEvent;
+use App\Domain\TrainingPlanner\RaceEventRepository;
+use App\Domain\TrainingPlanner\RaceReadinessContext;
+use App\Domain\TrainingPlanner\RaceReadinessContextBuilder;
+use App\Domain\TrainingPlanner\TrainingBlock;
+use App\Domain\TrainingPlanner\TrainingBlockRepository;
 use App\Domain\Wellness\DailyRecoveryCheckIn;
 use App\Domain\Wellness\DailyRecoveryCheckInRepository;
 use App\Domain\Wellness\DailyWellness;
@@ -45,12 +55,16 @@ final readonly class TrainingAdvisorExportBuilder
         private EnrichedActivities $enrichedActivities,
         private ActivityTrainingLoadCalculator $activityTrainingLoadCalculator,
         private IntegratedDailyLoadCalculator $integratedDailyLoadCalculator,
+        private FtpHistory $ftpHistory,
         private DailyWellnessRepository $dailyWellnessRepository,
         private DailyRecoveryCheckInRepository $dailyRecoveryCheckInRepository,
         private WellnessReadinessCalculator $wellnessReadinessCalculator,
         private PlannedSessionRepository $plannedSessionRepository,
+        private RaceEventRepository $raceEventRepository,
+        private TrainingBlockRepository $trainingBlockRepository,
         private PlannedSessionLoadEstimator $plannedSessionLoadEstimator,
         private PlannedSessionForecastBuilder $plannedSessionForecastBuilder,
+        private RaceReadinessContextBuilder $raceReadinessContextBuilder,
         private TranslatorInterface $translator,
     ) {
     }
@@ -99,6 +113,21 @@ final readonly class TrainingAdvisorExportBuilder
             now: $now,
             projectedLoads: $plannedSessionForecast->getProjectedLoads(),
             horizon: self::FORECAST_HORIZON_DAYS,
+            currentDayProjectedLoad: $plannedSessionForecast->getCurrentDayProjectedLoad(),
+        );
+        $upcomingRaceEvents = $this->raceEventRepository->findUpcoming($now, 4);
+        $currentAndUpcomingTrainingBlocks = $this->trainingBlockRepository->findCurrentAndUpcoming($now, 4);
+        $currentTrainingBlock = $this->findCurrentTrainingBlock($currentAndUpcomingTrainingBlocks, $now);
+        $raceReadinessContext = $this->raceReadinessContextBuilder->build(
+            referenceDate: $now,
+            plannedSessions: $plannedSessions,
+            raceEvents: $upcomingRaceEvents,
+            trainingBlocks: $currentAndUpcomingTrainingBlocks,
+            currentTrainingBlock: $currentTrainingBlock,
+            raceEventsById: $this->buildRaceEventsById($upcomingRaceEvents),
+            plannedSessionEstimatesById: $this->buildPlannedSessionEstimatesById($plannedSessions),
+            readinessScore: $readinessAssessment?->getScore(),
+            forecastProjection: $plannedSessionProjection,
         );
 
         return [
@@ -134,6 +163,7 @@ final readonly class TrainingAdvisorExportBuilder
                 'latestRecoveryCheckInUsedForReadiness' => $latestRecoveryCheckInForToday,
             ],
             'recentActivities' => $recentActivities,
+            'performanceAnchors' => PerformanceAnchorHistory::fromFtpHistory($this->ftpHistory)->exportForAITooling(),
             'trainingLoad' => [
                 'current' => $this->buildTrainingMetricsSummary($trainingMetrics),
                 'last42Days' => $this->buildRecentTrainingMetricsTimeline($trainingMetrics, $integratedLoads),
@@ -147,11 +177,14 @@ final readonly class TrainingAdvisorExportBuilder
                 'records' => array_map($this->mapRecoveryCheckIn(...), $recentRecoveryCheckIns),
                 'latest' => $latestRecoveryCheckInOverall,
             ],
+            'raceReadinessContext' => $this->buildRaceReadinessContextSummary($raceReadinessContext),
             'upcomingPlannedSessions' => [
                 'summary' => [
                     'count' => count($plannedSessions),
                     'totalProjectedLoad' => $plannedSessionForecast->getTotalProjectedLoad(),
+                    'currentDayProjectedLoad' => $plannedSessionForecast->getCurrentDayProjectedLoad(),
                     'projectedLoadsByDayOffset' => $this->buildProjectedLoadsByDayOffset($now, $plannedSessionForecast->getProjectedLoads()),
+                    'confidence' => $this->buildForecastConfidenceSummary($plannedSessionProjection),
                     'recoveryProjection' => [
                         'daysUntilTsbHealthy' => $plannedSessionProjection->getDaysUntilTsbHealthy(),
                         'daysUntilAcRatioHealthy' => $plannedSessionProjection->getDaysUntilAcRatioHealthy(),
@@ -161,6 +194,53 @@ final readonly class TrainingAdvisorExportBuilder
                 'items' => array_map(fn (PlannedSession $plannedSession): array => $this->mapPlannedSession($plannedSession), $plannedSessions),
             ],
         ];
+    }
+
+    /**
+     * @param list<RaceEvent> $raceEvents
+     *
+     * @return array<string, RaceEvent>
+     */
+    private function buildRaceEventsById(array $raceEvents): array
+    {
+        $raceEventsById = [];
+
+        foreach ($raceEvents as $raceEvent) {
+            $raceEventsById[(string) $raceEvent->getId()] = $raceEvent;
+        }
+
+        return $raceEventsById;
+    }
+
+    /**
+     * @param list<PlannedSession> $plannedSessions
+     *
+     * @return array<string, null|float>
+     */
+    private function buildPlannedSessionEstimatesById(array $plannedSessions): array
+    {
+        $estimatesById = [];
+
+        foreach ($plannedSessions as $plannedSession) {
+            $estimate = $this->plannedSessionLoadEstimator->estimate($plannedSession);
+            $estimatesById[(string) $plannedSession->getId()] = $estimate?->getEstimatedLoad();
+        }
+
+        return $estimatesById;
+    }
+
+    /**
+     * @param list<TrainingBlock> $trainingBlocks
+     */
+    private function findCurrentTrainingBlock(array $trainingBlocks, SerializableDateTime $now): ?TrainingBlock
+    {
+        foreach ($trainingBlocks as $trainingBlock) {
+            if ($trainingBlock->containsDay($now)) {
+                return $trainingBlock;
+            }
+        }
+
+        return null;
     }
 
     /**
@@ -387,6 +467,99 @@ final readonly class TrainingAdvisorExportBuilder
     /**
      * @return array<string, mixed>
      */
+    private function buildRaceReadinessContextSummary(RaceReadinessContext $raceReadinessContext): array
+    {
+        $readinessScore = $raceReadinessContext->getReadinessScore();
+
+        return [
+            'targetRace' => null === $raceReadinessContext->getTargetRace() ? null : [
+                'id' => (string) $raceReadinessContext->getTargetRace()?->getId(),
+                'day' => $raceReadinessContext->getTargetRace()?->getDay()->format('Y-m-d'),
+                'type' => $raceReadinessContext->getTargetRace()?->getType()->value,
+                'family' => $raceReadinessContext->getTargetRace()?->getFamily()->value,
+                'profile' => $raceReadinessContext->getTargetRace()?->getProfile()->value,
+                'title' => $raceReadinessContext->getTargetRace()?->getTitle(),
+                'priority' => $raceReadinessContext->getTargetRace()?->getPriority()->value,
+            ],
+            'countdownDays' => $raceReadinessContext->getTargetRaceCountdownDays(),
+            'hasRaceEventInWindow' => $raceReadinessContext->hasRaceEventInContextWindow(),
+            'trainingBlock' => null === $raceReadinessContext->getPrimaryTrainingBlock() ? null : [
+                'id' => (string) $raceReadinessContext->getPrimaryTrainingBlock()?->getId(),
+                'phase' => $raceReadinessContext->getPrimaryTrainingBlock()?->getPhase()->value,
+                'title' => $raceReadinessContext->getPrimaryTrainingBlock()?->getTitle(),
+                'focus' => $raceReadinessContext->getPrimaryTrainingBlock()?->getFocus(),
+                'notes' => $raceReadinessContext->getPrimaryTrainingBlock()?->getNotes(),
+                'durationInDays' => $raceReadinessContext->getPrimaryTrainingBlock()?->getDurationInDays(),
+            ],
+            'plannerSummary' => [
+                'sessionCount' => $raceReadinessContext->getSessionCount(),
+                'distinctSessionDayCount' => $raceReadinessContext->getDistinctSessionDayCount(),
+                'estimatedLoad' => round($raceReadinessContext->getEstimatedLoad(), 1),
+                'hardSessionCount' => $raceReadinessContext->getHardSessionCount(),
+                'easySessionCount' => $raceReadinessContext->getEasySessionCount(),
+                'brickDayCount' => $raceReadinessContext->getBrickDayCount(),
+                'hasLongRideSession' => $raceReadinessContext->hasLongRideSession(),
+                'hasLongRunSession' => $raceReadinessContext->hasLongRunSession(),
+                'disciplineCounts' => $raceReadinessContext->getDisciplineCounts(),
+                'activityTypeSummaries' => array_map(
+                    static fn (array $summary): array => [
+                        'activityType' => $summary['activityType']->value,
+                        'count' => $summary['count'],
+                    ],
+                    $raceReadinessContext->getActivityTypeSummaries(),
+                ),
+            ],
+            'readiness' => null === $readinessScore ? null : $this->buildReadinessScoreSummary($readinessScore),
+            'forecast' => $this->buildRaceReadinessForecastSummary(
+                $raceReadinessContext->getForecastConfidence(),
+                $raceReadinessContext->getForecastDaysUntilTsbHealthy(),
+                $raceReadinessContext->getForecastDaysUntilAcRatioHealthy(),
+            ),
+        ];
+    }
+
+    /**
+     * @return array{score: int, status: array{key: string, label: string, description: string, range: string}}
+     */
+    private function buildReadinessScoreSummary(ReadinessScore $readinessScore): array
+    {
+        return [
+            'score' => $readinessScore->getValue(),
+            'status' => [
+                'key' => $readinessScore->getStatus()->name,
+                'label' => $readinessScore->getStatus()->trans($this->translator),
+                'description' => $readinessScore->getStatus()->transDescription($this->translator),
+                'range' => $readinessScore->getStatus()->getRange(),
+            ],
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>|null
+     */
+    private function buildRaceReadinessForecastSummary(
+        ?TrainingLoadForecastConfidence $forecastConfidence,
+        ?int $daysUntilTsbHealthy,
+        ?int $daysUntilAcRatioHealthy,
+    ): ?array {
+        if (null === $forecastConfidence && null === $daysUntilTsbHealthy && null === $daysUntilAcRatioHealthy) {
+            return null;
+        }
+
+        return [
+            'confidence' => null === $forecastConfidence ? null : [
+                'key' => $forecastConfidence->value,
+                'label' => $forecastConfidence->trans($this->translator),
+                'description' => $forecastConfidence->transDescription($this->translator),
+            ],
+            'daysUntilTsbHealthy' => $daysUntilTsbHealthy,
+            'daysUntilAcRatioHealthy' => $daysUntilAcRatioHealthy,
+        ];
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
     private function mapReadinessFactor(ReadinessFactor $factor): array
     {
         return [
@@ -516,6 +689,20 @@ final readonly class TrainingAdvisorExportBuilder
             ],
             $projection->getProjection(),
         );
+    }
+
+    /**
+     * @return array{key: string, label: string, description: string}
+     */
+    private function buildForecastConfidenceSummary(TrainingLoadForecastProjection $projection): array
+    {
+        $confidence = $projection->getConfidence();
+
+        return [
+            'key' => $confidence->value,
+            'label' => $confidence->trans($this->translator),
+            'description' => $confidence->transDescription($this->translator),
+        ];
     }
 
     /**

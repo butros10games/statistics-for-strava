@@ -107,13 +107,13 @@ export const registerEchartsCallbacks = () => {
                 return '';
             }
 
-            const seriesOrder = ['CTL (Fitness)', 'ATL (Fatigue)', 'TSB (Form)', 'Daily load'];
             const seriesNameMap = {
                 __forecast_ctl: 'CTL (Fitness)',
                 __forecast_atl: 'ATL (Fatigue)',
                 __forecast_tsb: 'TSB (Form)',
-                __forecast_load: 'Daily load',
+                __forecast_load: 'Predicted daily load',
             };
+            const seriesOrderWithForecast = ['CTL (Fitness)', 'ATL (Fatigue)', 'TSB (Form)', 'Daily load', 'Predicted daily load'];
             const preferredEntries = new Map();
 
             params.forEach((param) => {
@@ -131,7 +131,7 @@ export const registerEchartsCallbacks = () => {
             });
 
             const axisLabel = params[0].axisValueLabel ?? params[0].name ?? '';
-            const rows = seriesOrder
+            const rows = seriesOrderWithForecast
                 .filter((label) => preferredEntries.has(label))
                 .map((label) => {
                     const param = preferredEntries.get(label);

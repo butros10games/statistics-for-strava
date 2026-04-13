@@ -210,6 +210,10 @@ services:
         factory: [ null, 'fromArray' ]
         arguments: ['@=app_config("general.athlete.ftpHistory")']
 
+    App\Domain\Performance\PerformanceAnchor\PerformanceAnchorHistory:
+        factory: [ null, 'fromFtpHistory' ]
+        arguments: ['@App\Domain\Ftp\FtpHistory']
+
     App\Domain\Gear\CustomGear\CustomGearConfig:
         factory: [ null, 'fromArray' ]
         arguments: ['@=app_config("gear.customGear", [])']

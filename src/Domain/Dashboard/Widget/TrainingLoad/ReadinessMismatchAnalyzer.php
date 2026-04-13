@@ -23,6 +23,7 @@ final class ReadinessMismatchAnalyzer
             ReadinessFactor::KEY_TSB,
             ReadinessFactor::KEY_AC_RATIO,
             ReadinessFactor::KEY_MONOTONY,
+            ReadinessFactor::KEY_STRAIN,
         ]);
         $subjectiveImpact = $readinessAssessment->sumFactors([ReadinessFactor::KEY_RECOVERY_CHECK_IN]);
 

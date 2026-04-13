@@ -140,6 +140,7 @@ final readonly class TrainingLoadWidget implements Widget
                 now: $projectionNow,
                 projectedLoads: $plannedSessionForecast->getProjectedLoads(),
                 horizon: $forecastHorizon,
+                currentDayProjectedLoad: $plannedSessionForecast->getCurrentDayProjectedLoad(),
             )
             : null;
 

@@ -6,6 +6,7 @@ namespace App\Domain\Activity;
 
 use App\Domain\Activity\Route\RouteGeography;
 use App\Domain\Activity\SportType\SportType;
+use App\Domain\Activity\Stream\StreamBasedActivityPowerRepository;
 use App\Domain\Gear\GearId;
 use App\Domain\Integration\Weather\OpenMeteo\Weather;
 use App\Infrastructure\Exception\EntityNotFound;
@@ -138,6 +139,10 @@ final readonly class DbalActivityRepository extends DbalRepository implements Ac
             'streamsAreImported' => 0,
             'workoutType' => $activity->getWorkoutType()?->value,
         ]);
+
+        EnrichedActivities::reset();
+        ActivityIntensity::reset();
+        StreamBasedActivityPowerRepository::reset();
     }
 
     public function update(ActivityWithRawData $activityWithRawData): void
@@ -187,6 +192,10 @@ final readonly class DbalActivityRepository extends DbalRepository implements Ac
             'workoutType' => $activity->getWorkoutType()?->value,
             'data' => Json::encode($this->cleanData($activityWithRawData->getRawData())),
         ]);
+
+        EnrichedActivities::reset();
+        ActivityIntensity::reset();
+        StreamBasedActivityPowerRepository::reset();
     }
 
     public function delete(ActivityId $activityId): void
@@ -196,6 +205,10 @@ final readonly class DbalActivityRepository extends DbalRepository implements Ac
         $this->connection->executeStatement($sql, [
             'activityId' => $activityId,
         ]);
+
+        EnrichedActivities::reset();
+        ActivityIntensity::reset();
+        StreamBasedActivityPowerRepository::reset();
     }
 
     public function activityNeedsStreamImport(ActivityId $activityId): bool

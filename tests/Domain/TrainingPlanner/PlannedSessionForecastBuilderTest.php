@@ -92,6 +92,54 @@ final class PlannedSessionForecastBuilderTest extends ContainerTestCase
         self::assertSame(0.0, $projectedLoads[5]);
     }
 
+    public function testItIncludesUnfinishedCurrentDaySessionsWithoutShiftingThemIntoTomorrow(): void
+    {
+        $unfinishedToday = $this->createPlannedSession(
+            day: '2026-04-07 00:00:00',
+            title: 'Lunch ride',
+            targetLoad: 52.5,
+            estimationSource: PlannedSessionEstimationSource::MANUAL_TARGET_LOAD,
+        );
+        $alreadyCompletedToday = PlannedSession::create(
+            plannedSessionId: PlannedSessionId::random(),
+            day: SerializableDateTime::fromString('2026-04-07 00:00:00'),
+            activityType: ActivityType::RIDE,
+            title: 'Completed ride',
+            notes: null,
+            targetLoad: 40.0,
+            targetDurationInSeconds: null,
+            targetIntensity: null,
+            templateActivityId: null,
+            estimationSource: PlannedSessionEstimationSource::MANUAL_TARGET_LOAD,
+            linkedActivityId: ActivityId::fromUnprefixed('900001'),
+            linkStatus: PlannedSessionLinkStatus::LINKED,
+            createdAt: SerializableDateTime::fromString('2026-04-07 08:00:00'),
+            updatedAt: SerializableDateTime::fromString('2026-04-07 08:00:00'),
+        );
+        $tomorrow = $this->createPlannedSession(
+            day: '2026-04-08 00:00:00',
+            title: 'Tomorrow ride',
+            targetLoad: 33.0,
+            estimationSource: PlannedSessionEstimationSource::MANUAL_TARGET_LOAD,
+        );
+
+        $this->plannedSessionRepository->upsert($unfinishedToday);
+        $this->plannedSessionRepository->upsert($alreadyCompletedToday);
+        $this->plannedSessionRepository->upsert($tomorrow);
+
+        $forecast = $this->plannedSessionForecastBuilder->build(
+            SerializableDateTime::fromString('2026-04-07 09:00:00'),
+            3,
+        );
+
+        self::assertSame(52.5, $forecast->getCurrentDayProjectedLoad());
+        self::assertSame(33.0, $forecast->getProjectedLoads()[1]);
+        self::assertSame(0.0, $forecast->getProjectedLoads()[2]);
+        self::assertSame(0.0, $forecast->getProjectedLoads()[3]);
+        self::assertCount(2, $forecast->getEstimates());
+        self::assertSame(85.5, $forecast->getTotalProjectedLoad());
+    }
+
     private function createPlannedSession(
         string $day,
         string $title,

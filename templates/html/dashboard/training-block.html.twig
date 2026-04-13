@@ -1,0 +1,96 @@
+{% autoescape false %}
+    {% set uniqueId = uniqueNumberForId('trainingBlock') %}
+    <div class="modal-header flex items-center justify-between">
+        <div class="min-w-0">
+            <h3>
+                <span>{{ "Training block"|trans }}</span>
+            </h3>
+            <div class="mt-0.5 text-xs font-normal text-gray-500">
+                {% if trainingBlock %}
+                    {{ "Update the phase guiding the current stretch of training."|trans }}
+                {% else %}
+                    {{ "Add a phase so the planner can show where the season is building, sharpening, or backing off."|trans }}
+                {% endif %}
+            </div>
+        </div>
+        <div class="flex items-center">
+            <button type="button" class="close">
+                <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
+                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
+                </svg>
+                <span class="sr-only">{{ "Close modal"|trans }}</span>
+            </button>
+        </div>
+    </div>
+    <div class="modal-body">
+        <form id="training-block-form-{{ uniqueId }}" action="/training-block" method="post" class="space-y-4">
+            {% if trainingBlock %}
+                <input type="hidden" name="trainingBlockId" value="{{ trainingBlock.getId() }}" />
+            {% endif %}
+            <input type="hidden" name="redirectTo" value="{{ redirectTo|default('/monthly-stats') }}" />
+
+            <div class="rounded-lg border border-gray-200 bg-white shadow-xs">
+                <div class="px-4 py-3 border-b border-gray-100">
+                    <div class="text-xs font-semibold uppercase tracking-wide text-gray-500">{{ "Block details"|trans }}</div>
+                    <div class="mt-0.5 text-[11px] text-gray-400">{{ "Define the phase, its time window, and the main focus you want visible in the calendar."|trans }}</div>
+                </div>
+                <div class="px-4 py-3">
+                    <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+                        <div>
+                            <label class="mb-1 block text-[10px] font-medium uppercase tracking-wide text-gray-500" for="training-block-start-day-{{ uniqueId }}">{{ "Start day"|trans }}</label>
+                            <input id="training-block-start-day-{{ uniqueId }}" name="startDay" type="date" value="{{ trainingBlockDefaultStartDay }}" class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-amber-500 focus:ring-amber-500" />
+                        </div>
+                        <div>
+                            <label class="mb-1 block text-[10px] font-medium uppercase tracking-wide text-gray-500" for="training-block-end-day-{{ uniqueId }}">{{ "End day"|trans }}</label>
+                            <input id="training-block-end-day-{{ uniqueId }}" name="endDay" type="date" value="{{ trainingBlockDefaultEndDay }}" class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-amber-500 focus:ring-amber-500" />
+                        </div>
+                        <div>
+                            <label class="mb-1 block text-[10px] font-medium uppercase tracking-wide text-gray-500" for="training-block-phase-{{ uniqueId }}">{{ "Phase"|trans }}</label>
+                            <select id="training-block-phase-{{ uniqueId }}" name="phase" class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-amber-500 focus:ring-amber-500">
+                                {% for phase in trainingBlockPhaseOptions %}
+                                    <option value="{{ phase.value }}"{% if (trainingBlock ? trainingBlock.getPhase().value : 'base') == phase.value %} selected{% endif %}>{{ phase|trans }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="mb-1 block text-[10px] font-medium uppercase tracking-wide text-gray-500" for="training-block-title-{{ uniqueId }}">{{ "Title"|trans }}</label>
+                            <input id="training-block-title-{{ uniqueId }}" name="title" type="text" value="{{ trainingBlock ? trainingBlock.getTitle() : '' }}" placeholder="{{ 'Early summer build'|trans }}" class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-amber-500 focus:ring-amber-500" />
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="mb-1 block text-[10px] font-medium uppercase tracking-wide text-gray-500" for="training-block-target-race-{{ uniqueId }}">{{ "Target race"|trans }}</label>
+                            <select id="training-block-target-race-{{ uniqueId }}" name="targetRaceEventId" class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-amber-500 focus:ring-amber-500">
+                                <option value="">{{ "No linked race"|trans }}</option>
+                                {% for raceEvent in trainingBlockRaceEventOptions %}
+                                    {% set raceTitle = raceEvent.getTitle() ?: (raceEvent.getType()|trans) %}
+                                    <option value="{{ raceEvent.getId() }}"{% if trainingBlock and trainingBlock.getTargetRaceEventId() and trainingBlock.getTargetRaceEventId() ~ '' == raceEvent.getId() ~ '' %} selected{% endif %}>{{ raceTitle }} · {{ raceEvent.getDay().format('D d M Y') }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="mb-1 block text-[10px] font-medium uppercase tracking-wide text-gray-500" for="training-block-focus-{{ uniqueId }}">{{ "Focus"|trans }}</label>
+                            <input id="training-block-focus-{{ uniqueId }}" name="focus" type="text" value="{{ trainingBlock ? trainingBlock.getFocus() : '' }}" placeholder="{{ 'Aerobic durability, long ride quality, and controlled tempo run progression'|trans }}" class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-amber-500 focus:ring-amber-500" />
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="mb-1 block text-[10px] font-medium uppercase tracking-wide text-gray-500" for="training-block-notes-{{ uniqueId }}">{{ "Notes"|trans }}</label>
+                            <textarea id="training-block-notes-{{ uniqueId }}" name="notes" rows="4" placeholder="{{ 'Key reminders, cap sessions, recovery constraints, or how this phase should feel.'|trans }}" class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-amber-500 focus:ring-amber-500">{{ trainingBlock ? trainingBlock.getNotes() : '' }}</textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+        {% if trainingBlock %}
+            <form id="training-block-delete-form-{{ uniqueId }}" action="/training-block/delete" method="post">
+                <input type="hidden" name="trainingBlockId" value="{{ trainingBlock.getId() }}" />
+                <input type="hidden" name="redirectTo" value="{{ redirectTo|default('/monthly-stats') }}" />
+            </form>
+        {% endif %}
+        <div class="mt-4 flex items-center justify-between gap-3">
+            {% if trainingBlock %}
+                <button type="submit" form="training-block-delete-form-{{ uniqueId }}" class="inline-flex items-center rounded-lg border border-red-300 px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-50">{{ "Delete"|trans }}</button>
+            {% else %}
+                <span></span>
+            {% endif %}
+            <button type="submit" form="training-block-form-{{ uniqueId }}" class="inline-flex items-center rounded-lg bg-strava-orange px-3 py-2 text-sm font-medium text-white hover:bg-orange-600 focus:ring-4 focus:outline-hidden focus:ring-orange-300">{{ trainingBlock ? 'Save changes'|trans : 'Create block'|trans }}</button>
+        </div>
+    </div>
+{% endautoescape %}

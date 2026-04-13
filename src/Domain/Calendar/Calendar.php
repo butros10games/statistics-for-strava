@@ -6,6 +6,8 @@ namespace App\Domain\Calendar;
 
 use App\Domain\Activity\EnrichedActivities;
 use App\Domain\TrainingPlanner\PlannedSession;
+use App\Domain\TrainingPlanner\RaceEvent;
+use App\Domain\TrainingPlanner\TrainingBlock;
 use App\Infrastructure\ValueObject\Time\SerializableDateTime;
 
 final readonly class Calendar
@@ -14,6 +16,8 @@ final readonly class Calendar
         private Month $month,
         private EnrichedActivities $enrichedActivities,
         private array $plannedSessionsByDay,
+        private array $raceEventsByDay,
+        private array $trainingBlocksByDay,
     ) {
     }
 
@@ -21,11 +25,15 @@ final readonly class Calendar
         Month $month,
         EnrichedActivities $enrichedActivities,
         array $plannedSessionsByDay = [],
+        array $raceEventsByDay = [],
+        array $trainingBlocksByDay = [],
     ): self {
         return new self(
             month: $month,
             enrichedActivities: $enrichedActivities,
             plannedSessionsByDay: $plannedSessionsByDay,
+            raceEventsByDay: $raceEventsByDay,
+            trainingBlocksByDay: $trainingBlocksByDay,
         );
     }
 
@@ -55,6 +63,8 @@ final readonly class Calendar
                 isCurrentMonth: false,
                 activities: $this->enrichedActivities->findByStartDate($date, null),
                 plannedSessions: $this->plannedSessionsByDay[$date->format('Y-m-d')] ?? [],
+                raceEvents: $this->raceEventsByDay[$date->format('Y-m-d')] ?? [],
+                trainingBlocks: $this->trainingBlocksByDay[$date->format('Y-m-d')] ?? [],
             ));
         }
 
@@ -71,6 +81,8 @@ final readonly class Calendar
                 isCurrentMonth: true,
                 activities: $this->enrichedActivities->findByStartDate($date, null),
                 plannedSessions: $this->plannedSessionsByDay[$date->format('Y-m-d')] ?? [],
+                raceEvents: $this->raceEventsByDay[$date->format('Y-m-d')] ?? [],
+                trainingBlocks: $this->trainingBlocksByDay[$date->format('Y-m-d')] ?? [],
             ));
         }
 
@@ -88,6 +100,8 @@ final readonly class Calendar
                 isCurrentMonth: false,
                 activities: $this->enrichedActivities->findByStartDate($date, null),
                 plannedSessions: $this->plannedSessionsByDay[$date->format('Y-m-d')] ?? [],
+                raceEvents: $this->raceEventsByDay[$date->format('Y-m-d')] ?? [],
+                trainingBlocks: $this->trainingBlocksByDay[$date->format('Y-m-d')] ?? [],
             ));
         }
 

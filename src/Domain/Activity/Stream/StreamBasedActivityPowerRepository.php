@@ -22,6 +22,11 @@ final class StreamBasedActivityPowerRepository implements ActivityPowerRepositor
     /** @var array<string, PowerOutputs> */
     public static array $cachedPowerOutputs = [];
 
+    public static function reset(): void
+    {
+        self::$cachedPowerOutputs = [];
+    }
+
     public function __construct(
         private readonly Connection $connection,
         private readonly ActivityIdRepository $activityIdRepository,
@@ -34,18 +39,23 @@ final class StreamBasedActivityPowerRepository implements ActivityPowerRepositor
     {
         $this->buildStaticCaches();
 
-        return StreamBasedActivityPowerRepository::$cachedPowerOutputs[(string) $activityId];
+        if (!isset(self::$cachedPowerOutputs[(string) $activityId])) {
+            self::reset();
+            $this->buildStaticCaches();
+        }
+
+        return self::$cachedPowerOutputs[(string) $activityId] ?? PowerOutputs::empty();
     }
 
     private function buildStaticCaches(): void
     {
-        if ([] !== StreamBasedActivityPowerRepository::$cachedPowerOutputs) {
+        if ([] !== self::$cachedPowerOutputs) {
             return;
         }
 
         $activityIds = $this->activityIdRepository->findAll();
         foreach ($activityIds as $activityId) {
-            StreamBasedActivityPowerRepository::$cachedPowerOutputs[(string) $activityId] = PowerOutputs::empty();
+            self::$cachedPowerOutputs[(string) $activityId] = PowerOutputs::empty();
         }
 
         $results = $this->connection->executeQuery(
@@ -77,7 +87,7 @@ final class StreamBasedActivityPowerRepository implements ActivityPowerRepositor
                 }
 
                 $relativePower = $athleteWeight->toFloat() > 0 ? round($bestAverageForTimeInterval / $athleteWeight->toFloat(), 2) : 0;
-                StreamBasedActivityPowerRepository::$cachedPowerOutputs[(string) $activityId]->add(PowerOutput::fromState(
+                self::$cachedPowerOutputs[(string) $activityId]->add(PowerOutput::fromState(
                     timeIntervalInSeconds: $timeIntervalInSeconds,
                     formattedTimeInterval: 0 !== (int) $interval->totalHours ? $interval->totalHours.' h' : (0 !== (int) $interval->totalMinutes ? $interval->totalMinutes.' m' : $interval->totalSeconds.' s'),
                     power: $bestAverageForTimeInterval,

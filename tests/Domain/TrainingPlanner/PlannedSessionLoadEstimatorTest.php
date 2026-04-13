@@ -11,6 +11,7 @@ use App\Domain\Activity\ActivityWithRawData;
 use App\Domain\Activity\SportType\SportType;
 use App\Domain\Athlete\Athlete;
 use App\Domain\Athlete\AthleteRepository;
+use App\Domain\Performance\PerformanceAnchor\PerformanceAnchorHistory;
 use App\Domain\TrainingPlanner\PlannedSession;
 use App\Domain\TrainingPlanner\PlannedSessionEstimationSource;
 use App\Domain\TrainingPlanner\PlannedSessionId;
@@ -199,6 +200,49 @@ final class PlannedSessionLoadEstimatorTest extends ContainerTestCase
         self::assertGreaterThan($easyEstimate->getEstimatedLoad(), $hardEstimate->getEstimatedLoad());
     }
 
+    public function testWorkoutRunPowerTargetsCanUseRunningThresholdAnchorsWithoutPowerSamples(): void
+    {
+        $estimator = new PlannedSessionLoadEstimator(
+            activityRepository: $this->activityRepository,
+            athleteRepository: $this->athleteRepository,
+            performanceAnchorHistory: PerformanceAnchorHistory::fromArray([
+                'running_threshold_power' => [
+                    '2026-03-01' => 250,
+                ],
+            ]),
+        );
+
+        self::assertSame([], $estimator->getPowerLoadPerHourSamplesForActivityType(ActivityType::RUN));
+
+        $runPowerSession = $this->createPlannedSession(
+            day: '2026-04-10 00:00:00',
+            activityType: ActivityType::RUN,
+            workoutSteps: [[
+                'itemId' => 'run-power-step',
+                'parentBlockId' => null,
+                'type' => 'steady',
+                'repetitions' => 1,
+                'targetType' => 'time',
+                'conditionType' => null,
+                'durationInSeconds' => 1800,
+                'distanceInMeters' => null,
+                'targetPace' => null,
+                'targetPower' => 300,
+                'targetHeartRate' => null,
+                'recoveryAfterInSeconds' => null,
+            ]],
+        );
+
+        $estimate = $estimator->estimate($runPowerSession);
+
+        self::assertNotNull($estimate);
+        self::assertSame(PlannedSessionEstimationSource::WORKOUT_TARGETS, $estimate->getEstimationSource());
+
+        $expectedLoadPerHour = round(($this->clamp(300 / 250, 0.35, 1.8) ** 2) * 100, 1);
+
+        self::assertSame(round((1800 / 3600) * $expectedLoadPerHour, 1), $estimate->getEstimatedLoad());
+    }
+
     public function testEstimatedTargetLoadDoesNotBlockWorkoutTargetEstimation(): void
     {
         $plannedSession = $this->createPlannedSession(
@@ -364,5 +408,10 @@ final class PlannedSessionLoadEstimatorTest extends ContainerTestCase
         $intensity = max(0.0, min(1.5, $intensity));
 
         return round(($movingTimeInSeconds / 60) * $intensity * exp(1.92 * $intensity), 1);
+    }
+
+    private function clamp(float $value, float $min, float $max): float
+    {
+        return max($min, min($max, $value));
     }
 }

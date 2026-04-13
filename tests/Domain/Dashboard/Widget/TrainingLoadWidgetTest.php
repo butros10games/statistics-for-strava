@@ -18,6 +18,7 @@ use App\Domain\TrainingPlanner\PlannedSessionId;
 use App\Domain\TrainingPlanner\PlannedSessionIntensity;
 use App\Domain\TrainingPlanner\PlannedSessionLinkStatus;
 use App\Domain\TrainingPlanner\PlannedSessionRepository;
+use App\Infrastructure\Time\Clock\Clock;
 use App\Infrastructure\ValueObject\Time\SerializableDateTime;
 use App\Tests\ContainerTestCase;
 use App\Tests\Domain\Activity\ActivityBuilder;
@@ -50,9 +51,11 @@ final class TrainingLoadWidgetTest extends ContainerTestCase
             return;
         }
 
+        $now = $this->getContainer()->get(Clock::class)->getCurrentDateTimeImmutable()->setTime(0, 0);
+
         $this->plannedSessionRepository->upsert(PlannedSession::create(
             plannedSessionId: PlannedSessionId::random(),
-            day: SerializableDateTime::fromString('2026-04-08 00:00:00'),
+            day: $now->modify('+1 day'),
             activityType: \App\Domain\Activity\ActivityType::RIDE,
             title: 'Manual ride',
             notes: null,
@@ -68,13 +71,14 @@ final class TrainingLoadWidgetTest extends ContainerTestCase
         ));
 
         $renderedWidget = $this->trainingLoadWidget->render(
-            now: SerializableDateTime::fromString('2026-04-07 00:00:00'),
+            now: $now,
             configuration: WidgetConfiguration::empty(),
         );
         $trainingLoadModal = $this->buildStorage->read('training-load.html');
 
         self::assertStringContainsString('Training Load Analysis', $renderedWidget);
         self::assertStringContainsString('Planned sessions forecast', $trainingLoadModal);
+        self::assertStringContainsString('Forecast confidence', $trainingLoadModal);
         self::assertStringContainsString('Manual ride', $trainingLoadModal);
         self::assertStringContainsString('Projects the next 7 days using the sessions currently saved in your planner.', $trainingLoadModal);
     }

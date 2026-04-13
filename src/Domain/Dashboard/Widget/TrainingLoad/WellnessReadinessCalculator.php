@@ -82,6 +82,10 @@ final class WellnessReadinessCalculator
         $factors[] = ReadinessFactor::create(ReadinessFactor::KEY_MONOTONY, 'Monotony', $monotonyComponent);
         $score += $monotonyComponent;
 
+        $strainComponent = $this->calculateStrainComponent($trainingMetrics);
+        $factors[] = ReadinessFactor::create(ReadinessFactor::KEY_STRAIN, 'Strain', $strainComponent);
+        $score += $strainComponent;
+
         $recoveryCheckInComponent = $this->calculateRecoveryQuestionnaireComponent($latestRecoveryCheckIn);
         $factors[] = ReadinessFactor::create(ReadinessFactor::KEY_RECOVERY_CHECK_IN, 'Recovery check-in', $recoveryCheckInComponent);
         $score += $recoveryCheckInComponent;
@@ -200,6 +204,21 @@ final class WellnessReadinessCalculator
         }
 
         return -$this->clamp(($latestRecord['stepsCount'] - $stepsThreshold) / 1500, 0, 6);
+    }
+
+    private function calculateStrainComponent(TrainingMetrics $trainingMetrics): float
+    {
+        $currentStrain = $trainingMetrics->getCurrentStrain();
+        if (null === $currentStrain) {
+            return 0.0;
+        }
+
+        return match (true) {
+            $currentStrain >= 6000 => -6.0,
+            $currentStrain >= 4500 => -3.0,
+            $currentStrain >= 3000 => -1.5,
+            default => 0.0,
+        };
     }
 
     /**

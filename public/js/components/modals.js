@@ -3,10 +3,24 @@ import {eventBus, Events} from "../core/event-bus";
 export default class ModalManager {
     constructor(router) {
         this.router = router;
+        this.initializedRoots = new WeakSet();
         this.modalSkeletonNode = document.getElementById('modal-skeleton');
         this.modalContent = this.modalSkeletonNode.querySelector('#modal-content');
         this.modalSpinner = this.modalSkeletonNode.querySelector('.spinner');
         this.modal = null;
+        this.handleModalTriggerClick = (event) => {
+            const node = event.target.closest('a[data-model-content-url]');
+            if (!node || !event.currentTarget.contains(node)) {
+                return;
+            }
+
+            event.preventDefault();
+            event.stopPropagation();
+
+            const modalId = node.getAttribute('data-model-content-url');
+            this.open(modalId);
+            this.router.pushCurrentRouteToHistoryState(modalId);
+        };
 
         this.modalContent.addEventListener('submit', (event) => {
             const formNode = event.target.closest('form');
@@ -25,16 +39,12 @@ export default class ModalManager {
     }
 
     init(rootNode) {
-        rootNode.addEventListener('click', (e) => {
-            const node = e.target.closest('a[data-model-content-url]');
-            if (!node) return;
+        if (this.initializedRoots.has(rootNode)) {
+            return;
+        }
 
-            e.preventDefault();
-            e.stopPropagation();
-            const modalId = node.getAttribute('data-model-content-url');
-            this.open(modalId);
-            this.router.pushCurrentRouteToHistoryState(modalId);
-        });
+        this.initializedRoots.add(rootNode);
+        rootNode.addEventListener('click', this.handleModalTriggerClick, true);
     }
 
     open(modalId) {
@@ -76,6 +86,26 @@ export default class ModalManager {
                     this.router.pushCurrentRouteToHistoryState();
                 }, {once: true});
 
+                this._arrowKeyHandler = (e) => {
+                    if (e.target.closest('input, textarea, select, [contenteditable]')) {
+                        return;
+                    }
+                    if (e.key === 'ArrowLeft') {
+                        const prev = this.modalContent.querySelector('a[data-nav-prev][data-model-content-url]');
+                        if (prev) {
+                            e.preventDefault();
+                            prev.click();
+                        }
+                    } else if (e.key === 'ArrowRight') {
+                        const next = this.modalContent.querySelector('a[data-nav-next][data-model-content-url]');
+                        if (next) {
+                            e.preventDefault();
+                            next.click();
+                        }
+                    }
+                };
+                document.addEventListener('keydown', this._arrowKeyHandler);
+
                 document.body.addEventListener('click', (e) => {
                     if (e.target.id !== 'modal-skeleton') {
                         return;
@@ -89,6 +119,10 @@ export default class ModalManager {
             },
             onHide: () => {
                 this.modalContent.innerHTML = '';
+                if (this._arrowKeyHandler) {
+                    document.removeEventListener('keydown', this._arrowKeyHandler);
+                    this._arrowKeyHandler = null;
+                }
             }
         });
 

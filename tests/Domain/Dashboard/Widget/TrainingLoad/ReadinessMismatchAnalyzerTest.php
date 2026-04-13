@@ -33,9 +33,9 @@ final class ReadinessMismatchAnalyzerTest extends TestCase
     {
         $insight = $this->analyzer->analyze(
             $this->buildAssessment(
-                ReadinessFactor::create(ReadinessFactor::KEY_HRV, 'HRV', -9.0),
-                ReadinessFactor::create(ReadinessFactor::KEY_SLEEP_DURATION, 'Sleep duration', -4.0),
-                ReadinessFactor::create(ReadinessFactor::KEY_MONOTONY, 'Monotony', -3.0),
+                ReadinessFactor::create(ReadinessFactor::KEY_HRV, 'HRV', -7.0),
+                ReadinessFactor::create(ReadinessFactor::KEY_SLEEP_DURATION, 'Sleep duration', -2.0),
+                ReadinessFactor::create(ReadinessFactor::KEY_STRAIN, 'Strain', -3.0),
                 ReadinessFactor::create(ReadinessFactor::KEY_RECOVERY_CHECK_IN, 'Recovery check-in', -1.0),
             ),
             ['day' => '2026-04-07', 'fatigue' => 2, 'soreness' => 2, 'stress' => 2, 'motivation' => 4, 'sleepQuality' => 4],

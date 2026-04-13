@@ -4,6 +4,7 @@ namespace App\Tests\Domain\Activity;
 
 use App\Domain\Activity\ActivityIntensity;
 use App\Domain\Activity\ActivityRepository;
+use App\Domain\Activity\ActivityTrainingLoadCalculator;
 use App\Domain\Activity\ActivityWithRawData;
 use App\Domain\Activity\DailyTrainingLoad;
 use App\Domain\Activity\EnrichedActivities;
@@ -16,6 +17,7 @@ use App\Domain\Athlete\Athlete;
 use App\Domain\Athlete\AthleteRepository;
 use App\Domain\Athlete\KeyValueBasedAthleteRepository;
 use App\Domain\Athlete\MaxHeartRate\MaxHeartRateFormula;
+use App\Domain\Performance\PerformanceAnchor\PerformanceAnchorHistory;
 use App\Domain\Athlete\RestingHeartRate\RestingHeartRateFormula;
 use App\Domain\Ftp\FtpHistory;
 use App\Infrastructure\KeyValue\KeyValueStore;
@@ -57,25 +59,53 @@ class DailyTrainingLoadTest extends ContainerTestCase
         );
     }
 
+    public function testCalculateWithRunningPowerBasedData(): void
+    {
+        $this->athleteRepository->save(Athlete::create([
+            'birthDate' => '1989-08-14',
+        ]));
+
+        $activity = ActivityBuilder::fromDefaults()
+            ->withAveragePower(260)
+            ->withMovingTimeInSeconds(3600)
+            ->withSportType(SportType::RUN)
+            ->withStartDateTime(SerializableDateTime::fromString('2023-10-10'))
+            ->build();
+
+        $this->getContainer()->get(ActivityRepository::class)->add(ActivityWithRawData::fromState(
+            $activity,
+            []
+        ));
+        $this->getContainer()->get(ActivityStreamMetricRepository::class)->add(ActivityStreamMetric::create(
+            activityId: $activity->getId(),
+            streamType: StreamType::WATTS,
+            metricType: ActivityStreamMetricType::NORMALIZED_POWER,
+            data: [260],
+        ));
+
+        $this->assertEquals(
+            108,
+            $this->dailyTrainingLoad->calculate(SerializableDateTime::fromString('2023-10-10')),
+        );
+    }
+
     public function testCalculateWhenFtpNotFound(): void
     {
         $this->dailyTrainingLoad = new DailyTrainingLoad(
             $this->getContainer()->get(EnrichedActivities::class),
-            new ActivityIntensity(
-                $this->getContainer()->get(EnrichedActivities::class),
-                $this->athleteRepository = new KeyValueBasedAthleteRepository(
-                    $this->getContainer()->get(KeyValueStore::class),
-                    $this->getContainer()->get(MaxHeartRateFormula::class),
-                    $this->getContainer()->get(RestingHeartRateFormula::class),
+            new ActivityTrainingLoadCalculator(
+                new ActivityIntensity(
+                    $this->getContainer()->get(EnrichedActivities::class),
+                    $this->athleteRepository = new KeyValueBasedAthleteRepository(
+                        $this->getContainer()->get(KeyValueStore::class),
+                        $this->getContainer()->get(MaxHeartRateFormula::class),
+                        $this->getContainer()->get(RestingHeartRateFormula::class),
+                    ),
+                    PerformanceAnchorHistory::fromArray([]),
                 ),
-                FtpHistory::fromArray([]),
+                PerformanceAnchorHistory::fromArray([]),
+                $this->athleteRepository,
             ),
-            FtpHistory::fromArray([]),
-            $this->athleteRepository = new KeyValueBasedAthleteRepository(
-                $this->getContainer()->get(KeyValueStore::class),
-                $this->getContainer()->get(MaxHeartRateFormula::class),
-                $this->getContainer()->get(RestingHeartRateFormula::class),
-            )
         );
 
         $this->athleteRepository->save(Athlete::create([
@@ -159,13 +189,25 @@ class DailyTrainingLoadTest extends ContainerTestCase
 
         $this->dailyTrainingLoad = new DailyTrainingLoad(
             $this->getContainer()->get(EnrichedActivities::class),
-            $this->getContainer()->get(ActivityIntensity::class),
-            FtpHistory::fromArray(['2023-04-01' => 250]),
-            $this->athleteRepository = new KeyValueBasedAthleteRepository(
-                $this->getContainer()->get(KeyValueStore::class),
-                $this->getContainer()->get(MaxHeartRateFormula::class),
-                $this->getContainer()->get(RestingHeartRateFormula::class),
-            )
+            new ActivityTrainingLoadCalculator(
+                new ActivityIntensity(
+                    $this->getContainer()->get(EnrichedActivities::class),
+                    $this->athleteRepository = new KeyValueBasedAthleteRepository(
+                        $this->getContainer()->get(KeyValueStore::class),
+                        $this->getContainer()->get(MaxHeartRateFormula::class),
+                        $this->getContainer()->get(RestingHeartRateFormula::class),
+                    ),
+                    PerformanceAnchorHistory::fromFtpHistory(FtpHistory::fromArray([
+                        'cycling' => ['2023-04-01' => 250],
+                        'running' => ['2023-04-01' => 250],
+                    ])),
+                ),
+                PerformanceAnchorHistory::fromFtpHistory(FtpHistory::fromArray([
+                    'cycling' => ['2023-04-01' => 250],
+                    'running' => ['2023-04-01' => 250],
+                ])),
+                $this->athleteRepository,
+            ),
         );
     }
 }

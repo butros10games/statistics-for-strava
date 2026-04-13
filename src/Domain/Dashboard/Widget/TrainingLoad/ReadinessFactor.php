@@ -14,6 +14,7 @@ final readonly class ReadinessFactor
     public const string KEY_TSB = 'tsb';
     public const string KEY_AC_RATIO = 'acRatio';
     public const string KEY_MONOTONY = 'monotony';
+    public const string KEY_STRAIN = 'strain';
     public const string KEY_RECOVERY_CHECK_IN = 'recoveryCheckIn';
     public const string KEY_PERSONALIZATION = 'personalization';
 

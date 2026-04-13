@@ -52,9 +52,9 @@ final class PlannedSessionRequestHandlerTest extends ContainerTestCase
 
         self::assertSame(Response::HTTP_OK, $response->getStatusCode());
         self::assertStringContainsString('Planned session', (string) $response->getContent());
-        self::assertStringContainsString('Training planner session', (string) $response->getContent());
         self::assertStringContainsString('Add repeat block', (string) $response->getContent());
         self::assertStringContainsString('Planner outlook', (string) $response->getContent());
+        self::assertStringContainsString('option value="steady" selected', (string) $response->getContent());
     }
 
     public function testHandleGetShowsRecentTemplateActivitiesAndPlannerOutlook(): void
@@ -72,7 +72,7 @@ final class PlannedSessionRequestHandlerTest extends ContainerTestCase
         $response = $this->requestHandler->handle(new Request(query: ['day' => '2026-04-12']));
 
         self::assertSame(Response::HTTP_OK, $response->getStatusCode());
-        self::assertStringContainsString('Pick one of your recent activities to reuse its duration and heart-rate based load profile.', (string) $response->getContent());
+        self::assertStringContainsString('Reuse duration and load profile from a recent activity.', (string) $response->getContent());
         self::assertStringContainsString('Easy jog', (string) $response->getContent());
         self::assertStringContainsString('No estimated planned sessions in the next 14 days yet.', (string) $response->getContent());
     }
@@ -260,6 +260,89 @@ final class PlannedSessionRequestHandlerTest extends ContainerTestCase
         self::assertSame('heartRate', $records[0]->getWorkoutSteps()[4]['targetType']);
         self::assertSame('untilBelow', $records[0]->getWorkoutSteps()[4]['conditionType']);
         self::assertSame(150, $records[0]->getWorkoutSteps()[4]['targetHeartRate']);
+    }
+
+    public function testHandlePostPersistsNestedRepeatBlocks(): void
+    {
+        $this->expectPlannerRebuilds();
+
+        $response = $this->requestHandler->handle(new Request(
+            request: [
+                'day' => '2026-04-17',
+                'title' => 'Nested block workout',
+                'activityType' => ActivityType::RUN->value,
+                'targetIntensity' => 'hard',
+                'workoutSteps' => [
+                    [
+                        'itemId' => 'outer-block',
+                        'parentBlockId' => '',
+                        'type' => 'repeatBlock',
+                        'label' => 'Outer set',
+                        'repetitions' => '2',
+                        'targetType' => '',
+                        'conditionType' => '',
+                        'durationInMinutes' => '',
+                        'durationInSecondsPart' => '',
+                        'distanceInMeters' => '',
+                        'targetPace' => '',
+                        'targetHeartRate' => '',
+                    ],
+                    [
+                        'itemId' => 'inner-block',
+                        'parentBlockId' => 'outer-block',
+                        'type' => 'repeatBlock',
+                        'label' => 'Inner reps',
+                        'repetitions' => '3',
+                        'targetType' => '',
+                        'conditionType' => '',
+                        'durationInMinutes' => '',
+                        'durationInSecondsPart' => '',
+                        'distanceInMeters' => '',
+                        'targetPace' => '',
+                        'targetHeartRate' => '',
+                    ],
+                    [
+                        'itemId' => 'inner-interval',
+                        'parentBlockId' => 'inner-block',
+                        'type' => 'interval',
+                        'label' => 'On',
+                        'repetitions' => '1',
+                        'targetType' => 'time',
+                        'conditionType' => '',
+                        'durationInMinutes' => '1',
+                        'durationInSecondsPart' => '',
+                        'distanceInMeters' => '',
+                        'targetPace' => '4:00/km',
+                        'targetHeartRate' => '',
+                    ],
+                    [
+                        'itemId' => 'inner-recovery',
+                        'parentBlockId' => 'inner-block',
+                        'type' => 'recovery',
+                        'label' => 'Off',
+                        'repetitions' => '1',
+                        'targetType' => 'time',
+                        'conditionType' => '',
+                        'durationInMinutes' => '',
+                        'durationInSecondsPart' => '30',
+                        'distanceInMeters' => '',
+                        'targetPace' => '',
+                        'targetHeartRate' => '',
+                    ],
+                ],
+            ],
+            server: ['REQUEST_METHOD' => 'POST'],
+        ));
+
+        self::assertEquals(new RedirectResponse('/dashboard', Response::HTTP_FOUND), $response);
+
+        $records = $this->repository->findByDay(SerializableDateTime::fromString('2026-04-17 00:00:00'));
+        self::assertCount(1, $records);
+        self::assertCount(4, $records[0]->getWorkoutSteps());
+        self::assertSame(540, $records[0]->getTargetDurationInSeconds());
+        self::assertSame('outer-block', $records[0]->getWorkoutSteps()[1]['parentBlockId']);
+        self::assertSame('inner-block', $records[0]->getWorkoutSteps()[2]['parentBlockId']);
+        self::assertSame('inner-block', $records[0]->getWorkoutSteps()[3]['parentBlockId']);
     }
 
     public function testHandlePostPersistsTimeTargetWithUntilButtonPressCondition(): void
@@ -454,6 +537,47 @@ final class PlannedSessionRequestHandlerTest extends ContainerTestCase
         self::assertSame(240, $records[0]->getWorkoutSteps()[1]['targetPower']);
         self::assertNull($records[0]->getWorkoutSteps()[1]['targetPace']);
         self::assertSame(5000, $records[0]->getWorkoutSteps()[1]['distanceInMeters']);
+    }
+
+    public function testHandlePostPreservesRunningPowerTargetsWhenSubmitted(): void
+    {
+        $this->expectPlannerRebuilds();
+
+        $response = $this->requestHandler->handle(new Request(
+            request: [
+                'day' => '2026-04-16',
+                'title' => 'Power based run workout',
+                'activityType' => ActivityType::RUN->value,
+                'targetIntensity' => 'hard',
+                'workoutSteps' => [
+                    [
+                        'itemId' => 'run-power-step',
+                        'parentBlockId' => '',
+                        'type' => 'interval',
+                        'label' => 'Threshold effort',
+                        'repetitions' => '1',
+                        'targetType' => 'time',
+                        'conditionType' => '',
+                        'durationInMinutes' => '8',
+                        'durationInSecondsPart' => '',
+                        'distanceInMeters' => '',
+                        'targetPace' => '4:05/km',
+                        'targetPower' => '300',
+                        'targetHeartRate' => '',
+                    ],
+                ],
+            ],
+            server: ['REQUEST_METHOD' => 'POST'],
+        ));
+
+        self::assertEquals(new RedirectResponse('/dashboard', Response::HTTP_FOUND), $response);
+
+        $records = $this->repository->findByDay(SerializableDateTime::fromString('2026-04-16 00:00:00'));
+        self::assertCount(1, $records);
+        self::assertSame(ActivityType::RUN, $records[0]->getActivityType());
+        self::assertCount(1, $records[0]->getWorkoutSteps());
+        self::assertSame(300, $records[0]->getWorkoutSteps()[0]['targetPower']);
+        self::assertNull($records[0]->getWorkoutSteps()[0]['targetPace']);
     }
 
     public function testHandlePostPersistsConfirmedLinkWhenActivityExists(): void

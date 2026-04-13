@@ -83,6 +83,35 @@ const maybeAutoOpenRecoveryCheckIn = (modalId) => {
 sidebar.init();
 darkModeManager.attachEventListeners();
 
+// Arrow key navigation for month pages.
+document.addEventListener('keydown', (e) => {
+    if (e.target.closest('input, textarea, select, [contenteditable]')) {
+        return;
+    }
+    // Skip when a modal is open (modal has its own handler).
+    const modalSkeleton = document.getElementById('modal-skeleton');
+    if (modalSkeleton && !modalSkeleton.classList.contains('hidden')) {
+        return;
+    }
+    const content = document.getElementById('js-loaded-content');
+    if (!content) {
+        return;
+    }
+    if (e.key === 'ArrowLeft') {
+        const prev = content.querySelector('a[data-nav-prev][data-router-navigate], a[data-nav-prev][data-model-content-url]');
+        if (prev) {
+            e.preventDefault();
+            prev.click();
+        }
+    } else if (e.key === 'ArrowRight') {
+        const next = content.querySelector('a[data-nav-next][data-router-navigate], a[data-nav-next][data-model-content-url]');
+        if (next) {
+            e.preventDefault();
+            next.click();
+        }
+    }
+});
+
 eventBus.on(Events.DARK_MODE_TOGGLED, ({darkModeEnabled}) => {
     chartManager.toggleDarkTheme(darkModeEnabled);
 });
@@ -122,6 +151,30 @@ eventBus.on(Events.NAVIGATION_CLICKED, ({link}) => {
 });
 eventBus.on(Events.MODAL_LOADED, async ({node, modalName}) => {
     initElements(node);
+
+    // Race event family ↔ profile filtering.
+    const familySelect = node.querySelector('select[name="family"]');
+    const profileSelect = node.querySelector('select[name="profile"]');
+    if (familySelect && profileSelect) {
+        const syncProfiles = () => {
+            const selectedFamily = familySelect.value;
+            let hasVisibleSelected = false;
+            Array.from(profileSelect.options).forEach((opt) => {
+                const visible = opt.dataset.family === selectedFamily;
+                opt.hidden = !visible;
+                opt.disabled = !visible;
+                if (visible && opt.selected) {
+                    hasVisibleSelected = true;
+                }
+            });
+            if (!hasVisibleSelected) {
+                const first = Array.from(profileSelect.options).find((o) => !o.disabled);
+                if (first) first.selected = true;
+            }
+        };
+        familySelect.addEventListener('change', syncProfiles);
+        syncProfiles();
+    }
 
     if (modalName === 'ai-chat') {
         const {default: Chat} = await import(

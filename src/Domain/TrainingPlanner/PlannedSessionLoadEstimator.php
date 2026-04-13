@@ -8,8 +8,10 @@ use App\Domain\Activity\Activity;
 use App\Domain\Activity\ActivityRepository;
 use App\Domain\Activity\ActivityType;
 use App\Domain\Athlete\AthleteRepository;
-use App\Domain\Ftp\FtpHistory;
+use App\Domain\Performance\PerformanceAnchor\PerformanceAnchorHistory;
+use App\Domain\Performance\PerformanceAnchor\PerformanceAnchorType;
 use App\Infrastructure\Exception\EntityNotFound;
+use App\Infrastructure\ValueObject\Time\SerializableDateTime;
 
 final class PlannedSessionLoadEstimator
 {
@@ -25,7 +27,7 @@ final class PlannedSessionLoadEstimator
     public function __construct(
         private readonly ActivityRepository $activityRepository,
         private readonly AthleteRepository $athleteRepository,
-        private readonly FtpHistory $ftpHistory,
+        private readonly PerformanceAnchorHistory $performanceAnchorHistory,
     ) {
     }
 
@@ -116,14 +118,26 @@ final class PlannedSessionLoadEstimator
         }
 
         $history = [];
-        foreach ($this->ftpHistory->findAll($activityType) as $ftp) {
+        foreach ($this->getPerformanceAnchorsForActivityType($activityType) as $anchor) {
             $history[] = [
-                'setOn' => $ftp->getSetOn()->format('Y-m-d'),
-                'ftp' => $ftp->getFtp()->getValue(),
+                'setOn' => $anchor['setOn'],
+                'ftp' => (int) round($anchor['value']),
             ];
         }
 
         return $history;
+    }
+
+    /**
+     * @return list<array{setOn: string, value: float, unit: string, source: string, confidence: string, sampleSize: int}>
+     */
+    public function getPerformanceAnchorsForActivityType(ActivityType $activityType): array
+    {
+        if (!$activityType->supportsPowerData()) {
+            return [];
+        }
+
+        return $this->performanceAnchorHistory->exportForAITooling()[PerformanceAnchorType::fromActivityType($activityType)->value] ?? [];
     }
 
     private function estimateFromTemplate(PlannedSession $plannedSession): ?float
@@ -233,7 +247,9 @@ final class PlannedSessionLoadEstimator
         }
 
         $activityType = $plannedSession->getActivityType();
-        if (ActivityType::RIDE === $activityType && null !== ($workoutStep['targetPower'] ?? null) && $workoutStep['targetPower'] > 0) {
+        if (null !== ($workoutStep['targetPower'] ?? null)
+            && $workoutStep['targetPower'] > 0
+            && $activityType->supportsPowerData()) {
             $loadPerHour = $this->estimateLoadPerHourFromTargetPower($activityType, $plannedSession->getDay(), $workoutStep['targetPower']);
             if (null !== $loadPerHour) {
                 return round(($estimatedStepDurationInSeconds / 3600) * $loadPerHour, 1);
@@ -298,11 +314,14 @@ final class PlannedSessionLoadEstimator
             return null;
         }
 
-        if (ActivityType::RIDE === $activityType) {
+        if ($activityType->supportsPowerData()) {
             try {
-                $ftp = $this->ftpHistory->find(ActivityType::RIDE, $day)->getFtp()->getValue();
-                if ($ftp > 0) {
-                    $intensityFactor = $this->clamp($targetPower / $ftp, 0.35, 1.8);
+                $thresholdPower = $this->performanceAnchorHistory->find(
+                    PerformanceAnchorType::fromActivityType($activityType),
+                    SerializableDateTime::fromString($day->format('Y-m-d')),
+                )->getValue();
+                if ($thresholdPower > 0) {
+                    $intensityFactor = $this->clamp($targetPower / $thresholdPower, 0.35, 1.8);
 
                     return round(($intensityFactor ** 2) * 100, 1);
                 }

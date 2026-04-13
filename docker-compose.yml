@@ -24,11 +24,8 @@ services:
             dockerfile: docker/app/Dockerfile
         container_name: 'statistics-for-strava-app'
         volumes:
-            - ./config/app:/var/www/config/app
-            - ./build:/var/www/build
-            - ./storage/database:/var/www/storage/database
-            - ./storage/files:/var/www/storage/files
-            - ./storage/gear-maintenance:/var/www/storage/gear-maintenance
+            - './:/var/www/'
+            - 'statistics-for-strava-node-modules:/var/www/node_modules'
         env_file: '.env.local'
         healthcheck:
           test: ["CMD", "curl", "-f", "http://localhost:2019/metrics"]
@@ -47,11 +44,8 @@ services:
         container_name: 'statistics-for-strava-daemon'
         restart: unless-stopped
         volumes:
-            - ./config/app:/var/www/config/app
-            - ./build:/var/www/build
-            - ./storage/database:/var/www/storage/database
-            - ./storage/files:/var/www/storage/files
-            - ./storage/gear-maintenance:/var/www/storage/gear-maintenance
+            - './:/var/www/'
+            - 'statistics-for-strava-node-modules:/var/www/node_modules'
         env_file: ".env.local"
         healthcheck:
             test: [ "CMD", "sh", "-c", "test -f /var/www/storage/database/strava.db && echo 'ok' || exit 1" ]

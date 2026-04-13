@@ -3,10 +3,12 @@
 namespace App\Tests\Domain\Activity;
 
 use App\Domain\Activity\Activity;
+use App\Domain\Activity\ActivityIntensity;
 use App\Domain\Activity\ActivityId;
 use App\Domain\Activity\ActivityRepository;
 use App\Domain\Activity\ActivityWithRawData;
 use App\Domain\Activity\DbalActivityRepository;
+use App\Domain\Activity\EnrichedActivities;
 use App\Domain\Activity\Route\RouteGeography;
 use App\Domain\Activity\SportType\SportType;
 use App\Domain\Gear\GearId;
@@ -219,10 +221,56 @@ class DbalActivityRepositoryTest extends ContainerTestCase
         );
     }
 
+    public function testAddShouldResetEnrichedActivitiesCache(): void
+    {
+        $enrichedActivities = $this->getContainer()->get(EnrichedActivities::class);
+        $enrichedActivities->findAll();
+
+        $activity = ActivityBuilder::fromDefaults()
+            ->withActivityId(ActivityId::fromUnprefixed(999))
+            ->build();
+
+        $this->activityRepository->add(ActivityWithRawData::fromState(
+            $activity,
+            ['raw' => 'data']
+        ));
+
+        $this->assertEquals(
+            $activity->getId(),
+            $enrichedActivities->find($activity->getId())->getId()
+        );
+    }
+
+    public function testDeleteShouldResetEnrichedActivitiesCache(): void
+    {
+        $enrichedActivities = $this->getContainer()->get(EnrichedActivities::class);
+
+        $activity = ActivityBuilder::fromDefaults()
+            ->withActivityId(ActivityId::fromUnprefixed(1000))
+            ->build();
+
+        $this->activityRepository->add(ActivityWithRawData::fromState(
+            $activity,
+            ['raw' => 'data']
+        ));
+        $this->assertEquals(
+            $activity->getId(),
+            $enrichedActivities->find($activity->getId())->getId()
+        );
+
+        $this->activityRepository->delete($activity->getId());
+
+        $this->expectExceptionObject(new EntityNotFound(sprintf('Activity "%s" not found', $activity->getId())));
+        $enrichedActivities->find($activity->getId());
+    }
+
     #[\Override]
     protected function setUp(): void
     {
         parent::setUp();
+
+        EnrichedActivities::reset();
+        ActivityIntensity::reset();
 
         $this->activityRepository = new DbalActivityRepository(
             $this->getConnection(),

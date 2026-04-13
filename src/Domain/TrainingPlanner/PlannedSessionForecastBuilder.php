@@ -19,15 +19,27 @@ final readonly class PlannedSessionForecastBuilder
     {
         $horizon = max(1, $horizon);
         $today = $now->setTime(0, 0);
-        $from = $today->modify('+1 day');
+        $from = $today;
         $till = $today->modify(sprintf('+%d days', $horizon))->setTime(23, 59, 59);
 
+        $currentDayProjectedLoad = 0.0;
         $projectedLoads = array_fill_keys(range(1, $horizon), 0.0);
         $estimates = [];
 
         foreach ($this->plannedSessionRepository->findByDateRange(DateRange::fromDates($from, $till)) as $plannedSession) {
             $estimate = $this->plannedSessionLoadEstimator->estimate($plannedSession);
             if (null === $estimate) {
+                continue;
+            }
+
+            if ($estimate->getDay()->format('Y-m-d') === $today->format('Y-m-d')) {
+                if ($this->isCompletedForToday($plannedSession)) {
+                    continue;
+                }
+
+                $currentDayProjectedLoad = round($currentDayProjectedLoad + $estimate->getEstimatedLoad(), 1);
+                $estimates[] = $estimate;
+
                 continue;
             }
 
@@ -42,6 +54,12 @@ final readonly class PlannedSessionForecastBuilder
 
         return [] === $estimates
             ? PlannedSessionForecast::empty($horizon)
-            : PlannedSessionForecast::create($projectedLoads, $estimates);
+            : PlannedSessionForecast::create($currentDayProjectedLoad, $projectedLoads, $estimates);
+    }
+
+    private function isCompletedForToday(PlannedSession $plannedSession): bool
+    {
+        return PlannedSessionLinkStatus::LINKED === $plannedSession->getLinkStatus()
+            && null !== $plannedSession->getLinkedActivityId();
     }
 }

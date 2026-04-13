@@ -274,6 +274,7 @@ final readonly class PlannedSessionRequestHandler
      *     globalLoadPerHour: ?float,
      *     intensityMultipliers: array<string, float>,
      *     effortLoadPerHourSamples: array<string, array{power: list<array{effort: float, loadPerHour: float}>, pace: list<array{effort: float, loadPerHour: float}>}>,
+     *     performanceAnchorsByActivityType: array<string, list<array{setOn: string, value: float, unit: string, source: string, confidence: string, sampleSize: int}>>,
      *     ftpHistoryByActivityType: array<string, list<array{setOn: string, ftp: int}>>,
      *     labels: array<string, string>
      * }
@@ -282,6 +283,7 @@ final readonly class PlannedSessionRequestHandler
     {
         $loadPerHourByActivityType = [];
         $effortLoadPerHourSamples = [];
+        $performanceAnchorsByActivityType = [];
         $ftpHistoryByActivityType = [];
         foreach (ActivityType::cases() as $activityType) {
             $loadPerHourByActivityType[$activityType->value] = $this->plannedSessionLoadEstimator->getHistoricalLoadPerHourForActivityType($activityType);
@@ -289,6 +291,7 @@ final readonly class PlannedSessionRequestHandler
                 'power' => $this->plannedSessionLoadEstimator->getPowerLoadPerHourSamplesForActivityType($activityType),
                 'pace' => $this->plannedSessionLoadEstimator->getPaceLoadPerHourSamplesForActivityType($activityType),
             ];
+            $performanceAnchorsByActivityType[$activityType->value] = $this->plannedSessionLoadEstimator->getPerformanceAnchorsForActivityType($activityType);
             $ftpHistoryByActivityType[$activityType->value] = $this->plannedSessionLoadEstimator->getFtpHistoryForActivityType($activityType);
         }
 
@@ -302,6 +305,7 @@ final readonly class PlannedSessionRequestHandler
             'globalLoadPerHour' => $this->plannedSessionLoadEstimator->getGlobalHistoricalLoadPerHour(),
             'intensityMultipliers' => $intensityMultipliers,
             'effortLoadPerHourSamples' => $effortLoadPerHourSamples,
+            'performanceAnchorsByActivityType' => $performanceAnchorsByActivityType,
             'ftpHistoryByActivityType' => $ftpHistoryByActivityType,
             'labels' => [
                 'estimatedPrefix' => 'Est.',
@@ -423,7 +427,7 @@ final readonly class PlannedSessionRequestHandler
             if ($type->isContainer()) {
                 $parsedWorkoutSteps[] = [
                     'itemId' => $itemId,
-                    'parentBlockId' => null,
+                    'parentBlockId' => $parentBlockId,
                     'type' => $type->value,
                     'label' => $label,
                     'repetitions' => max(1, $repetitions),
@@ -690,7 +694,7 @@ final readonly class PlannedSessionRequestHandler
      */
     private function normalizeWorkoutStepEffortTargets(ActivityType $activityType, ?string $targetPace, ?int $targetPower): array
     {
-        if (ActivityType::RIDE === $activityType) {
+        if ($activityType->supportsPowerData()) {
             if (null !== $targetPower && $targetPower > 0) {
                 return [null, $targetPower];
             }
@@ -1070,7 +1074,7 @@ final readonly class PlannedSessionRequestHandler
             $workoutSteps[] = [
                 'itemId' => 'workout-item-default-step',
                 'parentBlockId' => null,
-                'type' => PlannedSessionStepType::INTERVAL->value,
+                'type' => PlannedSessionStepType::STEADY->value,
                 'label' => '',
                 'repetitions' => '1',
                 'targetType' => PlannedSessionStepTargetType::TIME->value,

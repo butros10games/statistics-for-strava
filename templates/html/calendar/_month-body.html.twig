@@ -1,5 +1,24 @@
 {% set plannedSessionCount = plannedSessionsForMonth|length %}
 {% set linkedPlannedSessionCount = plannedSessionsForMonth|filter(session => session.getLinkStatus().value == 'linked')|length %}
+{% set raceEventsForMonth = raceEventsForMonth ?? [] %}
+{% set upcomingRaceEvents = upcomingRaceEvents ?? [] %}
+{% set raceEventsById = raceEventsById ?? {} %}
+{% set raceEventCountdownDaysById = raceEventCountdownDaysById ?? {} %}
+{% set trainingBlocksForMonth = trainingBlocksForMonth ?? [] %}
+{% set currentWeek = currentWeek ?? null %}
+{% set currentWeekPlannedSessions = currentWeekPlannedSessions ?? [] %}
+{% set currentWeekRaceEvents = currentWeekRaceEvents ?? [] %}
+{% set currentWeekTrainingBlocks = currentWeekTrainingBlocks ?? [] %}
+{% set currentWeekEstimatedLoad = currentWeekEstimatedLoad ?? 0 %}
+{% set currentWeekActivityTypeSummaries = currentWeekActivityTypeSummaries ?? [] %}
+{% set currentWeekKeySessionIds = currentWeekKeySessionIds ?? {} %}
+{% set currentWeekBrickSessionIds = currentWeekBrickSessionIds ?? {} %}
+{% set currentWeekRaceIntent = currentWeekRaceIntent ?? null %}
+{% set currentWeekCoachCues = currentWeekCoachCues ?? [] %}
+{% set currentTrainingBlock = currentTrainingBlock ?? null %}
+{% set currentAndUpcomingTrainingBlocks = currentAndUpcomingTrainingBlocks ?? [] %}
+{% set raceEventCount = raceEventsForMonth|length %}
+{% set trainingBlockCount = trainingBlocksForMonth|length %}
 {% set showPlannerSummaryCard = showPlannerSummaryCard ?? true %}
 {% set estimatedPlannedLoad = 0 %}
 {% for plannedSession in plannedSessionsForMonth %}
@@ -16,6 +35,8 @@
                 <div class="mt-3 flex flex-wrap gap-2 text-xs text-gray-700">
                     <span class="badge-pill">{{ plannedSessionCount }} {{ "Planned sessions"|trans }}</span>
                     <span class="badge-pill">{{ linkedPlannedSessionCount }} {{ "Auto-linked"|trans }}</span>
+                    <span class="badge-pill">{{ raceEventCount }} {{ "Race targets"|trans }}</span>
+                    <span class="badge-pill">{{ trainingBlockCount }} {{ "Training blocks"|trans }}</span>
                     <span class="badge-pill">{{ estimatedPlannedLoad|formatNumber(0) }} {{ "Total planned load"|trans }}</span>
                 </div>
             </div>
@@ -27,7 +48,7 @@
         </div>
     </div>
     {% endif %}
-    <div class="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,1fr)_20rem]">
+    <div class="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_18rem]">
         <div class="flex flex-col">
             <div class="grid grid-cols-7 gap-px leading-6 font-semibold text-xs text-center border border-b-0">
                 <div class="py-2 bg-white">
@@ -62,19 +83,109 @@
                 class="bg-gray-600/10 border-l-gray-600"
                 #}
                 {% for day in calendar.getDays() %}
-                    <div class="py-2 px-3 {{ day.isCurrentMonth ? 'bg-white' : 'bg-gray-100' }}">
-                        <div class="flex items-center justify-between gap-2">
-                            <div class="text-right text-gray-400">
-                                {{ day.getDayNumber() }}
+                    {% set dayTrainingBlock = day.getTrainingBlocks()|first %}
+                    {% set dayTrainingBlockPhase = dayTrainingBlock ? dayTrainingBlock.getPhase().value : null %}
+                    {% set dayRacePriority = day.getRaceEvents() is empty
+                        ? null
+                        : (day.getRaceEvents()|filter(raceEvent => raceEvent.getPriority().value == 'a') is not empty
+                            ? 'a'
+                            : (day.getRaceEvents()|filter(raceEvent => raceEvent.getPriority().value == 'b') is not empty ? 'b' : 'c')) %}
+                    {% set dayTrainingBlockBorderClasses = dayTrainingBlockPhase == 'base'
+                        ? 'border-t-2 border-t-emerald-300'
+                        : (dayTrainingBlockPhase == 'build'
+                            ? 'border-t-2 border-t-sky-300'
+                            : (dayTrainingBlockPhase == 'peak'
+                                ? 'border-t-2 border-t-violet-300'
+                                : (dayTrainingBlockPhase == 'taper'
+                                    ? 'border-t-2 border-t-amber-300'
+                                    : (dayTrainingBlockPhase == 'recovery'
+                                        ? 'border-t-2 border-t-slate-300'
+                                        : '')))) %}
+                    {% set dayTrainingBlockBadgeClasses = dayTrainingBlockPhase == 'base'
+                        ? 'bg-emerald-100 text-emerald-700 ring-emerald-200'
+                        : (dayTrainingBlockPhase == 'build'
+                            ? 'bg-sky-100 text-sky-700 ring-sky-200'
+                            : (dayTrainingBlockPhase == 'peak'
+                                ? 'bg-violet-100 text-violet-700 ring-violet-200'
+                                : (dayTrainingBlockPhase == 'taper'
+                                    ? 'bg-amber-100 text-amber-700 ring-amber-200'
+                                    : 'bg-slate-100 text-slate-700 ring-slate-200'))) %}
+                    {% set dayRaceClasses = dayRacePriority == 'a'
+                        ? 'bg-rose-50/60 ring-1 ring-inset ring-rose-200 dark:bg-rose-950/40 dark:ring-rose-800/50'
+                        : (dayRacePriority == 'b'
+                            ? 'bg-amber-50/65 ring-1 ring-inset ring-amber-200 dark:bg-amber-950/40 dark:ring-amber-800/50'
+                            : (dayRacePriority == 'c'
+                                ? 'bg-sky-50/70 ring-1 ring-inset ring-sky-200 dark:bg-sky-950/40 dark:ring-sky-800/50'
+                                : (day.isCurrentMonth ? 'bg-white' : 'bg-gray-100'))) %}
+                    {% set dayRaceBadgeClasses = dayRacePriority == 'a'
+                        ? 'bg-rose-100 text-rose-700 ring-rose-200 dark:bg-rose-900/60 dark:text-rose-300 dark:ring-rose-700/50'
+                        : (dayRacePriority == 'b'
+                            ? 'bg-amber-100 text-amber-700 ring-amber-200 dark:bg-amber-900/60 dark:text-amber-300 dark:ring-amber-700/50'
+                            : 'bg-sky-100 text-sky-700 ring-sky-200 dark:bg-sky-900/60 dark:text-sky-300 dark:ring-sky-700/50') %}
+                    <div class="py-2 px-3 {{ dayRaceClasses }} {{ dayTrainingBlockBorderClasses }}">
+                        <div class="flex items-start justify-between gap-2">
+                            <div class="flex min-w-0 flex-wrap items-center gap-1.5 text-right text-gray-400">
+                                {% if day.getDate().format('Y-m-d') == "now"|date('Y-m-d') %}
+                                    <span class="inline-flex size-5 items-center justify-center rounded-full bg-strava-orange text-[10px] font-bold leading-none text-white">{{ day.getDayNumber() }}</span>
+                                {% else %}
+                                    <span>{{ day.getDayNumber() }}</span>
+                                {% endif %}
+                                {% if dayTrainingBlock %}
+                                    {% set dayBlockTextClass = dayTrainingBlockPhase == 'base'
+                                        ? 'text-emerald-600'
+                                        : (dayTrainingBlockPhase == 'build'
+                                            ? 'text-sky-600'
+                                            : (dayTrainingBlockPhase == 'peak'
+                                                ? 'text-violet-600'
+                                                : (dayTrainingBlockPhase == 'taper'
+                                                    ? 'text-amber-600'
+                                                    : 'text-slate-500'))) %}
+                                    <span class="text-[9px] font-semibold uppercase {{ dayBlockTextClass }}">{{ dayTrainingBlock.getPhase()|trans }}</span>
+                                {% endif %}
+                                {% if dayRacePriority %}
+                                    <span class="inline-flex items-center gap-1 rounded-full px-1.5 py-0.5 text-[9px] font-semibold uppercase ring-1 {{ dayRaceBadgeClasses }}">
+                                        {{ svg('trophy', 'size-2.5 shrink-0') }}
+                                        {{ 'Race'|trans }}
+                                    </span>
+                                {% endif %}
                             </div>
                             {% if day.isCurrentMonth %}
-                                <a href="#" data-model-content-url="/planned-session?day={{ day.getDate().format('Y-m-d') }}" class="inline-flex rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-strava-orange hover:bg-gray-200">
+                                <a href="#" data-model-content-url="/planned-session?day={{ day.getDate().format('Y-m-d') }}" class="inline-flex shrink-0 whitespace-nowrap rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-semibold text-strava-orange hover:bg-gray-200 dark:bg-white/[.06] dark:hover:bg-white/[.12]">
                                     + {{ "Session"|trans }}
                                 </a>
                             {% endif %}
                         </div>
                         <div class="mt-2 h-28 overflow-y-auto space-y-2">
                             {% set linkedActivityIds = [] %}
+                            {% if day.getRaceEvents() is not empty %}
+                                <ul class="space-y-1">
+                                    {% for raceEvent in day.getRaceEvents() %}
+                                        {% set raceTitle = raceEvent.getTitle() ?: (raceEvent.getType()|trans) %}
+                                        {% set racePriority = raceEvent.getPriority().value %}
+                                        {% set raceItemClasses = racePriority == 'a'
+                                            ? 'border-l-rose-500 bg-rose-50/[.65] dark:bg-rose-900/30 dark:border-l-rose-400'
+                                            : (racePriority == 'b'
+                                                ? 'border-l-amber-500 bg-amber-50/[.7] dark:bg-amber-900/30 dark:border-l-amber-400'
+                                                : 'border-l-sky-500 bg-sky-50/[.75] dark:bg-sky-900/30 dark:border-l-sky-400') %}
+                                        {% set raceMetaClasses = racePriority == 'a'
+                                            ? 'text-rose-700 dark:text-rose-300'
+                                            : (racePriority == 'b'
+                                                ? 'text-amber-700 dark:text-amber-300'
+                                                : 'text-sky-700 dark:text-sky-300') %}
+                                        <li class="rounded-md border-l-2 {{ raceItemClasses }} px-1.5 py-1">
+                                            <a href="#" data-model-content-url="/race-event?raceEventId={{ raceEvent.getId() }}" class="flex min-w-0 items-center gap-1 font-medium {{ raceMetaClasses }} hover:underline" title="{{ 'Edit race event'|trans }}">
+                                                {{ svg('trophy', 'size-3 shrink-0') }}
+                                                <span class="truncate">{{ raceTitle }}</span>
+                                            </a>
+                                            <div class="mt-0.5 flex flex-wrap items-center gap-x-1 gap-y-0.5 text-[10px] {{ raceMetaClasses }}">
+                                                <span>{{ raceEvent.getType()|trans }}</span>
+                                                <span>·</span>
+                                                <span>{{ raceEvent.getPriority()|trans }}</span>
+                                            </div>
+                                        </li>
+                                    {% endfor %}
+                                </ul>
+                            {% endif %}
                             {% if day.getPlannedSessions() is not empty %}
                                 <ul class="space-y-1">
                                     {% for plannedSession in day.getPlannedSessions() %}
@@ -128,55 +239,452 @@
                 {% endfor %}
             </div>
         </div>
-        <aside class="flex h-full min-h-0 flex-col rounded-xl border border-gray-200 bg-white p-4 shadow-xs">
-            <div class="flex shrink-0 items-center justify-between gap-2">
-                <div>
-                    <h4 class="text-sm font-semibold text-gray-900">{{ "Month planner"|trans }}</h4>
-                    <p class="mt-1 text-xs text-gray-500">{{ "Review every planned session for this month in one place."|trans }}</p>
+        <aside class="lg:sticky lg:top-2 lg:max-h-[calc(100vh-1rem)] flex h-full min-h-0 flex-col gap-3 overflow-y-auto pt-1 pr-1 pb-4">
+            {# ──────────────────────────────────────────────
+               SECTION 1 — CURRENT WEEK  (always visible, hero)
+               ────────────────────────────────────────────── #}
+            {% set currentWeekPrimaryBlock = currentWeekTrainingBlocks|first %}
+            {% set currentWeekPrimaryTargetRace = currentWeekTrainingBlocks|filter(block => block.getTargetRaceEventId() is not null)|first %}
+            {% set currentWeekTargetRace = currentWeekPrimaryTargetRace and currentWeekPrimaryTargetRace.getTargetRaceEventId() ? (raceEventsById[currentWeekPrimaryTargetRace.getTargetRaceEventId() ~ ''] ?? null) : null %}
+            {% set currentWeekTargetRaceCountdown = currentWeekTargetRace ? (raceEventCountdownDaysById[currentWeekTargetRace.getId() ~ ''] ?? null) : null %}
+            <div class="rounded-xl border border-gray-200 bg-white shadow-xs">
+                <div class="flex items-center justify-between gap-2 px-4 pt-3 pb-1">
+                    <h4 class="text-[10px] font-semibold uppercase tracking-widest text-gray-400">{{ "Current week"|trans }}</h4>
+                    {% if currentWeek %}
+                        <span class="text-[10px] font-medium text-gray-400">{{ currentWeek.getFrom().format('d M') }} – {{ currentWeek.getTo().format('d M') }}</span>
+                    {% endif %}
                 </div>
-                <a href="#" data-model-content-url="/planned-session?day={{ calendar.getMonth().getId() }}-01" class="inline-flex rounded-lg border border-gray-300 bg-white px-2.5 py-1.5 text-xs font-medium text-gray-700 hover:bg-gray-50">
-                    {{ "Create session"|trans }}
-                </a>
-            </div>
-            <div class="mt-4 flex-1 min-h-0 overflow-y-auto pr-1">
-                {% if plannedSessionsForMonth is empty %}
-                    <div class="rounded-lg border border-dashed border-gray-300 bg-white p-4 text-sm text-gray-500">
-                        {{ "No planned sessions yet for this month."|trans }}
+                <div class="px-4 pb-3 space-y-2.5">
+                    {# Microcycle card #}
+                    <div class="rounded-lg border border-gray-100 bg-gray-50/60 px-3 py-2">
+                        <div class="flex items-start justify-between gap-2">
+                            <div class="min-w-0">
+                                <div class="text-sm font-semibold text-gray-900">
+                                    {% if currentWeekPrimaryBlock %}
+                                        {{ currentWeekPrimaryBlock.getTitle() ?: (currentWeekPrimaryBlock.getPhase()|trans) }}
+                                    {% else %}
+                                        {{ 'Weekly structure'|trans }}
+                                    {% endif %}
+                                </div>
+                                {% if currentWeekPrimaryBlock and currentWeekPrimaryBlock.getFocus() %}
+                                    <div class="mt-0.5 text-[11px] leading-snug text-gray-500">{{ currentWeekPrimaryBlock.getFocus() }}</div>
+                                {% elseif currentWeekRaceEvents is not empty %}
+                                    <div class="mt-0.5 text-[11px] leading-snug text-gray-500">{{ 'Race week is here — keep the microcycle sharp and simple.'|trans }}</div>
+                                {% else %}
+                                    <div class="mt-0.5 text-[11px] leading-snug text-gray-500">{{ 'Balance the disciplines, keep recovery honest, and make the key work count.'|trans }}</div>
+                                {% endif %}
+                            </div>
+                            {% if currentWeekPrimaryBlock %}
+                                {% set currentWeekPrimaryPhase = currentWeekPrimaryBlock.getPhase().value %}
+                                {% set currentWeekPhaseTextClass = currentWeekPrimaryPhase == 'base'
+                                    ? 'text-emerald-600'
+                                    : (currentWeekPrimaryPhase == 'build'
+                                        ? 'text-sky-600'
+                                        : (currentWeekPrimaryPhase == 'peak'
+                                            ? 'text-violet-600'
+                                            : (currentWeekPrimaryPhase == 'taper'
+                                                ? 'text-amber-600'
+                                                : 'text-slate-500'))) %}
+                                <span class="shrink-0 text-[10px] font-semibold {{ currentWeekPhaseTextClass }}">{{ currentWeekPrimaryBlock.getPhase()|trans }}</span>
+                            {% endif %}
+                        </div>
+                        {# Stats row #}
+                        <div class="mt-2 flex flex-wrap gap-x-3 gap-y-0.5 text-[10px] text-gray-500">
+                            <span><span class="font-semibold text-gray-700">{{ currentWeekPlannedSessions|length }}</span> {{ currentWeekPlannedSessions|length == 1 ? 'session'|trans : 'sessions'|trans }}</span>
+                            <span><span class="font-semibold text-gray-700">{{ currentWeekEstimatedLoad|formatNumber(0) }}</span> {{ 'load'|trans }}</span>
+                            {% if currentWeekKeySessionIds is not empty %}
+                                <span><span class="font-semibold text-violet-600">{{ currentWeekKeySessionIds|length }}</span> {{ 'key'|trans }}</span>
+                            {% endif %}
+                            {% for summary in currentWeekActivityTypeSummaries %}
+                                <span><span class="font-semibold text-{{ summary.activityType.getColor() }}">{{ summary.count }}</span> {{ summary.activityType|trans|lower }}</span>
+                            {% endfor %}
+                        </div>
+                        {% if currentWeekTargetRace %}
+                            <a href="#" data-model-content-url="/race-event?raceEventId={{ currentWeekTargetRace.getId() }}" class="mt-1.5 inline-flex items-center gap-1 text-[10px] font-medium text-gray-500 hover:text-blue-600 hover:underline">
+                                {{ svg('trophy', 'size-3 shrink-0 text-strava-orange') }}
+                                <span>{{ 'Toward'|trans }} {{ currentWeekTargetRace.getTitle() ?: (currentWeekTargetRace.getType()|trans) }}</span>
+                                {% if currentWeekTargetRaceCountdown is not null %}
+                                    <span>· D-{{ currentWeekTargetRaceCountdown }}</span>
+                                {% endif %}
+                            </a>
+                        {% endif %}
                     </div>
-                {% else %}
-                    <div class="flex flex-col gap-2">
-                        {% for plannedSession in plannedSessionsForMonth %}
-                            {% set plannedColor = plannedSession.getActivityType().getColor() %}
-                            {% set plannedTitle = plannedSession.getTitle() ?: (plannedSession.getActivityType()|trans) %}
-                            {% set linkStatusClasses = plannedSession.getLinkStatus().value == 'linked'
-                                ? 'bg-green-50 text-green-700 ring-green-200'
-                                : (plannedSession.getLinkStatus().value == 'suggested'
-                                    ? 'bg-amber-50 text-amber-700 ring-amber-200'
-                                    : 'bg-gray-100 text-gray-600 ring-gray-200') %}
-                            <div class="overflow-hidden rounded-xl border border-gray-200 border-l-4 border-l-{{ plannedColor }} bg-white shadow-xs transition-colors hover:border-gray-300 min-h-[9rem]">
-                                <div class="flex h-full min-h-[9rem] flex-col justify-between bg-{{ plannedColor }}/[.08] px-3 py-2.5">
-                                    <div class="flex items-start justify-between gap-3">
-                                        <div class="min-w-0">
-                                            <a href="#" data-model-content-url="/planned-session?plannedSessionId={{ plannedSession.getId() }}" class="flex items-center gap-2 text-sm font-medium text-blue-600 hover:underline" title="{{ 'Edit planned session'|trans }}">
-                                                <span class="inline-flex size-7 shrink-0 items-center justify-center rounded-full bg-white ring-1 ring-gray-200">
-                                                    {{ svg('calendar', 'size-3.5') }}
-                                                </span>
-                                                <span class="truncate">{{ plannedTitle }}</span>
-                                            </a>
-                                        </div>
-                                        <span class="inline-flex shrink-0 rounded-full px-2 py-1 text-[10px] font-semibold uppercase ring-1 {{ linkStatusClasses }}">{{ plannedSession.getLinkStatus().value|replace({'_': ' '})|title }}</span>
-                                    </div>
-                                    <div class="mt-4 flex flex-wrap items-center gap-x-1 gap-y-0.5 text-xs text-gray-500">
-                                        <span>{{ plannedSession.getDay().format('D d M') }}</span>
+                    {# Coach notes #}
+                    {% if currentWeekCoachCues is not empty %}
+                        <div class="space-y-1">
+                            <div class="text-[10px] font-semibold uppercase tracking-widest text-gray-400 px-0.5">{{ 'Coach notes'|trans }}</div>
+                            {% for cue in currentWeekCoachCues %}
+                                <div class="rounded-lg border border-gray-100 bg-gray-50/60 px-3 py-2">
+                                    <div class="text-[11px] font-semibold text-gray-800">{{ cue.title|trans }}</div>
+                                    <div class="mt-0.5 text-[11px] leading-snug text-gray-500">{{ cue.body|trans }}</div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                    {# Weekly sessions #}
+                    {% if currentWeekPlannedSessions is not empty %}
+                        <div class="space-y-1">
+                            <div class="text-[10px] font-semibold uppercase tracking-widest text-gray-400 px-0.5">{{ 'This week'|trans }}</div>
+                            {% for plannedSession in currentWeekPlannedSessions %}
+                                {% set plannedColor = plannedSession.getActivityType().getColor() %}
+                                {% set plannedTitle = plannedSession.getTitle() ?: (plannedSession.getActivityType()|trans) %}
+                                {% set plannedLoad = plannedSessionEstimatesById[plannedSession.getId() ~ ''] ?? null %}
+                                {% set plannedDuration = plannedSession.getTargetDurationInSeconds() ?: plannedSession.getWorkoutDurationInSeconds() %}
+                                {% set plannedIntensity = plannedSession.getTargetIntensity() %}
+                                {% set isKeySession = currentWeekKeySessionIds[plannedSession.getId() ~ ''] ?? false %}
+                                {% set isBrickSession = currentWeekBrickSessionIds[plannedSession.getId() ~ ''] ?? false %}
+                                {% set weekLinkStatusClasses = plannedSession.getLinkStatus().value == 'linked'
+                                    ? 'bg-green-50 text-green-700 ring-green-200'
+                                    : (plannedSession.getLinkStatus().value == 'suggested'
+                                        ? 'bg-amber-50 text-amber-700 ring-amber-200'
+                                        : 'bg-gray-100 text-gray-600 ring-gray-200') %}
+                                {% set intensityClasses = plannedIntensity is null
+                                    ? 'bg-gray-100 text-gray-600 ring-gray-200'
+                                    : (plannedIntensity.value == 'easy'
+                                        ? 'bg-emerald-50 text-emerald-700 ring-emerald-200'
+                                        : (plannedIntensity.value == 'moderate'
+                                            ? 'bg-sky-50 text-sky-700 ring-sky-200'
+                                            : (plannedIntensity.value == 'hard'
+                                                ? 'bg-amber-50 text-amber-700 ring-amber-200'
+                                                : 'bg-rose-50 text-rose-700 ring-rose-200'))) %}
+                                <div class="rounded-lg border border-gray-100 border-l-2 border-l-{{ plannedColor }} bg-white px-2.5 py-1.5">
+                                    <a href="#" data-model-content-url="/planned-session?plannedSessionId={{ plannedSession.getId() }}" class="block truncate text-[11px] font-medium text-blue-600 hover:underline">
+                                        {{ plannedTitle }}
+                                    </a>
+                                    <div class="flex flex-wrap items-center gap-x-1 text-[10px] text-gray-400">
+                                        <span>{{ plannedSession.getDay().format('D') }}</span>
                                         <span>·</span>
                                         <span>{{ plannedSession.getActivityType()|trans }}</span>
+                                        {% if plannedDuration %}
+                                            <span>·</span>
+                                            <span>{{ plannedDuration|formatSeconds }}</span>
+                                        {% endif %}
+                                        {% if plannedLoad is not null %}
+                                            <span>·</span>
+                                            <span>{{ plannedLoad|formatNumber(0) }} {{ 'Load'|trans }}</span>
+                                        {% endif %}
+                                        <span>·</span>
+                                        {% if isKeySession %}
+                                            <span class="text-violet-600 font-medium">{{ 'Key'|trans }}</span>
+                                            <span>·</span>
+                                        {% endif %}
+                                        {% if isBrickSession %}
+                                            <span class="text-fuchsia-600 font-medium">{{ 'Brick'|trans }}</span>
+                                            <span>·</span>
+                                        {% endif %}
+                                        {% if plannedIntensity %}
+                                            {% set intensityTextClass = plannedIntensity.value == 'easy'
+                                                ? 'text-emerald-600'
+                                                : (plannedIntensity.value == 'moderate'
+                                                    ? 'text-sky-600'
+                                                    : (plannedIntensity.value == 'hard'
+                                                        ? 'text-amber-600'
+                                                        : 'text-rose-600')) %}
+                                            <span class="{{ intensityTextClass }} font-medium">{{ plannedIntensity.getLabel()|trans }}</span>
+                                            <span>·</span>
+                                        {% endif %}
+                                        {% set linkTextClass = plannedSession.getLinkStatus().value == 'linked'
+                                            ? 'text-green-600'
+                                            : (plannedSession.getLinkStatus().value == 'suggested'
+                                                ? 'text-amber-600'
+                                                : 'text-gray-400') %}
+                                        <span class="{{ linkTextClass }} font-medium">{{ plannedSession.getLinkStatus().value|replace({'_': ' '})|title }}</span>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% else %}
+                        <div class="rounded-lg border border-dashed border-gray-200 p-2.5 text-xs text-gray-400">
+                            {{ 'No planned sessions yet for this week.'|trans }}
+                        </div>
+                    {% endif %}
+                </div>
+            </div>
+
+            {# ──────────────────────────────────────────────
+               SECTION 2 — RACE TARGETS  (collapsible)
+               ────────────────────────────────────────────── #}
+            <details class="group rounded-xl border border-gray-200 bg-white shadow-xs" open>
+                <summary class="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-2.5 [&::-webkit-details-marker]:hidden">
+                    <div class="flex items-center gap-2">
+                        <svg class="size-3.5 text-gray-400 transition-transform group-open:rotate-90" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd"/></svg>
+                        <h4 class="text-[10px] font-semibold uppercase tracking-widest text-gray-400">{{ "Race targets"|trans }}</h4>
+                        {% if upcomingRaceEvents is not empty %}
+                            <span class="text-[10px] font-semibold text-rose-600">{{ upcomingRaceEvents|length }}</span>
+                        {% endif %}
+                    </div>
+                    <a href="#" data-model-content-url="/race-event?day={{ calendar.getMonth().getId() }}-01" class="text-[10px] font-medium text-gray-400 hover:text-gray-700" onclick="event.stopPropagation()">
+                        + {{ "Add"|trans }}
+                    </a>
+                </summary>
+                <div class="px-4 pb-3 space-y-1.5">
+                    {% if upcomingRaceEvents is empty %}
+                        <div class="rounded-lg border border-dashed border-gray-200 p-2.5 text-xs text-gray-400">
+                            {{ "No upcoming race targets yet. Add your A, B, and C races to anchor the calendar."|trans }}
+                        </div>
+                    {% else %}
+                        {% set primaryUpcomingRace = upcomingRaceEvents|first %}
+                        {% set primaryCountdownDays = primaryUpcomingRace ? (raceEventCountdownDaysById[primaryUpcomingRace.getId() ~ ''] ?? null) : null %}
+                        {% if primaryUpcomingRace %}
+                            {% set primaryCountdownLabel = primaryCountdownDays == 0
+                                ? 'Race day'|trans
+                                : (primaryCountdownDays == 1
+                                    ? 'Tomorrow'|trans
+                                    : (primaryCountdownDays is not null and primaryCountdownDays <= 7
+                                        ? 'Race week'|trans
+                                        : 'D-' ~ primaryCountdownDays)) %}
+                            <div class="rounded-lg border border-gray-100 bg-gray-50/60 px-3 py-2">
+                                <div class="flex items-start justify-between gap-2">
+                                    <div class="min-w-0">
+                                        <a href="#" data-model-content-url="/race-event?raceEventId={{ primaryUpcomingRace.getId() }}" class="flex items-center gap-1.5 text-sm font-semibold text-gray-900 hover:underline">
+                                            {{ svg('trophy', 'size-3.5 shrink-0 text-strava-orange') }}
+                                            <span class="truncate">{{ primaryUpcomingRace.getTitle() ?: (primaryUpcomingRace.getType()|trans) }}</span>
+                                        </a>
+                                        <div class="mt-0.5 text-[10px] text-gray-500">
+                                            {{ primaryUpcomingRace.getDay().format('D d M') }}
+                                            {% if primaryUpcomingRace.getLocation() %} · {{ primaryUpcomingRace.getLocation() }}{% endif %}
+                                        </div>
+                                    </div>
+                                    <span class="shrink-0 text-[11px] font-bold text-gray-700">{{ primaryCountdownLabel }}</span>
+                                </div>
+                            </div>
+                        {% endif %}
+                        {% if upcomingRaceEvents|length > 1 %}
+                            {% for raceEvent in upcomingRaceEvents %}
+                                {% if not loop.first %}
+                                    {% set raceTitle = raceEvent.getTitle() ?: (raceEvent.getType()|trans) %}
+                                    {% set racePriority = raceEvent.getPriority().value %}
+                                    {% set countdownDays = raceEventCountdownDaysById[raceEvent.getId() ~ ''] ?? null %}
+                                    {% set raceAccentClasses = racePriority == 'a'
+                                        ? 'border-l-rose-500 text-rose-700'
+                                        : (racePriority == 'b'
+                                            ? 'border-l-amber-500 text-amber-700'
+                                            : 'border-l-sky-500 text-sky-700') %}
+                                    {% set countdownLabel = countdownDays == 0
+                                        ? 'Race day'|trans
+                                        : (countdownDays == 1
+                                            ? 'Tomorrow'|trans
+                                            : (countdownDays is not null and countdownDays <= 7
+                                                ? 'Race week'|trans
+                                                : 'D-' ~ countdownDays)) %}
+                                    <div class="rounded-lg border border-gray-100 border-l-2 {{ raceAccentClasses }} px-2.5 py-1.5">
+                                            <div class="min-w-0">
+                                                <a href="#" data-model-content-url="/race-event?raceEventId={{ raceEvent.getId() }}" class="flex items-center gap-1.5 text-[11px] font-medium hover:underline" title="{{ 'Edit race event'|trans }}">
+                                                    {{ svg('trophy', 'size-3 shrink-0') }}
+                                                    <span class="truncate">{{ raceTitle }}</span>
+                                                </a>
+                                            <div class="flex flex-wrap items-center gap-x-1 text-[10px] text-gray-400">
+                                                    <span>{{ raceEvent.getDay().format('D d M') }}</span>
+                                                    <span>·</span>
+                                                    <span>{{ raceEvent.getType()|trans }}</span>
+                                                    {% if raceEvent.getLocation() %}
+                                                        <span>·</span>
+                                                        <span class="truncate">{{ raceEvent.getLocation() }}</span>
+                                                    {% endif %}
+                                                    {% if raceEvent.getTargetFinishTimeInSeconds() %}
+                                                        <span>·</span>
+                                                        <span>{{ 'Target'|trans }} {{ raceEvent.getTargetFinishTimeInSeconds()|formatSeconds }}</span>
+                                                    {% endif %}
+                                                    <span>·</span>
+                                                    {% set racePriorityTextClass = racePriority == 'a'
+                                                        ? 'text-rose-600'
+                                                        : (racePriority == 'b'
+                                                            ? 'text-amber-600'
+                                                            : 'text-sky-600') %}
+                                                    <span class="{{ racePriorityTextClass }} font-medium uppercase">{{ raceEvent.getPriority()|trans }}</span>
+                                                    <span>·</span>
+                                                    <span class="font-medium">{{ countdownLabel }}</span>
+                                                </div>
+                                        </div>
+                                    </div>
+                                {% endif %}
+                            {% endfor %}
+                        {% endif %}
+                    {% endif %}
+                </div>
+            </details>
+
+            {# ──────────────────────────────────────────────
+               SECTION 3 — TRAINING BLOCKS  (collapsible)
+               ────────────────────────────────────────────── #}
+            {% set queuedTrainingBlocks = currentAndUpcomingTrainingBlocks|filter(block => currentTrainingBlock is null or block.getId() ~ '' != currentTrainingBlock.getId() ~ '') %}
+            <details class="group rounded-xl border border-gray-200 bg-white shadow-xs" open>
+                <summary class="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-2.5 [&::-webkit-details-marker]:hidden">
+                    <div class="flex items-center gap-2">
+                        <svg class="size-3.5 text-gray-400 transition-transform group-open:rotate-90" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd"/></svg>
+                        <h4 class="text-[10px] font-semibold uppercase tracking-widest text-gray-400">{{ "Training blocks"|trans }}</h4>
+                        {% if currentTrainingBlock %}
+                            {% set currentPhaseForBadge = currentTrainingBlock.getPhase().value %}
+                            {% set summaryPhaseTextClass = currentPhaseForBadge == 'base'
+                                ? 'text-emerald-600'
+                                : (currentPhaseForBadge == 'build'
+                                    ? 'text-sky-600'
+                                    : (currentPhaseForBadge == 'peak'
+                                        ? 'text-violet-600'
+                                        : (currentPhaseForBadge == 'taper'
+                                            ? 'text-amber-600'
+                                            : 'text-slate-500'))) %}
+                            <span class="text-[10px] font-semibold {{ summaryPhaseTextClass }}">{{ currentTrainingBlock.getPhase()|trans }}</span>
+                        {% endif %}
+                    </div>
+                    <a href="#" data-model-content-url="/training-block?day={{ calendar.getMonth().getId() }}-01" class="text-[10px] font-medium text-gray-400 hover:text-gray-700" onclick="event.stopPropagation()">
+                        + {{ "Add"|trans }}
+                    </a>
+                </summary>
+                <div class="px-4 pb-3 space-y-1.5">
+                    {% if currentTrainingBlock %}
+                        {% set currentTrainingBlockTargetRace = currentTrainingBlock.getTargetRaceEventId() ? (raceEventsById[currentTrainingBlock.getTargetRaceEventId() ~ ''] ?? null) : null %}
+                        {% set currentTrainingBlockTargetRaceCountdown = currentTrainingBlockTargetRace ? (raceEventCountdownDaysById[currentTrainingBlockTargetRace.getId() ~ ''] ?? null) : null %}
+                        {% set currentPhase = currentTrainingBlock.getPhase().value %}
+                        <div class="rounded-lg border border-gray-100 bg-gray-50/60 px-3 py-2">
+                            <div class="flex items-start justify-between gap-2">
+                                <div class="min-w-0">
+                                    <a href="#" data-model-content-url="/training-block?trainingBlockId={{ currentTrainingBlock.getId() }}" class="block truncate text-sm font-semibold text-gray-900 hover:underline">
+                                        {{ currentTrainingBlock.getTitle() ?: (currentTrainingBlock.getPhase()|trans) }}
+                                    </a>
+                                    <div class="mt-0.5 text-[10px] text-gray-500">
+                                        {{ currentTrainingBlock.getStartDay().format('d M') }} → {{ currentTrainingBlock.getEndDay().format('d M') }} · {{ currentTrainingBlock.getDurationInDays() }} {{ currentTrainingBlock.getDurationInDays() == 1 ? 'day'|trans : 'days'|trans }}
+                                    </div>
+                                    {% if currentTrainingBlockTargetRace %}
+                                        <a href="#" data-model-content-url="/race-event?raceEventId={{ currentTrainingBlockTargetRace.getId() }}" class="mt-1.5 inline-flex items-center gap-1 rounded-full bg-white/80 px-2 py-0.5 text-[10px] font-medium text-gray-600 ring-1 ring-gray-200 hover:text-blue-600 hover:underline">
+                                            {{ svg('trophy', 'size-3 shrink-0 text-strava-orange') }}
+                                            <span>{{ 'Towards'|trans }} {{ currentTrainingBlockTargetRace.getTitle() ?: (currentTrainingBlockTargetRace.getType()|trans) }}</span>
+                                            {% if currentTrainingBlockTargetRaceCountdown is not null %}
+                                                <span>· D-{{ currentTrainingBlockTargetRaceCountdown }}</span>
+                                            {% endif %}
+                                        </a>
+                                    {% endif %}
+                                    {% if currentTrainingBlock.getFocus() %}
+                                        <div class="mt-1 text-xs text-gray-600">{{ currentTrainingBlock.getFocus() }}</div>
+                                    {% endif %}
+                                </div>
+                                {% set currentPhaseTextClass = currentPhase == 'base'
+                                    ? 'text-emerald-600'
+                                    : (currentPhase == 'build'
+                                        ? 'text-sky-600'
+                                        : (currentPhase == 'peak'
+                                            ? 'text-violet-600'
+                                            : (currentPhase == 'taper'
+                                                ? 'text-amber-600'
+                                                : 'text-slate-500'))) %}
+                                <span class="shrink-0 text-[10px] font-semibold {{ currentPhaseTextClass }}">{{ currentTrainingBlock.getPhase()|trans }}</span>
+                            </div>
+                        </div>
+                    {% endif %}
+                    {% if currentTrainingBlock is null and queuedTrainingBlocks is empty %}
+                        <div class="rounded-lg border border-dashed border-gray-200 p-2.5 text-xs text-gray-400">
+                            {{ 'No training blocks yet. Add base, build, peak, taper, or recovery phases to give the calendar season structure.'|trans }}
+                        </div>
+                    {% else %}
+                        {% for trainingBlock in queuedTrainingBlocks %}
+                            {% set trainingBlockTargetRace = trainingBlock.getTargetRaceEventId() ? (raceEventsById[trainingBlock.getTargetRaceEventId() ~ ''] ?? null) : null %}
+                            {% set trainingBlockTargetRaceCountdown = trainingBlockTargetRace ? (raceEventCountdownDaysById[trainingBlockTargetRace.getId() ~ ''] ?? null) : null %}
+                            {% set phase = trainingBlock.getPhase().value %}
+                            {% set phaseAccentClasses = phase == 'base'
+                                ? 'border-l-emerald-500'
+                                : (phase == 'build'
+                                    ? 'border-l-sky-500'
+                                    : (phase == 'peak'
+                                        ? 'border-l-violet-500'
+                                        : (phase == 'taper'
+                                            ? 'border-l-amber-500'
+                                            : 'border-l-slate-500'))) %}
+                            {% set phaseBadgeClasses = phase == 'base'
+                                ? 'bg-emerald-100 text-emerald-700 ring-emerald-200'
+                                : (phase == 'build'
+                                    ? 'bg-sky-100 text-sky-700 ring-sky-200'
+                                    : (phase == 'peak'
+                                        ? 'bg-violet-100 text-violet-700 ring-violet-200'
+                                        : (phase == 'taper'
+                                            ? 'bg-amber-100 text-amber-700 ring-amber-200'
+                                            : 'bg-slate-100 text-slate-700 ring-slate-200'))) %}
+                            <div class="rounded-lg border border-gray-100 border-l-2 {{ phaseAccentClasses }} px-2.5 py-1.5">
+                                <div class="min-w-0">
+                                    <a href="#" data-model-content-url="/training-block?trainingBlockId={{ trainingBlock.getId() }}" class="block truncate text-[11px] font-medium text-gray-900 hover:underline">
+                                        {{ trainingBlock.getTitle() ?: (trainingBlock.getPhase()|trans) }}
+                                    </a>
+                                    <div class="flex flex-wrap items-center gap-x-1 text-[10px] text-gray-400">
+                                        <span>{{ trainingBlock.getStartDay().format('d M') }} → {{ trainingBlock.getEndDay().format('d M') }}</span>
+                                        {% if trainingBlockTargetRace %}
+                                            <span>·</span>
+                                            <span>{{ trainingBlockTargetRace.getTitle() ?: (trainingBlockTargetRace.getType()|trans) }}</span>
+                                        {% endif %}
+                                        <span>·</span>
+                                        {% set phaseTextClass = phase == 'base'
+                                            ? 'text-emerald-600'
+                                            : (phase == 'build'
+                                                ? 'text-sky-600'
+                                                : (phase == 'peak'
+                                                    ? 'text-violet-600'
+                                                    : (phase == 'taper'
+                                                        ? 'text-amber-600'
+                                                        : 'text-slate-500'))) %}
+                                        <span class="{{ phaseTextClass }} font-medium">{{ trainingBlock.getPhase()|trans }}</span>
+                                        {% if trainingBlock.getFocus() %}
+                                            <span>·</span>
+                                            <span>{{ trainingBlock.getFocus() }}</span>
+                                        {% endif %}
                                     </div>
                                 </div>
                             </div>
                         {% endfor %}
+                    {% endif %}
+                </div>
+            </details>
+
+            {# ──────────────────────────────────────────────
+               SECTION 4 — MONTH PLANNER  (collapsible, closed by default)
+               ────────────────────────────────────────────── #}
+            <details class="group rounded-xl border border-gray-200 bg-white shadow-xs">
+                <summary class="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-2.5 [&::-webkit-details-marker]:hidden">
+                    <div class="flex items-center gap-2">
+                        <svg class="size-3.5 text-gray-400 transition-transform group-open:rotate-90" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd"/></svg>
+                        <h4 class="text-[10px] font-semibold uppercase tracking-widest text-gray-400">{{ "Month planner"|trans }}</h4>
+                        {% if plannedSessionsForMonth is not empty %}
+                            <span class="text-[10px] font-semibold text-gray-500">{{ plannedSessionsForMonth|length }}</span>
+                        {% endif %}
                     </div>
-                {% endif %}
-            </div>
+                    <a href="#" data-model-content-url="/planned-session?day={{ calendar.getMonth().getId() }}-01" class="text-[10px] font-medium text-gray-400 hover:text-gray-700" onclick="event.stopPropagation()">
+                        + {{ "Add"|trans }}
+                    </a>
+                </summary>
+                <div class="max-h-96 overflow-y-auto px-4 pb-3 pr-2">
+                    {% if plannedSessionsForMonth is empty %}
+                        <div class="rounded-lg border border-dashed border-gray-200 p-2.5 text-xs text-gray-400">
+                            {{ "No planned sessions yet for this month."|trans }}
+                        </div>
+                    {% else %}
+                        <div class="space-y-1.5">
+                            {% for plannedSession in plannedSessionsForMonth %}
+                                {% set plannedColor = plannedSession.getActivityType().getColor() %}
+                                {% set plannedTitle = plannedSession.getTitle() ?: (plannedSession.getActivityType()|trans) %}
+                                {% set linkStatusClasses = plannedSession.getLinkStatus().value == 'linked'
+                                    ? 'bg-green-50 text-green-700 ring-green-200'
+                                    : (plannedSession.getLinkStatus().value == 'suggested'
+                                        ? 'bg-amber-50 text-amber-700 ring-amber-200'
+                                        : 'bg-gray-100 text-gray-600 ring-gray-200') %}
+                                <div class="rounded-lg border border-gray-100 border-l-2 border-l-{{ plannedColor }} bg-{{ plannedColor }}/[.05] px-2.5 py-1.5">
+                                    <a href="#" data-model-content-url="/planned-session?plannedSessionId={{ plannedSession.getId() }}" class="block truncate text-[11px] font-medium text-blue-600 hover:underline" title="{{ 'Edit planned session'|trans }}">
+                                        {{ plannedTitle }}
+                                    </a>
+                                    <div class="flex flex-wrap items-center gap-x-1 text-[10px] text-gray-400">
+                                        <span>{{ plannedSession.getDay().format('D d M') }}</span>
+                                        <span>·</span>
+                                        <span>{{ plannedSession.getActivityType()|trans }}</span>
+                                        <span>·</span>
+                                        {% set linkTextClass = plannedSession.getLinkStatus().value == 'linked'
+                                            ? 'text-green-600'
+                                            : (plannedSession.getLinkStatus().value == 'suggested'
+                                                ? 'text-amber-600'
+                                                : 'text-gray-400') %}
+                                        <span class="{{ linkTextClass }} font-medium">{{ plannedSession.getLinkStatus().value|replace({'_': ' '})|title }}</span>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    {% endif %}
+                </div>
+            </details>
         </aside>
     </div>
 </div>

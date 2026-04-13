@@ -1,0 +1,109 @@
+{% autoescape false %}
+    {% set uniqueId = uniqueNumberForId('raceEvent') %}
+    <div class="modal-header flex items-center justify-between">
+        <div class="min-w-0">
+            <h3>
+                <span>{{ "Race event"|trans }}</span>
+            </h3>
+            <div class="mt-0.5 text-xs font-normal text-gray-500">
+                {% if raceEvent %}
+                    {{ "Update the event your block, taper, and key sessions should build toward."|trans }}
+                {% else %}
+                    {{ "Add a target event so the planner can start organizing training around real race goals."|trans }}
+                {% endif %}
+            </div>
+        </div>
+        <div class="flex items-center">
+            <button type="button" class="close">
+                <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
+                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
+                </svg>
+                <span class="sr-only">{{ "Close modal"|trans }}</span>
+            </button>
+        </div>
+    </div>
+    <div class="modal-body">
+        <form id="race-event-form-{{ uniqueId }}" action="/race-event" method="post" class="space-y-4">
+            {% if raceEvent %}
+                <input type="hidden" name="raceEventId" value="{{ raceEvent.getId() }}" />
+            {% endif %}
+            <input type="hidden" name="redirectTo" value="{{ redirectTo|default('/monthly-stats') }}" />
+
+            <div class="rounded-lg border border-gray-200 bg-white shadow-xs">
+                <div class="px-4 py-3 border-b border-gray-100">
+                    <div class="text-xs font-semibold uppercase tracking-wide text-gray-500">{{ "Event details"|trans }}</div>
+                    <div class="mt-0.5 text-[11px] text-gray-400">{{ "Keep target races visible so the calendar can plan around them."|trans }}</div>
+                </div>
+                <div class="px-4 py-3">
+                    <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+                        <div>
+                            <label class="mb-1 block text-[10px] font-medium uppercase tracking-wide text-gray-500" for="race-event-day-{{ uniqueId }}">{{ "Day"|trans }}</label>
+                            <input id="race-event-day-{{ uniqueId }}" name="day" type="date" value="{{ raceEventDefaultDay }}" class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-amber-500 focus:ring-amber-500" />
+                        </div>
+                        <div>
+                            <label class="mb-1 block text-[10px] font-medium uppercase tracking-wide text-gray-500" for="race-event-priority-{{ uniqueId }}">{{ "Priority"|trans }}</label>
+                            <select id="race-event-priority-{{ uniqueId }}" name="priority" class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-amber-500 focus:ring-amber-500">
+                                {% for priority in raceEventPriorityOptions %}
+                                    <option value="{{ priority.value }}"{% if (raceEvent ? raceEvent.getPriority().value : 'b') == priority.value %} selected{% endif %}>{{ priority|trans }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="mb-1 block text-[10px] font-medium uppercase tracking-wide text-gray-500" for="race-event-family-{{ uniqueId }}">{{ "Event family"|trans }}</label>
+                            <select id="race-event-family-{{ uniqueId }}" name="family" class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-amber-500 focus:ring-amber-500">
+                                {% set selectedFamily = raceEvent ? raceEvent.getFamily().value : 'triathlon' %}
+                                {% for family in raceEventFamilyOptions %}
+                                    <option value="{{ family.value }}"{% if selectedFamily == family.value %} selected{% endif %}>{{ family|trans }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="mb-1 block text-[10px] font-medium uppercase tracking-wide text-gray-500" for="race-event-profile-{{ uniqueId }}">{{ "Distance / profile"|trans }}</label>
+                            <select id="race-event-profile-{{ uniqueId }}" name="profile" class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-amber-500 focus:ring-amber-500">
+                                {% set selectedProfile = raceEvent ? raceEvent.getProfile().value : 'sprintTriathlon' %}
+                                {% for group in raceEventProfileOptionGroups %}
+                                    {% for profile in group.options %}
+                                        <option value="{{ profile.value }}" data-family="{{ group.family.value }}"{% if selectedProfile == profile.value %} selected{% endif %}>{{ profile|trans }}</option>
+                                    {% endfor %}
+                                {% endfor %}
+                            </select>
+                        </div>
+                        <div>
+                            <label class="mb-1 block text-[10px] font-medium uppercase tracking-wide text-gray-500" for="race-event-title-{{ uniqueId }}">{{ "Title"|trans }}</label>
+                            <input id="race-event-title-{{ uniqueId }}" name="title" type="text" value="{{ raceEvent ? raceEvent.getTitle() : '' }}" placeholder="{{ 'A-race goal'|trans }}" class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-amber-500 focus:ring-amber-500" />
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="mb-1 block text-[10px] font-medium uppercase tracking-wide text-gray-500" for="race-event-location-{{ uniqueId }}">{{ "Location"|trans }}</label>
+                            <input id="race-event-location-{{ uniqueId }}" name="location" type="text" value="{{ raceEvent ? raceEvent.getLocation() : '' }}" placeholder="{{ 'Mallorca, Belgium, Kona…'|trans }}" class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-amber-500 focus:ring-amber-500" />
+                        </div>
+                        <div>
+                            <label class="mb-1 block text-[10px] font-medium uppercase tracking-wide text-gray-500">{{ "Target finish"|trans }}</label>
+                            <div class="grid grid-cols-2 gap-1.5">
+                                <input name="targetFinishTimeHours" type="number" min="0" step="1" value="{{ targetFinishTimeHours is null ? '' : targetFinishTimeHours }}" placeholder="{{ 'Hours'|trans }}" class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-amber-500 focus:ring-amber-500" />
+                                <input name="targetFinishTimeMinutes" type="number" min="0" max="59" step="1" value="{{ targetFinishTimeMinutes is null ? '' : targetFinishTimeMinutes }}" placeholder="{{ 'Minutes'|trans }}" class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-amber-500 focus:ring-amber-500" />
+                            </div>
+                        </div>
+                        <div class="md:col-span-2">
+                            <label class="mb-1 block text-[10px] font-medium uppercase tracking-wide text-gray-500" for="race-event-notes-{{ uniqueId }}">{{ "Notes"|trans }}</label>
+                            <textarea id="race-event-notes-{{ uniqueId }}" name="notes" rows="4" placeholder="{{ 'Course notes, pacing idea, nutrition reminders, or key execution cues.'|trans }}" class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-amber-500 focus:ring-amber-500">{{ raceEvent ? raceEvent.getNotes() : '' }}</textarea>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </form>
+        {% if raceEvent %}
+            <form id="race-event-delete-form-{{ uniqueId }}" action="/race-event/delete" method="post">
+                <input type="hidden" name="raceEventId" value="{{ raceEvent.getId() }}" />
+                <input type="hidden" name="redirectTo" value="{{ redirectTo|default('/monthly-stats') }}" />
+            </form>
+        {% endif %}
+        <div class="mt-4 flex items-center justify-between gap-3">
+            {% if raceEvent %}
+                <button type="submit" form="race-event-delete-form-{{ uniqueId }}" class="inline-flex items-center rounded-lg border border-red-300 px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-50">{{ "Delete"|trans }}</button>
+            {% else %}
+                <span></span>
+            {% endif %}
+            <button type="submit" form="race-event-form-{{ uniqueId }}" class="inline-flex items-center rounded-lg bg-strava-orange px-3 py-2 text-sm font-medium text-white hover:bg-orange-600 focus:ring-4 focus:outline-hidden focus:ring-orange-300">{{ raceEvent ? 'Save changes'|trans : 'Create race'|trans }}</button>
+        </div>
+    </div>
+{% endautoescape %}

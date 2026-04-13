@@ -49,6 +49,7 @@ final readonly class TrainingLoadChart
         $atlLabel = Escape::forJsonEncode($this->translator->trans('ATL (Fatigue)'));
         $tsbLabel = Escape::forJsonEncode($this->translator->trans('TSB (Form)'));
         $dailyLoadLabel = Escape::forJsonEncode($this->translator->trans('Daily load'));
+        $currentDayProjection = $this->plannedSessionForecastProjection?->getCurrentDayProjection();
         $forecastProjectionRows = $this->plannedSessionForecastProjection?->getProjection() ?? [];
         $forecastHorizon = count($forecastProjectionRows);
         $start = SerializableDateTime::fromString($this->now->format('Y-m-d 00:00:00'))
@@ -99,26 +100,30 @@ final readonly class TrainingLoadChart
         $plannedForecastCtlSeries = $forecastHorizon > 0
             ? array_merge(
                 array_fill(0, $forecastStartIndex, null),
-                [(float) ($ctlValues[array_key_last($ctlValues)] ?? 0.0)],
+                [(float) ($currentDayProjection['ctl'] ?? ($ctlValues[array_key_last($ctlValues)] ?? 0.0))],
                 $forecastCtlValues,
             )
             : [];
         $plannedForecastAtlSeries = $forecastHorizon > 0
             ? array_merge(
                 array_fill(0, $forecastStartIndex, null),
-                [(float) ($atlValues[array_key_last($atlValues)] ?? 0.0)],
+                [(float) ($currentDayProjection['atl'] ?? ($atlValues[array_key_last($atlValues)] ?? 0.0))],
                 $forecastAtlValues,
             )
             : [];
         $plannedForecastTsbSeries = $forecastHorizon > 0
             ? array_merge(
                 array_fill(0, $forecastStartIndex, null),
-                [(float) ($tsbValues[array_key_last($tsbValues)] ?? 0.0)],
+                [(float) (($currentDayProjection['tsb'] ?? null)?->getValue() ?? ($tsbValues[array_key_last($tsbValues)] ?? 0.0))],
                 $forecastTsbValues,
             )
             : [];
         $plannedForecastLoadSeries = $forecastHorizon > 0
-            ? array_merge(array_fill(0, $historicalDays, null), $forecastLoadValues)
+            ? array_merge(
+                array_fill(0, max(0, $historicalDays - 1), null),
+                [null === $currentDayProjection ? null : (float) $currentDayProjection['projectedLoad']],
+                $forecastLoadValues,
+            )
             : [];
 
         $allTsbValues = array_values(array_filter(array_merge($tsbValues, $forecastTsbValues), static fn (int|float|null $value): bool => null !== $value));

@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace App\Domain\Activity;
 
 use App\Domain\Athlete\AthleteRepository;
-use App\Domain\Ftp\FtpHistory;
+use App\Domain\Performance\PerformanceAnchor\PerformanceAnchorHistory;
+use App\Domain\Performance\PerformanceAnchor\PerformanceAnchorType;
 use App\Infrastructure\Exception\EntityNotFound;
 use App\Infrastructure\ValueObject\Measurement\Time\Seconds;
 
@@ -13,7 +14,7 @@ final readonly class ActivityTrainingLoadCalculator
 {
     public function __construct(
         private ActivityIntensity $activityIntensity,
-        private FtpHistory $ftpHistory,
+        private PerformanceAnchorHistory $performanceAnchorHistory,
         private AthleteRepository $athleteRepository,
     ) {
     }
@@ -22,13 +23,17 @@ final readonly class ActivityTrainingLoadCalculator
     {
         $load = 0.0;
         $movingTimeInSeconds = $activity->getMovingTimeInSeconds();
+        $activityType = $activity->getSportType()->getActivityType();
 
-        if (ActivityType::RIDE === $activity->getSportType()->getActivityType() && ($normalizedPower = $activity->getNormalizedPower())) {
+        if ($activityType->supportsPowerData() && ($normalizedPower = $activity->getNormalizedPower())) {
             try {
                 $intensity = $this->activityIntensity->calculatePowerBased($activity->getId()) / 100;
-                $ftp = $this->ftpHistory->find(ActivityType::RIDE, $activity->getStartDate())->getFtp();
+                $thresholdPower = $this->performanceAnchorHistory->find(
+                    PerformanceAnchorType::fromActivityType($activityType),
+                    $activity->getStartDate(),
+                )->getValue();
 
-                $load += ($movingTimeInSeconds * $normalizedPower * $intensity) / ($ftp->getValue() * 3600) * 100;
+                $load += ($movingTimeInSeconds * $normalizedPower * $intensity) / ($thresholdPower * 3600) * 100;
 
                 return (int) round($load);
             } catch (CouldNotDetermineActivityIntensity|EntityNotFound) {

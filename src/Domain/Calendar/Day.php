@@ -6,6 +6,8 @@ namespace App\Domain\Calendar;
 
 use App\Domain\Activity\Activities;
 use App\Domain\TrainingPlanner\PlannedSession;
+use App\Domain\TrainingPlanner\RaceEvent;
+use App\Domain\TrainingPlanner\TrainingBlock;
 use App\Infrastructure\ValueObject\Time\SerializableDateTime;
 
 final readonly class Day
@@ -16,6 +18,8 @@ final readonly class Day
         private bool $isCurrentMonth,
         private Activities $activities,
         private array $plannedSessions,
+        private array $raceEvents,
+        private array $trainingBlocks,
     ) {
     }
 
@@ -25,6 +29,8 @@ final readonly class Day
         bool $isCurrentMonth,
         Activities $activities,
         array $plannedSessions = [],
+        array $raceEvents = [],
+        array $trainingBlocks = [],
     ): self {
         return new self(
             date: $date,
@@ -32,6 +38,8 @@ final readonly class Day
             isCurrentMonth: $isCurrentMonth,
             activities: $activities,
             plannedSessions: $plannedSessions,
+            raceEvents: $raceEvents,
+            trainingBlocks: $trainingBlocks,
         );
     }
 
@@ -61,5 +69,21 @@ final readonly class Day
     public function getPlannedSessions(): array
     {
         return $this->plannedSessions;
+    }
+
+    /**
+     * @return list<RaceEvent>
+     */
+    public function getRaceEvents(): array
+    {
+        return $this->raceEvents;
+    }
+
+    /**
+     * @return list<TrainingBlock>
+     */
+    public function getTrainingBlocks(): array
+    {
+        return $this->trainingBlocks;
     }
 }

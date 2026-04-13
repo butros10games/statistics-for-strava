@@ -116,6 +116,34 @@ final class WellnessReadinessCalculatorTest extends TestCase
         $this->assertNotEmpty($assessment->getTopPositiveFactors());
     }
 
+    public function testItAddsStrainAsANegativeDriverWhenWeeklyStressIsHigh(): void
+    {
+        $assessment = $this->calculator->assess(
+            trainingMetrics: TrainingMetrics::create($this->buildHighStrainIntensities()),
+            wellnessMetrics: new FindWellnessMetricsResponse(
+                records: [
+                    ['day' => '2026-04-01', 'stepsCount' => 9000, 'sleepDurationInSeconds' => 28200, 'sleepScore' => 80, 'hrv' => 60.0],
+                    ['day' => '2026-04-02', 'stepsCount' => 9200, 'sleepDurationInSeconds' => 28500, 'sleepScore' => 81, 'hrv' => 61.0],
+                    ['day' => '2026-04-03', 'stepsCount' => 9100, 'sleepDurationInSeconds' => 28800, 'sleepScore' => 82, 'hrv' => 60.5],
+                    ['day' => '2026-04-04', 'stepsCount' => 9400, 'sleepDurationInSeconds' => 27900, 'sleepScore' => 79, 'hrv' => 59.5],
+                    ['day' => '2026-04-05', 'stepsCount' => 9500, 'sleepDurationInSeconds' => 27600, 'sleepScore' => 78, 'hrv' => 59.0],
+                    ['day' => '2026-04-06', 'stepsCount' => 9800, 'sleepDurationInSeconds' => 28200, 'sleepScore' => 79, 'hrv' => 58.5],
+                ],
+                latestDay: SerializableDateTime::fromString('2026-04-06 00:00:00'),
+            ),
+        );
+
+        $this->assertNotNull($assessment);
+
+        $strainFactor = current(array_filter(
+            $assessment->getFactors(),
+            static fn ($factor): bool => $factor->getKey() === 'strain',
+        ));
+
+        $this->assertInstanceOf(\App\Domain\Dashboard\Widget\TrainingLoad\ReadinessFactor::class, $strainFactor);
+        $this->assertLessThan(0, $strainFactor->getValue());
+    }
+
     #[\Override]
     protected function setUp(): void
     {
@@ -150,6 +178,28 @@ final class WellnessReadinessCalculatorTest extends TestCase
         }
 
         foreach ([95, 95, 95, 95, 95, 95, 60] as $offset => $value) {
+            $date = SerializableDateTime::fromString('2026-04-06 00:00:00')->modify(sprintf('-%d days', 6 - $offset));
+            $intensities[$date->format('Y-m-d')] = $value;
+        }
+
+        ksort($intensities);
+
+        return $intensities;
+    }
+
+    /**
+     * @return array<string, int>
+     */
+    private function buildHighStrainIntensities(): array
+    {
+        $intensities = [];
+
+        for ($day = 59; $day >= 7; --$day) {
+            $date = SerializableDateTime::fromString('2026-04-06 00:00:00')->modify(sprintf('-%d days', $day));
+            $intensities[$date->format('Y-m-d')] = 80;
+        }
+
+        foreach ([80, 90, 100, 110, 120, 90, 110] as $offset => $value) {
             $date = SerializableDateTime::fromString('2026-04-06 00:00:00')->modify(sprintf('-%d days', 6 - $offset));
             $intensities[$date->format('Y-m-d')] = $value;
         }

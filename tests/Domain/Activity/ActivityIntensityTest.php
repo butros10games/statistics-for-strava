@@ -3,6 +3,7 @@
 namespace App\Tests\Domain\Activity;
 
 use App\Domain\Activity\ActivityIntensity;
+use App\Domain\Activity\ActivityId;
 use App\Domain\Activity\ActivityRepository;
 use App\Domain\Activity\ActivityWithRawData;
 use App\Domain\Activity\CouldNotDetermineActivityIntensity;
@@ -16,6 +17,7 @@ use App\Domain\Athlete\Athlete;
 use App\Domain\Athlete\AthleteRepository;
 use App\Domain\Athlete\KeyValueBasedAthleteRepository;
 use App\Domain\Athlete\MaxHeartRate\MaxHeartRateFormula;
+use App\Domain\Performance\PerformanceAnchor\PerformanceAnchorHistory;
 use App\Domain\Athlete\RestingHeartRate\RestingHeartRateFormula;
 use App\Domain\Ftp\FtpHistory;
 use App\Infrastructure\KeyValue\KeyValueStore;
@@ -93,7 +95,7 @@ class ActivityIntensityTest extends ContainerTestCase
         ]));
 
         $activity = ActivityBuilder::fromDefaults()
-            ->withSportType(SportType::RUN)
+            ->withSportType(SportType::WALK)
             ->build();
 
         $this->getContainer()->get(ActivityRepository::class)->add(ActivityWithRawData::fromState(
@@ -101,8 +103,38 @@ class ActivityIntensityTest extends ContainerTestCase
             []
         ));
 
-        $this->expectExceptionObject(new CouldNotDetermineActivityIntensity('Activity is not a ride'));
+        $this->expectExceptionObject(new CouldNotDetermineActivityIntensity('Activity does not support power-based intensity'));
         $this->activityIntensity->calculatePowerBased($activity->getId());
+    }
+
+    public function testCalculateWithPowerForRun(): void
+    {
+        $this->athleteRepository->save(Athlete::create([
+            'birthDate' => '1989-08-14',
+        ]));
+
+        $activity = ActivityBuilder::fromDefaults()
+            ->withSportType(SportType::RUN)
+            ->withAverageHeartRate(180)
+            ->withMovingTimeInSeconds(3600)
+            ->withStartDateTime(SerializableDateTime::fromString('2023-10-10'))
+            ->build();
+
+        $this->getContainer()->get(ActivityRepository::class)->add(ActivityWithRawData::fromState(
+            $activity,
+            []
+        ));
+        $this->getContainer()->get(ActivityStreamMetricRepository::class)->add(ActivityStreamMetric::create(
+            activityId: $activity->getId(),
+            streamType: StreamType::WATTS,
+            metricType: ActivityStreamMetricType::NORMALIZED_POWER,
+            data: [260],
+        ));
+
+        $this->assertEquals(
+            104,
+            $this->activityIntensity->calculatePowerBased($activity->getId()),
+        );
     }
 
     public function testCalculateWithPowerWhenFtpNotFound(): void
@@ -114,7 +146,7 @@ class ActivityIntensityTest extends ContainerTestCase
                 $this->getContainer()->get(MaxHeartRateFormula::class),
                 $this->getContainer()->get(RestingHeartRateFormula::class),
             ),
-            FtpHistory::fromArray([]),
+            PerformanceAnchorHistory::fromArray([]),
         );
 
         $this->athleteRepository->save(Athlete::create([
@@ -138,7 +170,7 @@ class ActivityIntensityTest extends ContainerTestCase
             data: [250],
         ));
 
-        $this->expectExceptionObject(new CouldNotDetermineActivityIntensity('Ftp not found'));
+        $this->expectExceptionObject(new CouldNotDetermineActivityIntensity('Threshold power not found'));
         $this->activityIntensity->calculatePowerBased($activity->getId());
     }
 
@@ -197,10 +229,27 @@ class ActivityIntensityTest extends ContainerTestCase
         );
     }
 
+    public function testCalculateWhenActivityIsMissing(): void
+    {
+        $missingActivityId = ActivityId::fromUnprefixed('missing');
+
+        $this->assertEquals(
+            0,
+            $this->activityIntensity->calculate($missingActivityId),
+        );
+        $this->assertSame(
+            0,
+            ActivityIntensity::$cachedIntensities[(string) $missingActivityId],
+        );
+    }
+
     #[\Override]
     protected function setUp(): void
     {
         parent::setUp();
+
+        EnrichedActivities::reset();
+        ActivityIntensity::reset();
 
         $this->activityIntensity = new ActivityIntensity(
             $this->getContainer()->get(EnrichedActivities::class),
@@ -209,7 +258,10 @@ class ActivityIntensityTest extends ContainerTestCase
                 $this->getContainer()->get(MaxHeartRateFormula::class),
                 $this->getContainer()->get(RestingHeartRateFormula::class),
             ),
-            FtpHistory::fromArray(['2023-04-01' => 250]),
+            PerformanceAnchorHistory::fromFtpHistory(FtpHistory::fromArray([
+                'cycling' => ['2023-04-01' => 250],
+                'running' => ['2023-04-01' => 250],
+            ])),
         );
     }
 }

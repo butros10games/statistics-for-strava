@@ -166,6 +166,20 @@ export default class WorkoutEditor {
                     return;
                 }
 
+                const addBlockToBlockButton = event.target.closest('[data-workout-block-add-to-block]');
+                if (addBlockToBlockButton) {
+                    event.preventDefault();
+                    const blockNode = addBlockToBlockButton.closest('[data-workout-block]');
+                    const blockStepsNode = blockNode?.querySelector('[data-workout-block-steps]');
+                    if (!blockNode || !blockStepsNode) {
+                        return;
+                    }
+
+                    this.appendBlock(editorNode, blockStepsNode, blockNode.dataset.itemId ?? '');
+
+                    return;
+                }
+
                 const duplicateButton = event.target.closest('[data-workout-item-duplicate]');
                 if (duplicateButton) {
                     event.preventDefault();
@@ -254,13 +268,6 @@ export default class WorkoutEditor {
                     return;
                 }
 
-                const dropzone = event.target.closest('[data-workout-dropzone]');
-                if (resolvedItemNode.matches('[data-workout-block]') && dropzone?.dataset.dropzoneType === 'block') {
-                    event.preventDefault();
-
-                    return;
-                }
-
                 editorNode.dataset.draggingItemId = resolvedItemNode.dataset.itemId ?? '';
                 this.applyDraggingStyles(resolvedItemNode);
 
@@ -332,28 +339,34 @@ export default class WorkoutEditor {
         });
     }
 
-    appendStep(editorNode, targetContainer, parentBlockId = '') {
-        const stepTemplate = this.getTemplateNode(editorNode, '[data-workout-step-template]');
-        if (!stepTemplate || !targetContainer) {
+    appendStep(editorNode, targetContainer, parentBlockId = '', stepType = 'steady') {
+        if (!targetContainer) {
             return;
         }
 
         this.setManualTargetLoadOverride(editorNode.closest('[data-planned-session-form]'), false);
-        const stepNode = this.createNodeFromTemplate(editorNode, stepTemplate);
-        stepNode.dataset.parentBlockId = parentBlockId;
+        const stepNode = this.createStepNode(editorNode, parentBlockId, stepType);
+        if (!stepNode) {
+            return;
+        }
+
         targetContainer.appendChild(stepNode);
         this.refreshEditor(editorNode);
     }
 
-    appendBlock(editorNode) {
-        const blockTemplate = this.getTemplateNode(editorNode, '[data-workout-block-template]');
-        const topLevelDropzone = this.getTopLevelDropzone(editorNode);
-        if (!blockTemplate || !topLevelDropzone) {
+    appendBlock(editorNode, targetContainer = this.getTopLevelDropzone(editorNode), parentBlockId = '') {
+        if (!targetContainer) {
             return;
         }
 
         this.setManualTargetLoadOverride(editorNode.closest('[data-planned-session-form]'), false);
-        topLevelDropzone.appendChild(this.createNodeFromTemplate(editorNode, blockTemplate));
+        const blockNode = this.createBlockNode(editorNode, parentBlockId);
+        if (!blockNode) {
+            return;
+        }
+
+        targetContainer.appendChild(blockNode);
+        this.seedDefaultBlockSteps(editorNode, blockNode);
         this.refreshEditor(editorNode);
     }
 
@@ -421,9 +434,7 @@ export default class WorkoutEditor {
             let isVisible = visibleFor.includes(targetType);
             const targetEffort = groupNode.dataset.targetEffort ?? '';
             if (isVisible && targetEffort) {
-                isVisible = this.isRideActivityType(activityType)
-                    ? targetEffort === 'power'
-                    : targetEffort === 'pace';
+                isVisible = this.isEffortFieldVisibleForActivityType(targetEffort, activityType);
             }
 
             groupNode.classList.toggle('hidden', !isVisible);
@@ -727,7 +738,7 @@ export default class WorkoutEditor {
             return null;
         }
 
-        if (activityTypeValue === 'Ride' && Number.isFinite(workoutStep.targetPower) && workoutStep.targetPower > 0) {
+        if (this.supportsPowerEffortActivityType(activityTypeValue) && Number.isFinite(workoutStep.targetPower) && workoutStep.targetPower > 0) {
             const loadPerHour = this.estimateLoadPerHourFromPowerTarget(formNode, activityTypeValue, workoutStep.targetPower);
             if (loadPerHour !== null) {
                 return (estimatedStepDurationInSeconds / 3600) * loadPerHour;
@@ -801,10 +812,10 @@ export default class WorkoutEditor {
             return null;
         }
 
-        if (activityTypeValue === 'Ride') {
-            const ftp = this.getFtpForActivityTypeOnDay(formNode, activityTypeValue);
-            if (Number.isFinite(ftp) && ftp > 0) {
-                const intensityFactor = this.clamp(targetPower / ftp, 0.35, 1.8);
+        if (this.supportsPowerEffortActivityType(activityTypeValue)) {
+            const thresholdPower = this.getThresholdPowerForActivityTypeOnDay(formNode, activityTypeValue);
+            if (Number.isFinite(thresholdPower) && thresholdPower > 0) {
+                const intensityFactor = this.clamp(targetPower / thresholdPower, 0.35, 1.8);
 
                 return this.roundToSingleDecimal((intensityFactor ** 2) * 100);
             }
@@ -873,11 +884,32 @@ export default class WorkoutEditor {
         return Math.abs(Math.log(targetEffort / sampleEffort));
     }
 
-    getFtpForActivityTypeOnDay(formNode, activityTypeValue) {
+    getThresholdPowerForActivityTypeOnDay(formNode, activityTypeValue) {
         const context = this.getPlannerEstimationContext(formNode);
-        const ftpEntries = context.ftpHistoryByActivityType?.[activityTypeValue];
         const selectedDayValue = this.getPlannerField(formNode, 'input[name="day"]')?.value ?? '';
-        if (!Array.isArray(ftpEntries) || !selectedDayValue) {
+        if (!selectedDayValue) {
+            return null;
+        }
+
+        const performanceAnchors = context.performanceAnchorsByActivityType?.[activityTypeValue];
+        if (Array.isArray(performanceAnchors)) {
+            let matchedAnchor = null;
+            performanceAnchors.forEach((entry) => {
+                const anchorValue = Number(entry?.value);
+                if (!entry?.setOn || !Number.isFinite(anchorValue) || entry.setOn > selectedDayValue) {
+                    return;
+                }
+
+                matchedAnchor = anchorValue;
+            });
+
+            if (matchedAnchor !== null) {
+                return matchedAnchor;
+            }
+        }
+
+        const ftpEntries = context.ftpHistoryByActivityType?.[activityTypeValue];
+        if (!Array.isArray(ftpEntries)) {
             return null;
         }
 
@@ -1437,21 +1469,32 @@ export default class WorkoutEditor {
         return activityType === 'Ride';
     }
 
-    formatEffortTarget(activityType, targetPace, targetPower) {
-        if (this.isRideActivityType(activityType)) {
-            if (targetPower !== undefined && targetPower !== null && String(targetPower).trim() !== '') {
-                return `${String(targetPower).trim()} W`;
-            }
+    supportsPowerEffortActivityType(activityType) {
+        return activityType === 'Ride' || activityType === 'Run';
+    }
 
-            return targetPace || null;
+    isEffortFieldVisibleForActivityType(targetEffort, activityType) {
+        if (targetEffort === 'power') {
+            return this.supportsPowerEffortActivityType(activityType);
+        }
+
+        if (targetEffort === 'pace') {
+            return !this.isRideActivityType(activityType);
+        }
+
+        return false;
+    }
+
+    formatEffortTarget(activityType, targetPace, targetPower) {
+        if (this.supportsPowerEffortActivityType(activityType)
+            && targetPower !== undefined
+            && targetPower !== null
+            && String(targetPower).trim() !== '') {
+            return `${String(targetPower).trim()} W`;
         }
 
         if (targetPace) {
             return targetPace;
-        }
-
-        if (targetPower !== undefined && targetPower !== null && String(targetPower).trim() !== '') {
-            return `${String(targetPower).trim()} W`;
         }
 
         return null;
@@ -1563,10 +1606,6 @@ export default class WorkoutEditor {
         }
 
         if (draggedItem === dropzone || draggedItem.contains(dropzone)) {
-            return false;
-        }
-
-        if (dropzone.dataset.dropzoneType === 'block' && draggedItem.matches('[data-workout-block]')) {
             return false;
         }
 
@@ -1688,17 +1727,15 @@ export default class WorkoutEditor {
             this.setManualTargetLoadOverride(editorNode.closest('[data-planned-session-form]'), false);
         }
 
-        const blockNode = targetNode.closest('[data-workout-block]');
-        if (blockNode) {
+        const refreshedBlockNodes = new Set();
+        let blockNode = targetNode.closest('[data-workout-block]');
+        while (blockNode) {
             this.refreshBlockSummary(blockNode);
+            refreshedBlockNodes.add(blockNode);
+            blockNode = blockNode.parentElement?.closest('[data-workout-block]') ?? null;
         }
 
-        const parentBlockNode = targetNode.closest('[data-workout-block-steps]')?.closest('[data-workout-block]');
-        if (parentBlockNode && parentBlockNode !== blockNode) {
-            this.refreshBlockSummary(parentBlockNode);
-        }
-
-        if (!blockNode && !parentBlockNode) {
+        if (0 === refreshedBlockNodes.size) {
             editorNode.querySelectorAll('[data-workout-block]').forEach((node) => this.refreshBlockSummary(node));
         }
 
@@ -1767,6 +1804,52 @@ export default class WorkoutEditor {
         wrapperNode.innerHTML = templateNode.innerHTML.trim().replaceAll('__ITEM_ID__', this.generateItemId(editorNode));
 
         return wrapperNode.firstElementChild;
+    }
+
+    createStepNode(editorNode, parentBlockId = '', stepType = 'steady') {
+        const stepTemplate = this.getTemplateNode(editorNode, '[data-workout-step-template]');
+        if (!stepTemplate) {
+            return null;
+        }
+
+        const stepNode = this.createNodeFromTemplate(editorNode, stepTemplate);
+        stepNode.dataset.parentBlockId = parentBlockId;
+
+        const typeSelect = stepNode.querySelector('[data-workout-step-type-select]');
+        if (typeSelect) {
+            typeSelect.value = stepType;
+        }
+
+        return stepNode;
+    }
+
+    createBlockNode(editorNode, parentBlockId = '') {
+        const blockTemplate = this.getTemplateNode(editorNode, '[data-workout-block-template]');
+        if (!blockTemplate) {
+            return null;
+        }
+
+        const blockNode = this.createNodeFromTemplate(editorNode, blockTemplate);
+        blockNode.dataset.parentBlockId = parentBlockId;
+
+        return blockNode;
+    }
+
+    seedDefaultBlockSteps(editorNode, blockNode) {
+        const blockStepsNode = blockNode?.querySelector('[data-workout-block-steps]');
+        const blockId = blockNode?.dataset.itemId ?? '';
+        if (!blockStepsNode || !blockId) {
+            return;
+        }
+
+        ['interval', 'recovery'].forEach((stepType) => {
+            const stepNode = this.createStepNode(editorNode, blockId, stepType);
+            if (!stepNode) {
+                return;
+            }
+
+            blockStepsNode.appendChild(stepNode);
+        });
     }
 
     ensureTemplatesInsideEditor(editorNode, topLevelDropzone = this.getTopLevelDropzone(editorNode)) {

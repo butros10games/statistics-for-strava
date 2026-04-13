@@ -6,6 +6,7 @@ namespace App\Domain\Activity\Stream\Metric;
 
 use App\Domain\Activity\ActivityId;
 use App\Domain\Activity\ActivityIds;
+use App\Domain\Activity\Stream\StreamBasedActivityPowerRepository;
 use App\Domain\Activity\Stream\StreamType;
 use App\Infrastructure\Repository\DbalRepository;
 use App\Infrastructure\Serialization\Json;
@@ -24,6 +25,8 @@ final readonly class DbalActivityStreamMetricRepository extends DbalRepository i
             'metricType' => $metric->getMetricType()->value,
             'data' => Json::encodeAndCompress($metric->getData()),
         ]);
+
+        StreamBasedActivityPowerRepository::reset();
     }
 
     public function deleteForActivity(ActivityId $activityId): void
@@ -33,6 +36,8 @@ final readonly class DbalActivityStreamMetricRepository extends DbalRepository i
         $this->connection->executeStatement($sql, [
             'activityId' => $activityId,
         ]);
+
+        StreamBasedActivityPowerRepository::reset();
     }
 
     public function findActivityIdsWithoutBestAverages(): ActivityIds

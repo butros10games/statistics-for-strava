@@ -292,7 +292,7 @@ final readonly class PlannedSession
             if ($type->isContainer()) {
                 $normalizedSteps[] = [
                     'itemId' => $itemId,
-                    'parentBlockId' => null,
+                    'parentBlockId' => $parentBlockId,
                     'type' => $type->value,
                     'label' => self::normalizeNullableString(is_string($workoutStep['label'] ?? null) ? $workoutStep['label'] : null),
                     'repetitions' => max(1, (int) ($workoutStep['repetitions'] ?? 1)),
@@ -492,7 +492,7 @@ final readonly class PlannedSession
      */
     private static function normalizeWorkoutStepEffortTargets(ActivityType $activityType, ?string $targetPace, ?int $targetPower): array
     {
-        if (ActivityType::RIDE === $activityType) {
+        if ($activityType->supportsPowerData()) {
             if (null !== $targetPower && $targetPower > 0) {
                 return [null, $targetPower];
             }

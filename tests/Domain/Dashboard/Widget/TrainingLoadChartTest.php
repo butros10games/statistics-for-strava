@@ -15,16 +15,7 @@ final class TrainingLoadChartTest extends TestCase
 {
     public function testItAddsPlannedSessionForecastSeriesToChart(): void
     {
-        $trainingMetrics = TrainingMetrics::create(array_fill_keys([
-            '2026-03-31',
-            '2026-04-01',
-            '2026-04-02',
-            '2026-04-03',
-            '2026-04-04',
-            '2026-04-05',
-            '2026-04-06',
-            '2026-04-07',
-        ], 40));
+        $trainingMetrics = $this->buildTrainingMetrics('2026-04-07', 40);
         $forecastProjection = TrainingLoadForecastProjection::createWithProjectedLoads(
             metrics: $trainingMetrics,
             now: SerializableDateTime::fromString('2026-04-07 00:00:00'),
@@ -62,6 +53,84 @@ final class TrainingLoadChartTest extends TestCase
             $seriesByName['__forecast_load']['data'],
             static fn (mixed $value): bool => null !== $value,
         )), -3));
+    }
+
+    public function testItShowsCurrentDayPredictedLoadOnTodaysChartIndex(): void
+    {
+        $trainingMetrics = $this->buildTrainingMetrics('2026-04-07', 40);
+        $forecastProjection = TrainingLoadForecastProjection::createWithProjectedLoads(
+            metrics: $trainingMetrics,
+            now: SerializableDateTime::fromString('2026-04-07 00:00:00'),
+            projectedLoads: [1 => 55.0, 2 => 60.0, 3 => 45.0],
+            horizon: 3,
+            currentDayProjectedLoad: 35.0,
+        );
+
+        $chart = TrainingLoadChart::create(
+            trainingMetrics: $trainingMetrics,
+            now: SerializableDateTime::fromString('2026-04-07 00:00:00'),
+            translator: $this->createTranslatorStub(),
+            plannedSessionForecastProjection: $forecastProjection,
+        )->build();
+
+        $seriesByName = [];
+        foreach ($chart['series'] as $series) {
+            $seriesByName[$series['name']] = $series;
+        }
+
+        $forecastLoadData = $seriesByName['__forecast_load']['data'];
+        self::assertSame(35.0, $forecastLoadData[TrainingLoadChart::NUMBER_OF_DAYS_TO_DISPLAY - 1]);
+        self::assertSame([35.0, 55.0, 60.0, 45.0], array_values(array_filter(
+            $forecastLoadData,
+            static fn (mixed $value): bool => null !== $value,
+        )));
+    }
+
+    public function testItAnchorsCurrentDayForecastLinesAboveTodaysMetricsWhenPendingLoadExists(): void
+    {
+        $trainingMetrics = $this->buildTrainingMetrics('2026-04-07', 40);
+        $forecastProjection = TrainingLoadForecastProjection::createWithProjectedLoads(
+            metrics: $trainingMetrics,
+            now: SerializableDateTime::fromString('2026-04-07 00:00:00'),
+            projectedLoads: [1 => 55.0, 2 => 60.0, 3 => 45.0],
+            horizon: 3,
+            currentDayProjectedLoad: 35.0,
+        );
+
+        $chart = TrainingLoadChart::create(
+            trainingMetrics: $trainingMetrics,
+            now: SerializableDateTime::fromString('2026-04-07 00:00:00'),
+            translator: $this->createTranslatorStub(),
+            plannedSessionForecastProjection: $forecastProjection,
+        )->build();
+
+        $seriesByName = [];
+        foreach ($chart['series'] as $series) {
+            $seriesByName[$series['name']] = $series;
+        }
+
+        $todayIndex = TrainingLoadChart::NUMBER_OF_DAYS_TO_DISPLAY - 1;
+
+        self::assertGreaterThan(
+            $seriesByName['ATL (Fatigue)']['data'][$todayIndex],
+            $seriesByName['__forecast_atl']['data'][$todayIndex],
+        );
+        self::assertGreaterThan(
+            $seriesByName['CTL (Fitness)']['data'][$todayIndex],
+            $seriesByName['__forecast_ctl']['data'][$todayIndex],
+        );
+    }
+
+    private function buildTrainingMetrics(string $today, int $load): TrainingMetrics
+    {
+        $intensities = [];
+        $referenceDay = SerializableDateTime::fromString($today.' 00:00:00');
+
+        for ($day = TrainingLoadChart::NUMBER_OF_DAYS_TO_DISPLAY - 1; $day >= 0; --$day) {
+            $intensities[$referenceDay->modify(sprintf('-%d days', $day))->format('Y-m-d')] = $load;
+        }
+
+        return TrainingMetrics::create($intensities);
     }
 
     private function createTranslatorStub(): TranslatorInterface

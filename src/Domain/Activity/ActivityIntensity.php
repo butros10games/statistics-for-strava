@@ -5,7 +5,8 @@ declare(strict_types=1);
 namespace App\Domain\Activity;
 
 use App\Domain\Athlete\AthleteRepository;
-use App\Domain\Ftp\FtpHistory;
+use App\Domain\Performance\PerformanceAnchor\PerformanceAnchorHistory;
+use App\Domain\Performance\PerformanceAnchor\PerformanceAnchorType;
 use App\Infrastructure\Exception\EntityNotFound;
 
 final class ActivityIntensity
@@ -13,10 +14,15 @@ final class ActivityIntensity
     /** @var array<string, int|null> */
     public static array $cachedIntensities = [];
 
+    public static function reset(): void
+    {
+        self::$cachedIntensities = [];
+    }
+
     public function __construct(
         private readonly EnrichedActivities $enrichedActivities,
         private readonly AthleteRepository $athleteRepository,
-        private readonly FtpHistory $ftpHistory,
+        private readonly PerformanceAnchorHistory $performanceAnchorHistory,
     ) {
     }
 
@@ -29,12 +35,12 @@ final class ActivityIntensity
 
         try {
             return $this->calculatePowerBased($activityId);
-        } catch (CouldNotDetermineActivityIntensity) {
+        } catch (CouldNotDetermineActivityIntensity|EntityNotFound) {
         }
 
         try {
             return $this->calculateHeartRateBased($activityId);
-        } catch (CouldNotDetermineActivityIntensity) {
+        } catch (CouldNotDetermineActivityIntensity|EntityNotFound) {
         }
 
         self::$cachedIntensities[$cacheKey] = 0;
@@ -45,8 +51,9 @@ final class ActivityIntensity
     public function calculatePowerBased(ActivityId $activityId): int
     {
         $activity = $this->enrichedActivities->find($activityId);
-        if (ActivityType::RIDE !== $activity->getSportType()->getActivityType()) {
-            throw new CouldNotDetermineActivityIntensity('Activity is not a ride');
+        $activityType = $activity->getSportType()->getActivityType();
+        if (!$activityType->supportsPowerData()) {
+            throw new CouldNotDetermineActivityIntensity('Activity does not support power-based intensity');
         }
 
         $cacheKey = (string) $activity->getId();
@@ -59,16 +66,19 @@ final class ActivityIntensity
         }
 
         try {
-            $ftp = $this->ftpHistory->find(ActivityType::RIDE, $activity->getStartDate())->getFtp();
-            // IF = Normalized Power / FTP
-            $intensity = (int) round(($normalizedPower / $ftp->getValue()) * 100);
+            $thresholdPower = $this->performanceAnchorHistory->find(
+                PerformanceAnchorType::fromActivityType($activityType),
+                $activity->getStartDate(),
+            )->getValue();
+            // IF = Normalized Power / Threshold Power
+            $intensity = (int) round(($normalizedPower / $thresholdPower) * 100);
             self::$cachedIntensities[$cacheKey] = $intensity;
 
             return self::$cachedIntensities[$cacheKey];
         } catch (EntityNotFound) {
         }
 
-        throw new CouldNotDetermineActivityIntensity('Ftp not found');
+        throw new CouldNotDetermineActivityIntensity('Threshold power not found');
     }
 
     public function calculateHeartRateBased(ActivityId $activityId): int
