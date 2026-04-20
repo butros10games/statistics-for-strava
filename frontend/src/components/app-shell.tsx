@@ -25,6 +25,7 @@ const previewLinks = [
     {to: '/monthly-stats', label: 'Monthly stats', description: 'Calendar cockpit', icon: '▦'},
     {to: '/photos', label: 'Photos', description: 'Gallery wall', icon: '▣'},
     {to: '/race-events', label: 'Race events', description: 'Planner target editor', icon: '◬'},
+    {to: '/training-blocks', label: 'Training blocks', description: 'Season structure editor', icon: '◫'},
     {to: '/rewind', label: 'Rewind', description: 'Yearly recap deck', icon: '◒'},
     {to: '/recovery-check-in', label: 'Recovery check-in', description: 'Wellness form slice', icon: '✳'},
     {to: '/segments', label: 'Segments', description: 'Filtered climb browser', icon: '◈'},
@@ -67,6 +68,7 @@ export function AppShell({
         {href: buildAppPath(bootstrap.basePath, 'recovery-check-in?redirectTo=/dashboard'), label: 'Legacy recovery check-in'},
         {href: buildAppPath(bootstrap.basePath, 'rewind'), label: 'Legacy rewind'},
         {href: buildAppPath(bootstrap.basePath, 'segments'), label: 'Legacy segments'},
+        {href: buildAppPath(bootstrap.basePath, 'training-block?redirectTo=/monthly-stats'), label: 'Legacy training-block modal'},
         {href: buildAppPath(bootstrap.basePath, 'training-plans'), label: 'Legacy training plans'},
         {href: buildAppPath(bootstrap.basePath, 'race-planner'), label: 'Legacy race planner'},
     ];

@@ -531,6 +531,13 @@ export function RacePlannerPage({bootstrap}: RacePlannerPageProps) {
                                 Manage race events
                                 <span aria-hidden="true">→</span>
                             </Link>
+                            <Link
+                                to="/training-blocks"
+                                className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-gray-600"
+                            >
+                                Manage training blocks
+                                <span aria-hidden="true">→</span>
+                            </Link>
                             {data.mode === 'plan-preview' && data.plannerSupportsRaceActions ? (
                                 <Link
                                     to="/race-planner"
