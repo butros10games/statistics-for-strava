@@ -2,6 +2,7 @@ import {useEffect, useMemo, useState} from 'react';
 import {BrowserRouter, Navigate, Route, Routes} from 'react-router-dom';
 import {ActivitiesPage} from './pages/activities-page';
 import {AppShell} from './components/app-shell';
+import {BadgesPage} from './pages/badges-page';
 import {BestEffortsPage} from './pages/best-efforts-page';
 import {ChallengesPage} from './pages/challenges-page';
 import {buildPreviewBasename, getReactBootstrap} from './lib/bootstrap';
@@ -57,6 +58,7 @@ export default function App() {
                 <Routes>
                     <Route path="/" element={<OverviewPage bootstrap={bootstrap} />} />
                     <Route path="/activities" element={<ActivitiesPage bootstrap={bootstrap} />} />
+                    <Route path="/badges" element={<BadgesPage bootstrap={bootstrap} />} />
                     <Route path="/best-efforts" element={<BestEffortsPage bootstrap={bootstrap} />} />
                     <Route path="/challenges" element={<ChallengesPage bootstrap={bootstrap} />} />
                     <Route path="/eddington" element={<EddingtonPage bootstrap={bootstrap} />} />

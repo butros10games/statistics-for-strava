@@ -14,6 +14,7 @@ interface AppShellProps {
 const previewLinks = [
     {to: '/', label: 'Workbench', description: 'Foundation slice', icon: '◫'},
     {to: '/activities', label: 'Activities', description: 'Read-heavy preview', icon: '◌'},
+    {to: '/badges', label: 'Badges', description: 'Embeddable SVG kit', icon: '▤'},
     {to: '/best-efforts', label: 'Best efforts', description: 'Records matrix', icon: '◍'},
     {to: '/challenges', label: 'Challenges', description: 'Badge archive', icon: '◐'},
     {to: '/eddington', label: 'Eddington', description: 'Chart-heavy preview', icon: '◎'},
@@ -49,6 +50,7 @@ export function AppShell({
     const legacyLinks = [
         {href: buildAppPath(bootstrap.basePath, 'dashboard'), label: 'Legacy dashboard'},
         {href: buildAppPath(bootstrap.basePath, 'activities'), label: 'Legacy activities'},
+        {href: buildAppPath(bootstrap.basePath, 'badge.html'), label: 'Legacy badges'},
         {href: buildAppPath(bootstrap.basePath, 'best-efforts'), label: 'Legacy best efforts'},
         {href: buildAppPath(bootstrap.basePath, 'challenges'), label: 'Legacy challenges'},
         {href: buildAppPath(bootstrap.basePath, 'eddington'), label: 'Legacy Eddington'},
