@@ -3,6 +3,7 @@ import {BrowserRouter, Navigate, Route, Routes} from 'react-router-dom';
 import {ActivitiesPage} from './pages/activities-page';
 import {AppShell} from './components/app-shell';
 import {BestEffortsPage} from './pages/best-efforts-page';
+import {ChallengesPage} from './pages/challenges-page';
 import {buildPreviewBasename, getReactBootstrap} from './lib/bootstrap';
 import {EddingtonPage} from './pages/eddington-page';
 import {GearPage} from './pages/gear-page';
@@ -56,6 +57,7 @@ export default function App() {
                     <Route path="/" element={<OverviewPage bootstrap={bootstrap} />} />
                     <Route path="/activities" element={<ActivitiesPage bootstrap={bootstrap} />} />
                     <Route path="/best-efforts" element={<BestEffortsPage bootstrap={bootstrap} />} />
+                    <Route path="/challenges" element={<ChallengesPage bootstrap={bootstrap} />} />
                     <Route path="/eddington" element={<EddingtonPage bootstrap={bootstrap} />} />
                     <Route path="/gear" element={<GearPage bootstrap={bootstrap} />} />
                     <Route path="/heatmap" element={<HeatmapPage bootstrap={bootstrap} />} />
