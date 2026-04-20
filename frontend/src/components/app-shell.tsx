@@ -14,6 +14,7 @@ interface AppShellProps {
 const previewLinks = [
     {to: '/', label: 'Workbench', description: 'Foundation slice', icon: '◫'},
     {to: '/activities', label: 'Activities', description: 'Read-heavy preview', icon: '◌'},
+    {to: '/best-efforts', label: 'Best efforts', description: 'Records matrix', icon: '◍'},
     {to: '/eddington', label: 'Eddington', description: 'Chart-heavy preview', icon: '◎'},
     {to: '/gear', label: 'Gear', description: 'Equipment analytics', icon: '⬡'},
     {to: '/segments', label: 'Segments', description: 'Filtered climb browser', icon: '◈'},
@@ -43,6 +44,7 @@ export function AppShell({
     const legacyLinks = [
         {href: buildAppPath(bootstrap.basePath, 'dashboard'), label: 'Legacy dashboard'},
         {href: buildAppPath(bootstrap.basePath, 'activities'), label: 'Legacy activities'},
+        {href: buildAppPath(bootstrap.basePath, 'best-efforts'), label: 'Legacy best efforts'},
         {href: buildAppPath(bootstrap.basePath, 'eddington'), label: 'Legacy Eddington'},
         {href: buildAppPath(bootstrap.basePath, 'gear'), label: 'Legacy gear'},
         {href: buildAppPath(bootstrap.basePath, 'segments'), label: 'Legacy segments'},
