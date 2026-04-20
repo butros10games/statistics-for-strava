@@ -35,12 +35,13 @@ function ensureThemesRegistered(echarts: EChartsThemeRegistry) {
 }
 
 interface EChartPanelProps {
-    title: string;
+    title?: string;
     options: Record<string, unknown>;
     heightClassName?: string;
+    chromeless?: boolean;
 }
 
-export function EChartPanel({title, options, heightClassName = 'h-72'}: EChartPanelProps) {
+export function EChartPanel({title, options, heightClassName = 'h-72', chromeless = false}: EChartPanelProps) {
     const chartNodeRef = useRef<HTMLDivElement | null>(null);
     const [themeName, setThemeName] = useState<'v5' | 'v5-dark'>(() => readThemeName());
     const serializedOptions = useMemo(() => JSON.stringify(options), [options]);
@@ -84,10 +85,14 @@ export function EChartPanel({title, options, heightClassName = 'h-72'}: EChartPa
         };
     }, [serializedOptions, themeName]);
 
+    if (chromeless) {
+        return <div ref={chartNodeRef} className={heightClassName} />;
+    }
+
     return (
         <div className="rounded-[28px] border border-gray-200 bg-white/92 p-5 shadow-sm dark:border-gray-800 dark:bg-gray-950/40">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{title}</h3>
-            <div ref={chartNodeRef} className={`mt-4 ${heightClassName}`} />
+            {title ? <h3 className="text-lg font-semibold text-gray-900 dark:text-white">{title}</h3> : null}
+            <div ref={chartNodeRef} className={`${title ? 'mt-4 ' : ''}${heightClassName}`} />
         </div>
     );
 }
