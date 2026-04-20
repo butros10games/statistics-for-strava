@@ -14,6 +14,7 @@ type MetricKey = 'cyclingFtp' | 'runningThresholdPaceDisplay' | 'swimmingCssDisp
 interface TrainingPlanCreateModalProps {
     basePath: string;
     isOpen: boolean;
+    trainingPlanId?: string;
     afterTrainingPlanId?: string;
     targetRaceEventId?: string;
     onClose: () => void;
@@ -115,12 +116,16 @@ function createInitialFormState(bootstrap: TrainingPlanFormBootstrapResponse): T
     };
 }
 
-function buildSubmitPayload(formState: TrainingPlanFormState): TrainingPlanFormSubmitPayload {
+function buildSubmitPayload(
+    bootstrap: TrainingPlanFormBootstrapResponse,
+    formState: TrainingPlanFormState,
+): TrainingPlanFormSubmitPayload {
     const cyclingFtp = formState.performanceMetrics.cyclingFtp.trim();
     const weeklyRunningVolume = formState.performanceMetrics.weeklyRunningVolume.trim();
     const weeklyBikingVolume = formState.performanceMetrics.weeklyBikingVolume.trim();
 
     return {
+        trainingPlanId: bootstrap.context.trainingPlan?.id,
         type: formState.type,
         title: formState.title.trim(),
         startDay: formState.startDay,
@@ -184,6 +189,7 @@ function DayPicker({
 export function TrainingPlanCreateModal({
     basePath,
     isOpen,
+    trainingPlanId,
     afterTrainingPlanId,
     targetRaceEventId,
     onClose,
@@ -210,6 +216,7 @@ export function TrainingPlanCreateModal({
         setSubmitError(null);
 
         fetchTrainingPlanFormPreview(basePath, {
+            trainingPlanId,
             afterTrainingPlanId,
             targetRaceEventId,
             signal: abortController.signal,
@@ -233,7 +240,7 @@ export function TrainingPlanCreateModal({
             });
 
         return () => abortController.abort();
-    }, [afterTrainingPlanId, basePath, isOpen, targetRaceEventId]);
+    }, [afterTrainingPlanId, basePath, isOpen, targetRaceEventId, trainingPlanId]);
 
     useEffect(() => {
         if (!isOpen) {
@@ -317,15 +324,17 @@ export function TrainingPlanCreateModal({
     const handleSubmit = async (event: FormEvent<HTMLFormElement>) => {
         event.preventDefault();
 
-        if (!formState) {
+        if (!bootstrap || !formState) {
             return;
         }
+
+        const currentBootstrap = bootstrap;
 
         setSubmitting(true);
         setSubmitError(null);
 
         try {
-            await createTrainingPlanPreview(basePath, buildSubmitPayload(formState));
+            await createTrainingPlanPreview(basePath, buildSubmitPayload(currentBootstrap, formState));
             onSaved();
             onClose();
         } catch (error) {
@@ -335,6 +344,8 @@ export function TrainingPlanCreateModal({
         }
     };
 
+    const isEditMode = bootstrap?.mode === 'edit';
+
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8">
             <button type="button" className="absolute inset-0 bg-gray-950/55 backdrop-blur-sm" aria-label="Close modal overlay" onClick={submitting ? undefined : onClose} />
@@ -343,9 +354,11 @@ export function TrainingPlanCreateModal({
                     <div className="flex items-start justify-between gap-4">
                         <div>
                             <div className="section-kicker">React modal flow</div>
-                            <h2 className="mt-4 text-3xl font-semibold tracking-tight text-gray-900 dark:text-white">Create a plan without leaving the preview shell.</h2>
+                            <h2 className="mt-4 text-3xl font-semibold tracking-tight text-gray-900 dark:text-white">{isEditMode ? 'Edit a plan without leaving the preview shell.' : 'Create a plan without leaving the preview shell.'}</h2>
                             <p className="mt-3 max-w-3xl text-sm leading-7 text-gray-600 dark:text-gray-300">
-                                This is the first fully React-managed training-plan modal in the preview app. It loads defaults from JSON, saves through the live Symfony backend, and keeps the preview timeline in sync.
+                                {isEditMode
+                                    ? 'This edit flow is now React-managed too: existing plan data loads from JSON, changes save through the live Symfony backend, and the preview timeline refreshes in place.'
+                                    : 'This is the first fully React-managed training-plan modal in the preview app. It loads defaults from JSON, saves through the live Symfony backend, and keeps the preview timeline in sync.'}
                             </p>
                         </div>
                         <button
@@ -382,7 +395,11 @@ export function TrainingPlanCreateModal({
                             <p className="mt-3">{loadError}</p>
                             <div className="mt-5 flex flex-wrap gap-3">
                                 <a
-                                    href={buildAppPath(basePath, `training-plan${targetRaceEventId ? `?targetRaceEventId=${targetRaceEventId}` : ''}`)}
+                                    href={buildAppPath(basePath, `training-plan${trainingPlanId
+                                        ? `?trainingPlanId=${trainingPlanId}`
+                                        : targetRaceEventId
+                                            ? `?targetRaceEventId=${targetRaceEventId}`
+                                            : ''}`)}
                                     className="inline-flex items-center gap-2 rounded-2xl bg-gray-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-gray-800 dark:bg-white dark:text-gray-950 dark:hover:bg-gray-200"
                                 >
                                     Open legacy modal route
@@ -396,7 +413,15 @@ export function TrainingPlanCreateModal({
                         <form className="space-y-6" onSubmit={handleSubmit}>
                             <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
                                 <div className="space-y-6">
-                                    {bootstrap.context.afterTrainingPlan ? (
+                                    {isEditMode && bootstrap.context.trainingPlan ? (
+                                        <div className="rounded-[28px] border border-sky-200 bg-sky-50/90 p-5 text-sm leading-7 text-sky-900 dark:border-sky-800/60 dark:bg-sky-950/30 dark:text-sky-100">
+                                            <div className="text-xs font-semibold uppercase tracking-[0.24em] text-sky-700 dark:text-sky-300">Editing live plan</div>
+                                            <div className="mt-3 font-semibold">{bootstrap.context.trainingPlan.title ?? formatLabel(bootstrap.context.trainingPlan.type)}</div>
+                                            <div className="mt-1 text-sky-800/80 dark:text-sky-100/80">{bootstrap.context.trainingPlan.startDay} → {bootstrap.context.trainingPlan.endDay}</div>
+                                        </div>
+                                    ) : null}
+
+                                    {!isEditMode && bootstrap.context.afterTrainingPlan ? (
                                         <div className="rounded-[28px] border border-emerald-200 bg-emerald-50/90 p-5 text-sm leading-7 text-emerald-900 dark:border-emerald-800/60 dark:bg-emerald-950/30 dark:text-emerald-100">
                                             <div className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-700 dark:text-emerald-300">Sequential handoff</div>
                                             <div className="mt-3 font-semibold">This new plan starts right after {bootstrap.context.afterTrainingPlan.title ?? formatLabel(bootstrap.context.afterTrainingPlan.type)} ends.</div>
@@ -404,7 +429,7 @@ export function TrainingPlanCreateModal({
                                         </div>
                                     ) : null}
 
-                                    {bootstrap.context.suggestedRaceEvent ? (
+                                    {!isEditMode && bootstrap.context.suggestedRaceEvent ? (
                                         <div className="rounded-[28px] border border-amber-200 bg-amber-50/90 p-5 text-sm leading-7 text-amber-900 dark:border-amber-800/60 dark:bg-amber-950/30 dark:text-amber-100">
                                             <div className="text-xs font-semibold uppercase tracking-[0.24em] text-amber-700 dark:text-amber-300">Suggested anchor</div>
                                             <div className="mt-3 font-semibold">{bootstrap.context.suggestedRaceEvent.title}</div>
@@ -680,7 +705,7 @@ export function TrainingPlanCreateModal({
                                         disabled={submitting}
                                         className="inline-flex items-center gap-2 rounded-2xl bg-strava-orange px-5 py-3 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60"
                                     >
-                                        {submitting ? 'Saving plan…' : 'Create plan in preview'}
+                                        {submitting ? 'Saving plan…' : isEditMode ? 'Save changes in preview' : 'Create plan in preview'}
                                         <span aria-hidden="true">→</span>
                                     </button>
                                 </div>

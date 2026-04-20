@@ -48,6 +48,8 @@ final readonly class ReactPreviewTrainingPlanFormApiRequestHandler
         $this->currentAppUser->require();
 
         $today = $this->clock->getCurrentDateTimeImmutable()->setTime(0, 0);
+        $trainingPlanId = $request->query->getString('trainingPlanId');
+        $trainingPlan = '' === $trainingPlanId ? null : $this->trainingPlanRepository->findById(TrainingPlanId::fromString($trainingPlanId));
         $afterTrainingPlanId = $request->query->getString('afterTrainingPlanId');
         $afterTrainingPlan = '' === $afterTrainingPlanId ? null : $this->trainingPlanRepository->findById(TrainingPlanId::fromString($afterTrainingPlanId));
         $raceEventOptions = $this->loadRaceEventOptions();
@@ -55,11 +57,13 @@ final readonly class ReactPreviewTrainingPlanFormApiRequestHandler
             $raceEventOptions,
             $this->nullableRaceEventId($request->query->getString('targetRaceEventId')),
         );
-        $defaultStartDay = $this->resolveDefaultStartDay($afterTrainingPlan, $selectedRaceEvent, $today);
-        $linkedRaceEventIds = $this->buildLinkedRaceEventIds($raceEventOptions);
-        $suggestedRaceEvent = $selectedRaceEvent;
+        $defaultStartDay = $this->resolveDefaultStartDay($trainingPlan, $afterTrainingPlan, $selectedRaceEvent, $today);
+        $linkedRaceEventIds = $this->buildLinkedRaceEventIds($raceEventOptions, $trainingPlan?->getId());
+        $suggestedRaceEvent = $trainingPlan?->getTargetRaceEventId()
+            ? $this->findRaceEventById($raceEventOptions, $trainingPlan->getTargetRaceEventId())
+            : $selectedRaceEvent;
 
-        if (null === $suggestedRaceEvent) {
+        if (null === $suggestedRaceEvent && null === $trainingPlan) {
             $suggestedRaceEvent = $this->findSuggestedRaceEvent(
                 $raceEventOptions,
                 $linkedRaceEventIds,
@@ -67,12 +71,19 @@ final readonly class ReactPreviewTrainingPlanFormApiRequestHandler
             );
         }
 
-        $defaultEndDay = $this->resolveDefaultEndDay($defaultStartDay, $suggestedRaceEvent);
-        $defaultType = null === $suggestedRaceEvent ? TrainingPlanType::TRAINING : TrainingPlanType::RACE;
+        $defaultEndDay = $this->resolveDefaultEndDay($trainingPlan, $defaultStartDay, $suggestedRaceEvent);
+        $defaultType = $trainingPlan?->getType() ?? (null === $suggestedRaceEvent ? TrainingPlanType::TRAINING : TrainingPlanType::RACE);
 
         return new JsonResponse([
-            'mode' => 'create',
+            'mode' => $trainingPlan instanceof TrainingPlan ? 'edit' : 'create',
             'context' => [
+                'trainingPlan' => $trainingPlan instanceof TrainingPlan ? [
+                    'id' => (string) $trainingPlan->getId(),
+                    'title' => $trainingPlan->getTitle(),
+                    'type' => $trainingPlan->getType()->value,
+                    'startDay' => $trainingPlan->getStartDay()->format('Y-m-d'),
+                    'endDay' => $trainingPlan->getEndDay()->format('Y-m-d'),
+                ] : null,
                 'afterTrainingPlan' => $afterTrainingPlan instanceof TrainingPlan ? [
                     'id' => (string) $afterTrainingPlan->getId(),
                     'title' => $afterTrainingPlan->getTitle(),
@@ -83,19 +94,19 @@ final readonly class ReactPreviewTrainingPlanFormApiRequestHandler
             ],
             'defaults' => [
                 'type' => $defaultType->value,
-                'title' => $suggestedRaceEvent?->getTitle(),
-                'startDay' => $defaultStartDay->format('Y-m-d'),
-                'endDay' => $defaultEndDay->format('Y-m-d'),
-                'targetRaceEventId' => $suggestedRaceEvent instanceof RaceEvent ? (string) $suggestedRaceEvent->getId() : null,
-                'discipline' => $afterTrainingPlan?->getDiscipline()?->value,
-                'sportSchedule' => [],
-                'performanceMetrics' => $this->resolveDefaultPerformanceMetrics($today),
-                'targetRaceProfile' => $suggestedRaceEvent?->getProfile()->value,
-                'trainingFocus' => null,
-                'trainingBlockStyle' => TrainingBlockStyle::BALANCED->value,
-                'runningWorkoutTargetMode' => RunningWorkoutTargetMode::TIME->value,
-                'runHillSessionsEnabled' => false,
-                'notes' => null,
+                'title' => $trainingPlan?->getTitle() ?? $suggestedRaceEvent?->getTitle(),
+                'startDay' => $trainingPlan?->getStartDay()->format('Y-m-d') ?? $defaultStartDay->format('Y-m-d'),
+                'endDay' => $trainingPlan?->getEndDay()->format('Y-m-d') ?? $defaultEndDay->format('Y-m-d'),
+                'targetRaceEventId' => $trainingPlan?->getTargetRaceEventId()?->__toString() ?? ($suggestedRaceEvent instanceof RaceEvent ? (string) $suggestedRaceEvent->getId() : null),
+                'discipline' => $trainingPlan?->getDiscipline()?->value ?? $afterTrainingPlan?->getDiscipline()?->value,
+                'sportSchedule' => $trainingPlan?->getSportSchedule() ?? [],
+                'performanceMetrics' => $this->resolveDefaultPerformanceMetrics($trainingPlan, $today),
+                'targetRaceProfile' => $trainingPlan?->getTargetRaceProfile()?->value ?? $suggestedRaceEvent?->getProfile()->value,
+                'trainingFocus' => $trainingPlan?->getTrainingFocus()?->value,
+                'trainingBlockStyle' => $trainingPlan?->getTrainingBlockStyle()?->value ?? TrainingBlockStyle::BALANCED->value,
+                'runningWorkoutTargetMode' => $trainingPlan?->getRunningWorkoutTargetMode()?->value ?? RunningWorkoutTargetMode::TIME->value,
+                'runHillSessionsEnabled' => $trainingPlan?->isRunHillSessionsEnabled() ?? false,
+                'notes' => $trainingPlan?->getNotes(),
             ],
             'options' => [
                 'types' => array_map(
@@ -168,11 +179,18 @@ final readonly class ReactPreviewTrainingPlanFormApiRequestHandler
      *
      * @return array<string, true>
      */
-    private function buildLinkedRaceEventIds(array $raceEvents): array
+    private function buildLinkedRaceEventIds(array $raceEvents, ?TrainingPlanId $excludedTrainingPlanId = null): array
     {
         $linkedRaceEventIds = [];
 
         foreach ($this->trainingPlanRepository->findAll() as $trainingPlan) {
+            if (
+                null !== $excludedTrainingPlanId
+                && (string) $trainingPlan->getId() === (string) $excludedTrainingPlanId
+            ) {
+                continue;
+            }
+
             if (null !== $trainingPlan->getTargetRaceEventId()) {
                 $linkedRaceEventIds[(string) $trainingPlan->getTargetRaceEventId()] = true;
             }
@@ -211,10 +229,15 @@ final readonly class ReactPreviewTrainingPlanFormApiRequestHandler
     }
 
     private function resolveDefaultStartDay(
+        ?TrainingPlan $trainingPlan,
         ?TrainingPlan $afterTrainingPlan,
         ?RaceEvent $selectedRaceEvent,
         SerializableDateTime $today,
     ): SerializableDateTime {
+        if (null !== $trainingPlan) {
+            return $trainingPlan->getStartDay();
+        }
+
         if (null !== $afterTrainingPlan) {
             return $afterTrainingPlan->getEndDay()->modify('+1 day')->setTime(0, 0);
         }
@@ -229,9 +252,14 @@ final readonly class ReactPreviewTrainingPlanFormApiRequestHandler
     }
 
     private function resolveDefaultEndDay(
+        ?TrainingPlan $trainingPlan,
         SerializableDateTime $defaultStartDay,
         ?RaceEvent $suggestedRaceEvent,
     ): SerializableDateTime {
+        if (null !== $trainingPlan) {
+            return $trainingPlan->getEndDay();
+        }
+
         if (null !== $suggestedRaceEvent && $suggestedRaceEvent->getDay() >= $defaultStartDay) {
             return $suggestedRaceEvent->getDay()->setTime(0, 0);
         }
@@ -249,8 +277,12 @@ final readonly class ReactPreviewTrainingPlanFormApiRequestHandler
     /**
      * @return array<string, mixed>
      */
-    private function resolveDefaultPerformanceMetrics(SerializableDateTime $today): array
+    private function resolveDefaultPerformanceMetrics(?TrainingPlan $trainingPlan, SerializableDateTime $today): array
     {
+        if (null !== $trainingPlan && null !== $trainingPlan->getPerformanceMetrics()) {
+            return $trainingPlan->getPerformanceMetrics();
+        }
+
         $metrics = [];
 
         try {

@@ -3,8 +3,15 @@ import {fetchJson} from './http';
 import type {TrainingPlansPreviewRace, TrainingPlansPreviewResponse} from './training-plans-api';
 
 export interface TrainingPlanFormBootstrapResponse {
-    mode: 'create';
+    mode: 'create' | 'edit';
     context: {
+        trainingPlan: {
+            id: string;
+            title: string | null;
+            type: string;
+            startDay: string;
+            endDay: string;
+        } | null;
         afterTrainingPlan: {
             id: string;
             title: string | null;
@@ -47,6 +54,7 @@ export interface TrainingPlanFormBootstrapResponse {
 }
 
 export interface TrainingPlanFormSubmitPayload {
+    trainingPlanId?: string;
     type: 'race' | 'training';
     title: string;
     startDay: string;
@@ -72,6 +80,7 @@ export interface TrainingPlanFormSubmitPayload {
 }
 
 interface FetchTrainingPlanFormOptions {
+    trainingPlanId?: string;
     afterTrainingPlanId?: string;
     targetRaceEventId?: string;
     signal?: AbortSignal;
@@ -79,6 +88,10 @@ interface FetchTrainingPlanFormOptions {
 
 export async function fetchTrainingPlanFormPreview(basePath: string, options: FetchTrainingPlanFormOptions = {}): Promise<TrainingPlanFormBootstrapResponse> {
     const searchParams = new URLSearchParams();
+
+    if (options.trainingPlanId) {
+        searchParams.set('trainingPlanId', options.trainingPlanId);
+    }
 
     if (options.afterTrainingPlanId) {
         searchParams.set('afterTrainingPlanId', options.afterTrainingPlanId);

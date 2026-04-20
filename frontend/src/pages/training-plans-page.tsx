@@ -103,7 +103,7 @@ function TrainingPlansLoadingState() {
 }
 
 export function TrainingPlansPage({bootstrap}: TrainingPlansPageProps) {
-    const [modalConfig, setModalConfig] = useState<null | {afterTrainingPlanId?: string; targetRaceEventId?: string}>(null);
+    const [modalConfig, setModalConfig] = useState<null | {trainingPlanId?: string; afterTrainingPlanId?: string; targetRaceEventId?: string}>(null);
     const loadTrainingPlans = useCallback(
         (signal: AbortSignal): Promise<TrainingPlansPreviewResponse> => fetchTrainingPlansPreview(bootstrap.basePath, signal),
         [bootstrap.basePath],
@@ -322,6 +322,14 @@ export function TrainingPlansPage({bootstrap}: TrainingPlansPageProps) {
                                     ) : null}
 
                                     <div className="mt-6 flex flex-wrap gap-3">
+                                        <button
+                                            type="button"
+                                            onClick={() => setModalConfig({trainingPlanId: plan.id})}
+                                            className="inline-flex items-center gap-2 rounded-2xl bg-strava-orange px-4 py-3 text-sm font-semibold text-white transition hover:bg-orange-600"
+                                        >
+                                            Edit in React
+                                            <span aria-hidden="true">✎</span>
+                                        </button>
                                         <a
                                             href={buildAppPath(bootstrap.basePath, plan.racePlannerPath)}
                                             className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-gray-600"
@@ -340,6 +348,7 @@ export function TrainingPlansPage({bootstrap}: TrainingPlansPageProps) {
             <TrainingPlanCreateModal
                 basePath={bootstrap.basePath}
                 isOpen={null !== modalConfig}
+                trainingPlanId={modalConfig?.trainingPlanId}
                 afterTrainingPlanId={modalConfig?.afterTrainingPlanId}
                 targetRaceEventId={modalConfig?.targetRaceEventId}
                 onClose={() => setModalConfig(null)}
