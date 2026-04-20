@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>Statistics for Strava | Robin Ingelbrecht</title>
+    <title>Tempo | Robin Ingelbrecht</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width">
     <meta name="theme-color" content="#F26822">
-    <meta name="mobile-web-app-title" content="Statistics for Strava | Robin Ingelbrecht">
+    <meta name="mobile-web-app-title" content="Tempo | Robin Ingelbrecht">
     <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-title" content="Statistics for Strava">
+    <meta name="apple-mobile-web-app-title" content="Tempo">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <link rel="apple-touch-icon" sizes="180x180" href="/assets/images/manifest/icon-apple-180.maskable.png">
     <link href="/manifest.json?0025176c-5652-11ee-923d-02424dd627d5" rel="manifest" crossorigin="use-credentials">
@@ -44,11 +44,11 @@
                 <span class="sr-only">Toggle sidebar</span>
             </button>
             <a href="#" data-router-navigate="/dashboard" class="flex items-center justify-between mr-4">
-                <img src="/assets/images/logo.svg" class="rounded-full mr-3 h-8" alt="Statistics for Strava Logo">
+                <img src="/assets/images/logo.svg" class="rounded-full mr-3 h-8" alt="Tempo Logo">
                 <div class="flex gap-x-1 sm:text-lg md:text-2xl font-semibold whitespace-nowrap">
-                    <div>Statistics for Strava</div>
+                    <div>Tempo</div>
                                             <div class="hidden md:block">|</div>
-                        <div class="hidden md:block">Robin The King &#128081;</div>
+                        <div class="hidden md:block">Robin The King 👑</div>
                                     </div>
             </a>
         </div>
@@ -131,6 +131,15 @@
                             </a>
                         </li>
                         <li>
+                            <a href="/account/settings" class="inline-flex items-center w-full p-2 hover:bg-gray-50 rounded">
+                                <svg class="size-4 me-1.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewbox="0 0 24 24">
+                                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19a1 1 0 0 1-1.106-1.447l.323-.646A1 1 0 0 0 8.382 15.5H7.618a1 1 0 0 0-.835 1.407l.323.646A1 1 0 0 1 6 19H5a1 1 0 0 1-.894-.553l-.764-1.528a1 1 0 0 1 .2-1.15l.457-.457a1 1 0 0 0 0-1.414l-.457-.457a1 1 0 0 1-.2-1.15l.764-1.528A1 1 0 0 1 5 8h1a1 1 0 0 1 1.106 1.447l-.323.646A1 1 0 0 0 7.618 11.5h.764a1 1 0 0 0 .835-1.407l-.323-.646A1 1 0 0 1 10 8h4a1 1 0 0 1 1.106 1.447l-.323.646A1 1 0 0 0 15.618 11.5h.764a1 1 0 0 0 .835-1.407l-.323-.646A1 1 0 0 1 18 8h1a1 1 0 0 1 .894.553l.764 1.528a1 1 0 0 1-.2 1.15l-.457.457a1 1 0 0 0 0 1.414l.457.457a1 1 0 0 1 .2 1.15l-.764 1.528A1 1 0 0 1 19 19h-1a1 1 0 0 1-1.106-1.447l.323-.646A1 1 0 0 0 16.382 15.5h-.764a1 1 0 0 0-.835 1.407l.323.646A1 1 0 0 1 14 19h-4Z"></path>
+                                    <path stroke="currentColor" stroke-width="2" d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"></path>
+                                </svg>
+                                Account settings
+                            </a>
+                        </li>
+                        <li>
                             <a href="https://www.strava.com/athletes/100" target="_blank" class="inline-flex items-center w-full p-2 hover:bg-gray-50 rounded">
                                 <svg class="size-4 me-1.5" fill="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                     <g stroke-width="0"></g>
@@ -156,9 +165,10 @@
                 </div>
                     </div>
     </div>
-</nav>        <!-- SIDEBAR -->
+</nav>
+        <!-- SIDEBAR -->
     <aside class="fixed top-0 left-0 w-64 sidebar-collapsed:w-20 h-screen pt-14 transition-transform -translate-x-full bg-white border-r border-gray-200 md:translate-x-0 z-1001" aria-label="Sidenav" id="drawer-navigation">
-                <div class="sidebar-collapsed:max-h-full max-h-[calc(100vh-114px)] overflow-y-auto py-5 px-3 h-full divide-y divide-gray-200">
+                <div class="sidebar-collapsed:max-h-full max-h-[calc(100vh-114px)] overflow-y-auto sidebar-collapsed:px-2 sidebar-collapsed:py-4 py-5 px-3 h-full divide-y divide-gray-200">
             <ul class="space-y-1 pb-2">
                 <li>
                     <a href="/dashboard" data-router-navigate="/dashboard" class="sidebar-menu-link">
@@ -207,7 +217,24 @@
                         <svg class="sidebar-menu-link-icon" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewbox="0 0 24 24">
                             <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 10h16m-8-3V4M7 7V4m10 3V4M5 20h14a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1Zm3-7h.01v.01H8V13Zm4 0h.01v.01H12V13Zm4 0h.01v.01H16V13Zm-8 4h.01v.01H8V17Zm4 0h.01v.01H12V17Zm4 0h.01v.01H16V17Z"></path>
                         </svg>
-                        <span class="flex-1 whitespace-nowrap">Monthly stats</span>
+                        <span class="flex-1 whitespace-nowrap">Training calendar</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/race-planner" data-router-navigate="/race-planner" class="sidebar-menu-link">
+                        <svg class="sidebar-menu-link-icon" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewbox="0 0 24 24">
+                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3v1.5M3 21v-6m0 0 2.77-.693a9 9 0 0 1 6.208.682l.108.054a9 9 0 0 0 6.086.71l3.114-.732a48.524 48.524 0 0 1-.005-10.499l-3.11.732a9 9 0 0 1-6.085-.711l-.108-.054a9 9 0 0 0-6.208-.682L3 4.5M3 15V4.5"></path>
+                        </svg>
+                        <span class="flex-1 whitespace-nowrap">Race planner</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/training-plans" data-router-navigate="/training-plans" class="sidebar-menu-link">
+                        <svg class="sidebar-menu-link-icon" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewbox="0 0 24 24">
+                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10m-12 9h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2Z"></path>
+                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 14h4m2 0h4M7 18h10"></path>
+                        </svg>
+                        <span class="flex-1 whitespace-nowrap">Plan manager</span>
                     </a>
                 </li>
                 <li>
@@ -287,13 +314,13 @@
                 <div class="flex items-center justify-center gap-x-1">
                     <span class="bg-gray-100 text-gray-600 font-medium px-2.5 py-0.5 rounded-sm" title="Updated on 17-10-2023 16:15">v4.7.5</span>
                     <span class="hidden" data-latest-version data-current-version="v4.7.5">
-                    (latest: <a class="underline" href="https://github.com/robiningelbrecht/statistics-for-strava/releases/tag/%5BLATEST_VERSION%5D">[LATEST_VERSION]</a>)
+                    (latest: <a class="underline" href="https://github.com/robiningelbrecht/statistics-for-strava/releases/tag/[LATEST_VERSION]">[LATEST_VERSION]</a>)
                 </span>
                 </div>
             </div>
             <div class="flex gap-x-1 items-center justify-center">
                 <img class="h-3" src="/assets/images/strava/powered-by-strava.svg" alt="Powered by Strava">
-                <div class="sidebar-collapsed:hidden">&amp; &#9749;</div>
+                <div class="sidebar-collapsed:hidden">&amp; ☕</div>
             </div>
         </div>
     </aside>
@@ -331,7 +358,7 @@
             </main>
 </div>
 <script>
-    window.statisticsForStrava = {"countries":{"AF":"Afghanistan","AX":"\u00c5land Islands","AL":"Albania","DZ":"Algeria","AS":"American Samoa","AD":"Andorra","AO":"Angola","AI":"Anguilla","AQ":"Antarctica","AG":"Antigua & Barbuda","AR":"Argentina","AM":"Armenia","AW":"Aruba","AU":"Australia","AT":"Austria","AZ":"Azerbaijan","BS":"Bahamas","BH":"Bahrain","BD":"Bangladesh","BB":"Barbados","BY":"Belarus","BE":"Belgium","BZ":"Belize","BJ":"Benin","BM":"Bermuda","BT":"Bhutan","BO":"Bolivia","BA":"Bosnia & Herzegovina","BW":"Botswana","BV":"Bouvet Island","BR":"Brazil","IO":"British Indian Ocean Territory","VG":"British Virgin Islands","BN":"Brunei","BG":"Bulgaria","BF":"Burkina Faso","BI":"Burundi","KH":"Cambodia","CM":"Cameroon","CA":"Canada","CV":"Cape Verde","BQ":"Caribbean Netherlands","KY":"Cayman Islands","CF":"Central African Republic","TD":"Chad","CL":"Chile","CN":"China","CX":"Christmas Island","CC":"Cocos (Keeling) Islands","CO":"Colombia","KM":"Comoros","CG":"Congo - Brazzaville","CD":"Congo - Kinshasa","CK":"Cook Islands","CR":"Costa Rica","CI":"C\u00f4te d\u2019Ivoire","HR":"Croatia","CU":"Cuba","CW":"Cura\u00e7ao","CY":"Cyprus","CZ":"Czechia","DK":"Denmark","DJ":"Djibouti","DM":"Dominica","DO":"Dominican Republic","EC":"Ecuador","EG":"Egypt","SV":"El Salvador","GQ":"Equatorial Guinea","ER":"Eritrea","EE":"Estonia","SZ":"Eswatini","ET":"Ethiopia","FK":"Falkland Islands","FO":"Faroe Islands","FJ":"Fiji","FI":"Finland","FR":"France","GF":"French Guiana","PF":"French Polynesia","TF":"French Southern Territories","GA":"Gabon","GM":"Gambia","GE":"Georgia","DE":"Germany","GH":"Ghana","GI":"Gibraltar","GR":"Greece","GL":"Greenland","GD":"Grenada","GP":"Guadeloupe","GU":"Guam","GT":"Guatemala","GG":"Guernsey","GN":"Guinea","GW":"Guinea-Bissau","GY":"Guyana","HT":"Haiti","HM":"Heard & McDonald Islands","HN":"Honduras","HK":"Hong Kong SAR China","HU":"Hungary","IS":"Iceland","IN":"India","ID":"Indonesia","IR":"Iran","IQ":"Iraq","IE":"Ireland","IM":"Isle of Man","IL":"Israel","IT":"Italy","JM":"Jamaica","JP":"Japan","JE":"Jersey","JO":"Jordan","KZ":"Kazakhstan","KE":"Kenya","KI":"Kiribati","KW":"Kuwait","KG":"Kyrgyzstan","LA":"Laos","LV":"Latvia","LB":"Lebanon","LS":"Lesotho","LR":"Liberia","LY":"Libya","LI":"Liechtenstein","LT":"Lithuania","LU":"Luxembourg","MO":"Macao SAR China","MG":"Madagascar","MW":"Malawi","MY":"Malaysia","MV":"Maldives","ML":"Mali","MT":"Malta","MH":"Marshall Islands","MQ":"Martinique","MR":"Mauritania","MU":"Mauritius","YT":"Mayotte","MX":"Mexico","FM":"Micronesia","MD":"Moldova","MC":"Monaco","MN":"Mongolia","ME":"Montenegro","MS":"Montserrat","MA":"Morocco","MZ":"Mozambique","MM":"Myanmar (Burma)","NA":"Namibia","NR":"Nauru","NP":"Nepal","NL":"Netherlands","NC":"New Caledonia","NZ":"New Zealand","NI":"Nicaragua","NE":"Niger","NG":"Nigeria","NU":"Niue","NF":"Norfolk Island","KP":"North Korea","MK":"North Macedonia","MP":"Northern Mariana Islands","NO":"Norway","OM":"Oman","PK":"Pakistan","PW":"Palau","PS":"Palestinian Territories","PA":"Panama","PG":"Papua New Guinea","PY":"Paraguay","PE":"Peru","PH":"Philippines","PN":"Pitcairn Islands","PL":"Poland","PT":"Portugal","PR":"Puerto Rico","QA":"Qatar","RE":"R\u00e9union","RO":"Romania","RU":"Russia","RW":"Rwanda","WS":"Samoa","SM":"San Marino","ST":"S\u00e3o Tom\u00e9 & Pr\u00edncipe","SA":"Saudi Arabia","SN":"Senegal","RS":"Serbia","SC":"Seychelles","SL":"Sierra Leone","SG":"Singapore","SX":"Sint Maarten","SK":"Slovakia","SI":"Slovenia","SB":"Solomon Islands","SO":"Somalia","ZA":"South Africa","GS":"South Georgia & South Sandwich Islands","KR":"South Korea","SS":"South Sudan","ES":"Spain","LK":"Sri Lanka","BL":"St. Barth\u00e9lemy","SH":"St. Helena","KN":"St. Kitts & Nevis","LC":"St. Lucia","MF":"St. Martin","PM":"St. Pierre & Miquelon","VC":"St. Vincent & Grenadines","SD":"Sudan","SR":"Suriname","SJ":"Svalbard & Jan Mayen","SE":"Sweden","CH":"Switzerland","SY":"Syria","TW":"Taiwan","TJ":"Tajikistan","TZ":"Tanzania","TH":"Thailand","TL":"Timor-Leste","TG":"Togo","TK":"Tokelau","TO":"Tonga","TT":"Trinidad & Tobago","TN":"Tunisia","TR":"T\u00fcrkiye","TM":"Turkmenistan","TC":"Turks & Caicos Islands","TV":"Tuvalu","UM":"U.S. Outlying Islands","VI":"U.S. Virgin Islands","UG":"Uganda","UA":"Ukraine","AE":"United Arab Emirates","GB":"United Kingdom","US":"United States","UY":"Uruguay","UZ":"Uzbekistan","VU":"Vanuatu","VA":"Vatican City","VE":"Venezuela","VN":"Vietnam","WF":"Wallis & Futuna","EH":"Western Sahara","YE":"Yemen","ZM":"Zambia","ZW":"Zimbabwe"},"appUrl":{"basePath":""},"unitSystem":{"name":"metric","paceSymbol":"\/km","distanceSymbol":"km","elevationSymbol":"m"}};
+    window.statisticsForStrava = {"countries":{"AF":"Afghanistan","AL":"Albania","DZ":"Algeria","AS":"American Samoa","AD":"Andorra","AO":"Angola","AI":"Anguilla","AQ":"Antarctica","AG":"Antigua & Barbuda","AR":"Argentina","AM":"Armenia","AW":"Aruba","AU":"Australia","AT":"Austria","AZ":"Azerbaijan","BS":"Bahamas","BH":"Bahrain","BD":"Bangladesh","BB":"Barbados","BY":"Belarus","BE":"Belgium","BZ":"Belize","BJ":"Benin","BM":"Bermuda","BT":"Bhutan","BO":"Bolivia","BA":"Bosnia & Herzegovina","BW":"Botswana","BV":"Bouvet Island","BR":"Brazil","IO":"British Indian Ocean Territory","VG":"British Virgin Islands","BN":"Brunei","BG":"Bulgaria","BF":"Burkina Faso","BI":"Burundi","KH":"Cambodia","CM":"Cameroon","CA":"Canada","CV":"Cape Verde","BQ":"Caribbean Netherlands","KY":"Cayman Islands","CF":"Central African Republic","TD":"Chad","CL":"Chile","CN":"China","CX":"Christmas Island","CC":"Cocos (Keeling) Islands","CO":"Colombia","KM":"Comoros","CG":"Congo - Brazzaville","CD":"Congo - Kinshasa","CK":"Cook Islands","CR":"Costa Rica","HR":"Croatia","CU":"Cuba","CW":"Cura\u00e7ao","CY":"Cyprus","CZ":"Czechia","CI":"C\u00f4te d\u2019Ivoire","DK":"Denmark","DJ":"Djibouti","DM":"Dominica","DO":"Dominican Republic","EC":"Ecuador","EG":"Egypt","SV":"El Salvador","GQ":"Equatorial Guinea","ER":"Eritrea","EE":"Estonia","SZ":"Eswatini","ET":"Ethiopia","FK":"Falkland Islands","FO":"Faroe Islands","FJ":"Fiji","FI":"Finland","FR":"France","GF":"French Guiana","PF":"French Polynesia","TF":"French Southern Territories","GA":"Gabon","GM":"Gambia","GE":"Georgia","DE":"Germany","GH":"Ghana","GI":"Gibraltar","GR":"Greece","GL":"Greenland","GD":"Grenada","GP":"Guadeloupe","GU":"Guam","GT":"Guatemala","GG":"Guernsey","GN":"Guinea","GW":"Guinea-Bissau","GY":"Guyana","HT":"Haiti","HM":"Heard & McDonald Islands","HN":"Honduras","HK":"Hong Kong SAR China","HU":"Hungary","IS":"Iceland","IN":"India","ID":"Indonesia","IR":"Iran","IQ":"Iraq","IE":"Ireland","IM":"Isle of Man","IL":"Israel","IT":"Italy","JM":"Jamaica","JP":"Japan","JE":"Jersey","JO":"Jordan","KZ":"Kazakhstan","KE":"Kenya","KI":"Kiribati","KW":"Kuwait","KG":"Kyrgyzstan","LA":"Laos","LV":"Latvia","LB":"Lebanon","LS":"Lesotho","LR":"Liberia","LY":"Libya","LI":"Liechtenstein","LT":"Lithuania","LU":"Luxembourg","MO":"Macao SAR China","MG":"Madagascar","MW":"Malawi","MY":"Malaysia","MV":"Maldives","ML":"Mali","MT":"Malta","MH":"Marshall Islands","MQ":"Martinique","MR":"Mauritania","MU":"Mauritius","YT":"Mayotte","MX":"Mexico","FM":"Micronesia","MD":"Moldova","MC":"Monaco","MN":"Mongolia","ME":"Montenegro","MS":"Montserrat","MA":"Morocco","MZ":"Mozambique","MM":"Myanmar (Burma)","NA":"Namibia","NR":"Nauru","NP":"Nepal","NL":"Netherlands","NC":"New Caledonia","NZ":"New Zealand","NI":"Nicaragua","NE":"Niger","NG":"Nigeria","NU":"Niue","NF":"Norfolk Island","MP":"Northern Mariana Islands","KP":"North Korea","MK":"North Macedonia","NO":"Norway","OM":"Oman","PK":"Pakistan","PW":"Palau","PS":"Palestinian Territories","PA":"Panama","PG":"Papua New Guinea","PY":"Paraguay","PE":"Peru","PH":"Philippines","PN":"Pitcairn Islands","PL":"Poland","PT":"Portugal","PR":"Puerto Rico","QA":"Qatar","RO":"Romania","RU":"Russia","RW":"Rwanda","RE":"R\u00e9union","WS":"Samoa","SM":"San Marino","SA":"Saudi Arabia","SN":"Senegal","RS":"Serbia","SC":"Seychelles","SL":"Sierra Leone","SG":"Singapore","SX":"Sint Maarten","SK":"Slovakia","SI":"Slovenia","SB":"Solomon Islands","SO":"Somalia","ZA":"South Africa","GS":"South Georgia & South Sandwich Islands","KR":"South Korea","SS":"South Sudan","ES":"Spain","LK":"Sri Lanka","BL":"St. Barth\u00e9lemy","SH":"St. Helena","KN":"St. Kitts & Nevis","LC":"St. Lucia","MF":"St. Martin","PM":"St. Pierre & Miquelon","VC":"St. Vincent & Grenadines","SD":"Sudan","SR":"Suriname","SJ":"Svalbard & Jan Mayen","SE":"Sweden","CH":"Switzerland","SY":"Syria","ST":"S\u00e3o Tom\u00e9 & Pr\u00edncipe","TW":"Taiwan","TJ":"Tajikistan","TZ":"Tanzania","TH":"Thailand","TL":"Timor-Leste","TG":"Togo","TK":"Tokelau","TO":"Tonga","TT":"Trinidad & Tobago","TN":"Tunisia","TM":"Turkmenistan","TC":"Turks & Caicos Islands","TV":"Tuvalu","TR":"T\u00fcrkiye","UM":"U.S. Outlying Islands","VI":"U.S. Virgin Islands","UG":"Uganda","UA":"Ukraine","AE":"United Arab Emirates","GB":"United Kingdom","US":"United States","UY":"Uruguay","UZ":"Uzbekistan","VU":"Vanuatu","VA":"Vatican City","VE":"Venezuela","VN":"Vietnam","WF":"Wallis & Futuna","EH":"Western Sahara","YE":"Yemen","ZM":"Zambia","ZW":"Zimbabwe","AX":"\u00c5land Islands"},"appUrl":{"basePath":""},"unitSystem":{"name":"metric","paceSymbol":"\/km","distanceSymbol":"km","elevationSymbol":"m"}};
     window.statisticsForStrava.placeholderBrokenImage = "/assets/placeholder-broken.webp";
 </script>
 <script src="/libraries/flowbite.min.js?0025176c-5652-11ee-923d-02424dd627d5"></script>

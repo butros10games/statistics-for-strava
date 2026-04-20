@@ -32,8 +32,10 @@ final readonly class DailyRecoveryCheckInRequestHandler
     public function handle(Request $request): Response
     {
         if ($request->isMethod('GET')) {
-            return $this->renderModal();
+            return $this->renderModal($request->query->getString('redirectTo', '/dashboard'));
         }
+
+        $redirectTo = $request->request->getString('redirectTo', '/dashboard');
 
         $day = $request->request->getString('day', $this->clock->getCurrentDateTimeImmutable()->format('Y-m-d'));
 
@@ -49,10 +51,10 @@ final readonly class DailyRecoveryCheckInRequestHandler
 
         $this->commandBus->dispatch(new BuildDashboardHtml());
 
-        return new RedirectResponse('/dashboard', Response::HTTP_FOUND);
+        return new RedirectResponse($redirectTo, Response::HTTP_FOUND);
     }
 
-    private function renderModal(): Response
+    private function renderModal(string $redirectTo): Response
     {
         $today = $this->clock->getCurrentDateTimeImmutable()->setTime(0, 0);
         $latestRecoveryCheckIn = $this->repository->findByDay($today);
@@ -63,6 +65,7 @@ final readonly class DailyRecoveryCheckInRequestHandler
             'latestRecoveryCheckInOverall' => null === $latestRecoveryCheckInOverall ? null : $this->toViewRecord($latestRecoveryCheckInOverall),
             'recoveryCheckInDefaultDay' => $today->format('Y-m-d'),
             'recoveryCheckInFormDefaults' => $this->recoveryCheckInFormDefaults($latestRecoveryCheckIn),
+            'redirectTo' => $redirectTo,
         ]));
     }
 

@@ -34,7 +34,6 @@ class BuildDashboardHtmlCommandHandlerTest extends BuildAppFilesTestCase
         $reflection = new \ReflectionClass(EnrichedActivities::class);
 
         $cachedActivities = $reflection->getProperty('cachedActivities');
-        $cachedActivities->setAccessible(true);
         $cachedActivities->setValue(null, [
             (string) ActivityId::fromUnprefixed('stale') => Activity::fromState(
                 activityId: ActivityId::fromUnprefixed('stale'),
@@ -69,7 +68,6 @@ class BuildDashboardHtmlCommandHandlerTest extends BuildAppFilesTestCase
         ]);
 
         $cachedActivitiesPerActivityType = $reflection->getProperty('cachedActivitiesPerActivityType');
-        $cachedActivitiesPerActivityType->setAccessible(true);
         $cachedActivitiesPerActivityType->setValue(null, [
             'ride' => [(string) ActivityId::fromUnprefixed('stale')],
         ]);

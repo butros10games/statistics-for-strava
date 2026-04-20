@@ -9,6 +9,7 @@ final readonly class RenderedWidget
     public function __construct(
         private string $renderedHtml,
         private int $width,
+        private ?string $section = null,
     ) {
     }
 
@@ -20,5 +21,10 @@ final readonly class RenderedWidget
     public function getWidth(): int
     {
         return $this->width;
+    }
+
+    public function getSection(): ?string
+    {
+        return $this->section;
     }
 }

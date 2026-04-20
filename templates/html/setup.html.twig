@@ -11,32 +11,37 @@
     <link rel="icon" type="image/x-icon" href="{{ relativeUrl('assets/images/logo.svg') }}">
     <link href="{{ relativeUrl(asset('css/dist/tailwind.min.css')) }}" rel="stylesheet"/>
 </head>
-<body class="bg-gray-50 h-screen flex justify-center items-center">
-{% include 'html/navigation/top-nav-bar.html.twig' %}
-<div>
-    <p class="text-2xl font-semibold pb-5">Looks like you still need to import your Strava data</p>
-
-    <dl class="text-gray-900 divide-y divide-gray-200">
-        <div class="flex flex-col pb-3">
-            <dt class="mb-1 text-gray-500 md:text-lg">Import Strava data</dt>
-            <dd class="font-semibold"><code>docker compose exec app bin/console app:strava:import-data</code></dd>
-        </div>
-        <div class="flex flex-col py-3">
-            <dt class="mb-1 text-gray-500 md:text-lg">Build static HTML files</dt>
-            <dd class="font-semibold"><code>docker compose exec app bin/console app:strava:build-files</code></dd>
-            <div class="mt-4 flex w-full p-4 text-sm text-yellow-800 border border-yellow-300 rounded-lg bg-yellow-50"
-                 role="alert">
-                <svg class="shrink-0 inline w-4 h-4 me-3 mt-0.5" aria-hidden="true"
-                     xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 20 20">
-                    <path d="M10 .5a9.5 9.5 0 1 0 9.5 9.5A9.51 9.51 0 0 0 10 .5ZM9.5 4a1.5 1.5 0 1 1 0 3 1.5 1.5 0 0 1 0-3ZM12 15H8a1 1 0 0 1 0-2h1v-3H8a1 1 0 0 1 0-2h2a1 1 0 0 1 1 1v4h1a1 1 0 0 1 0 2Z"/>
-                </svg>
-                <span class="sr-only">Info</span>
-                <div>
-                    You can only build these files if at least one Strava activity has been imported
-                </div>
+<body class="min-h-screen bg-gray-50">
+<div class="mx-auto flex min-h-screen max-w-4xl items-center justify-center px-4 py-10">
+    <div class="w-full rounded-3xl border border-gray-200 bg-white p-8 shadow-sm">
+        <div class="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
+            <div>
+                <h1 class="text-3xl font-semibold text-gray-900">Finish account setup</h1>
+                <p class="mt-2 max-w-2xl text-sm text-gray-500">Your account is ready, but there is no athlete profile for this user yet. Connect Strava to start importing and viewing your own dashboard and planning data.</p>
+            </div>
+            <div class="flex gap-2">
+                <a href="/account/settings" class="rounded-xl border border-gray-300 bg-white px-4 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">Account settings</a>
+                <a href="/logout" class="rounded-xl bg-gray-900 px-4 py-2 text-sm font-medium text-white hover:bg-black">Log out</a>
             </div>
         </div>
-    </dl>
+
+        <div class="mt-8 grid gap-4 md:grid-cols-2">
+            <div class="rounded-2xl border border-gray-200 bg-gray-50 p-5">
+                <div class="text-sm font-medium text-gray-500">Signed in as</div>
+                <div class="mt-1 text-lg font-semibold text-gray-900">{{ appUser.getEmail() }}</div>
+            </div>
+            <div class="rounded-2xl border border-gray-200 bg-gray-50 p-5">
+                <div class="text-sm font-medium text-gray-500">Strava status</div>
+                <div class="mt-1 text-lg font-semibold text-gray-900">{{ stravaConnection ? 'Connected' : 'Not connected' }}</div>
+            </div>
+        </div>
+
+        <div class="mt-8 rounded-2xl border border-dashed border-orange-300 bg-orange-50 p-6">
+            <h2 class="text-lg font-semibold text-gray-900">Connect Strava</h2>
+            <p class="mt-2 text-sm text-gray-600">This links the returned athlete and refresh token to the authenticated account instead of relying on a global copy-paste refresh token flow.</p>
+            <a href="/strava-oauth" class="mt-4 inline-flex items-center rounded-xl bg-strava-orange px-4 py-3 text-sm font-semibold text-white hover:bg-orange-600">Connect Strava</a>
+        </div>
+    </div>
 </div>
 </body>
 </html>

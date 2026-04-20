@@ -4,20 +4,33 @@ declare(strict_types=1);
 
 namespace App\Domain\TrainingPlanner;
 
+use App\Domain\Auth\AppUserId;
 use App\Infrastructure\Repository\DbalRepository;
+use App\Infrastructure\User\CurrentAppUser;
 use App\Infrastructure\ValueObject\Time\DateRange;
 use App\Infrastructure\ValueObject\Time\SerializableDateTime;
+use Doctrine\DBAL\Query\QueryBuilder;
 
 final readonly class DbalTrainingBlockRepository extends DbalRepository implements TrainingBlockRepository
 {
+    public function __construct(
+        \Doctrine\DBAL\Connection $connection,
+        private ?CurrentAppUser $currentAppUser = null,
+    ) {
+        parent::__construct($connection);
+    }
+
     public function upsert(TrainingBlock $trainingBlock): void
     {
+        $ownerUserId = $this->resolveOwnerUserId($trainingBlock->getOwnerUserId());
+
         $sql = 'INSERT INTO TrainingBlock (
-                    trainingBlockId, startDay, endDay, targetRaceEventId, phase, title, focus, notes, createdAt, updatedAt
+                    trainingBlockId, ownerUserId, startDay, endDay, targetRaceEventId, phase, title, focus, notes, createdAt, updatedAt
                 ) VALUES (
-                    :trainingBlockId, :startDay, :endDay, :targetRaceEventId, :phase, :title, :focus, :notes, :createdAt, :updatedAt
+                    :trainingBlockId, :ownerUserId, :startDay, :endDay, :targetRaceEventId, :phase, :title, :focus, :notes, :createdAt, :updatedAt
                 )
                 ON CONFLICT(`trainingBlockId`) DO UPDATE SET
+                    ownerUserId = excluded.ownerUserId,
                     startDay = excluded.startDay,
                     endDay = excluded.endDay,
                     targetRaceEventId = excluded.targetRaceEventId,
@@ -30,6 +43,7 @@ final readonly class DbalTrainingBlockRepository extends DbalRepository implemen
 
         $this->connection->executeStatement($sql, [
             'trainingBlockId' => (string) $trainingBlock->getId(),
+            'ownerUserId' => $ownerUserId?->__toString(),
             'startDay' => $trainingBlock->getStartDay(),
             'endDay' => $trainingBlock->getEndDay(),
             'targetRaceEventId' => $trainingBlock->getTargetRaceEventId()?->__toString(),
@@ -49,83 +63,85 @@ final readonly class DbalTrainingBlockRepository extends DbalRepository implemen
         ]);
     }
 
-    public function findById(TrainingBlockId $trainingBlockId): ?TrainingBlock
+    public function findById(TrainingBlockId $trainingBlockId, ?AppUserId $ownerUserId = null): ?TrainingBlock
     {
-        $result = $this->connection->createQueryBuilder()
+        $queryBuilder = $this->connection->createQueryBuilder()
             ->select('*')
             ->from('TrainingBlock')
             ->andWhere('trainingBlockId = :trainingBlockId')
             ->setParameter('trainingBlockId', (string) $trainingBlockId)
-            ->setMaxResults(1)
-            ->executeQuery()
-            ->fetchAssociative();
+            ->setMaxResults(1);
+        $this->applyOwnerScope($queryBuilder, $ownerUserId);
+        $result = $queryBuilder->executeQuery()->fetchAssociative();
 
         return false === $result ? null : $this->hydrate($result);
     }
 
-    public function findByDateRange(DateRange $dateRange): array
+    public function findByDateRange(DateRange $dateRange, ?AppUserId $ownerUserId = null): array
     {
+        $queryBuilder = $this->connection->createQueryBuilder()
+            ->select('*')
+            ->from('TrainingBlock')
+            ->andWhere('endDay >= :from')
+            ->andWhere('startDay <= :till')
+            ->setParameter('from', $dateRange->getFrom())
+            ->setParameter('till', $dateRange->getTill())
+            ->orderBy('startDay', 'ASC')
+            ->addOrderBy('endDay', 'ASC');
+        $this->applyOwnerScope($queryBuilder, $ownerUserId);
+
         return array_map(
             $this->hydrate(...),
-            $this->connection->createQueryBuilder()
-                ->select('*')
-                ->from('TrainingBlock')
-                ->andWhere('endDay >= :from')
-                ->andWhere('startDay <= :till')
-                ->setParameter('from', $dateRange->getFrom())
-                ->setParameter('till', $dateRange->getTill())
-                ->orderBy('startDay', 'ASC')
-                ->addOrderBy('endDay', 'ASC')
-                ->executeQuery()
-                ->fetchAllAssociative(),
+            $queryBuilder->executeQuery()->fetchAllAssociative(),
         );
     }
 
-    public function findCurrentAndUpcoming(SerializableDateTime $from, int $limit = 4): array
+    public function findCurrentAndUpcoming(SerializableDateTime $from, int $limit = 4, ?AppUserId $ownerUserId = null): array
     {
         if ($limit <= 0) {
             return [];
         }
 
+        $queryBuilder = $this->connection->createQueryBuilder()
+            ->select('*')
+            ->from('TrainingBlock')
+            ->andWhere('endDay >= :from')
+            ->setParameter('from', $from->setTime(0, 0))
+            ->orderBy('startDay', 'ASC')
+            ->addOrderBy('endDay', 'ASC')
+            ->setMaxResults($limit);
+        $this->applyOwnerScope($queryBuilder, $ownerUserId);
+
         return array_map(
             $this->hydrate(...),
-            $this->connection->createQueryBuilder()
-                ->select('*')
-                ->from('TrainingBlock')
-                ->andWhere('endDay >= :from')
-                ->setParameter('from', $from->setTime(0, 0))
-                ->orderBy('startDay', 'ASC')
-                ->addOrderBy('endDay', 'ASC')
-                ->setMaxResults($limit)
-                ->executeQuery()
-                ->fetchAllAssociative(),
+            $queryBuilder->executeQuery()->fetchAllAssociative(),
         );
     }
 
-    public function findEarliest(): ?TrainingBlock
+    public function findEarliest(?AppUserId $ownerUserId = null): ?TrainingBlock
     {
-        $result = $this->connection->createQueryBuilder()
+        $queryBuilder = $this->connection->createQueryBuilder()
             ->select('*')
             ->from('TrainingBlock')
             ->orderBy('startDay', 'ASC')
             ->addOrderBy('createdAt', 'ASC')
-            ->setMaxResults(1)
-            ->executeQuery()
-            ->fetchAssociative();
+            ->setMaxResults(1);
+        $this->applyOwnerScope($queryBuilder, $ownerUserId);
+        $result = $queryBuilder->executeQuery()->fetchAssociative();
 
         return false === $result ? null : $this->hydrate($result);
     }
 
-    public function findLatest(): ?TrainingBlock
+    public function findLatest(?AppUserId $ownerUserId = null): ?TrainingBlock
     {
-        $result = $this->connection->createQueryBuilder()
+        $queryBuilder = $this->connection->createQueryBuilder()
             ->select('*')
             ->from('TrainingBlock')
             ->orderBy('endDay', 'DESC')
             ->addOrderBy('updatedAt', 'DESC')
-            ->setMaxResults(1)
-            ->executeQuery()
-            ->fetchAssociative();
+            ->setMaxResults(1);
+        $this->applyOwnerScope($queryBuilder, $ownerUserId);
+        $result = $queryBuilder->executeQuery()->fetchAssociative();
 
         return false === $result ? null : $this->hydrate($result);
     }
@@ -137,6 +153,7 @@ final readonly class DbalTrainingBlockRepository extends DbalRepository implemen
     {
         return TrainingBlock::create(
             trainingBlockId: TrainingBlockId::fromString($result['trainingBlockId']),
+            ownerUserId: null === ($result['ownerUserId'] ?? null) ? null : AppUserId::fromString((string) $result['ownerUserId']),
             startDay: SerializableDateTime::fromString($result['startDay']),
             endDay: SerializableDateTime::fromString($result['endDay']),
             targetRaceEventId: null === $result['targetRaceEventId'] ? null : RaceEventId::fromString((string) $result['targetRaceEventId']),
@@ -147,5 +164,22 @@ final readonly class DbalTrainingBlockRepository extends DbalRepository implemen
             createdAt: SerializableDateTime::fromString($result['createdAt']),
             updatedAt: SerializableDateTime::fromString($result['updatedAt']),
         );
+    }
+
+    private function applyOwnerScope(QueryBuilder $queryBuilder, ?AppUserId $ownerUserId): void
+    {
+        $ownerUserId = $this->resolveOwnerUserId($ownerUserId);
+        if (null === $ownerUserId) {
+            return;
+        }
+
+        $queryBuilder
+            ->andWhere('ownerUserId = :ownerUserId')
+            ->setParameter('ownerUserId', (string) $ownerUserId);
+    }
+
+    private function resolveOwnerUserId(?AppUserId $ownerUserId): ?AppUserId
+    {
+        return $ownerUserId ?? $this->currentAppUser?->getId();
     }
 }

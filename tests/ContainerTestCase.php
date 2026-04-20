@@ -75,6 +75,16 @@ abstract class ContainerTestCase extends KernelTestCase
     {
         /** @var EntityManagerInterface $entityManager */
         $entityManager = self::getContainer()->get(EntityManagerInterface::class);
+        $connection = $entityManager->getConnection();
+
+        $entityManager->clear();
+        while ($connection->isTransactionActive()) {
+            $connection->rollBack();
+        }
+
+        if ($connection->isConnected()) {
+            $connection->close();
+        }
 
         $schemaTool = new SchemaTool($entityManager);
         $classes = $entityManager->getMetadataFactory()->getAllMetadata();

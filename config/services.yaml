@@ -40,6 +40,18 @@ services:
       class: App\Infrastructure\KeyValue\DbalKeyValueStore
       public: true
 
+    App\Domain\Auth\AppUserRepository:
+        class: App\Domain\Auth\DbalAppUserRepository
+
+    App\Domain\Social\UserConnectionRepository:
+        class: App\Domain\Social\DbalUserConnectionRepository
+
+    App\Domain\Strava\Connection\AppUserStravaConnectionRepository:
+        class: App\Domain\Strava\Connection\DbalAppUserStravaConnectionRepository
+
+    App\Domain\Athlete\AthleteRepository:
+        class: App\Domain\Athlete\ContextualAthleteRepository
+
     App\Infrastructure\ValueObject\String\KernelProjectDir:
         public: true
         factory: [ null, 'fromString' ]
@@ -245,6 +257,10 @@ services:
     App\Domain\TrainingPlanner\PlannedSessionLoadEstimator:
         arguments:
             $activityRepository: '@App\Domain\Activity\DbalActivityRepository'
+
+    App\Domain\TrainingPlanner\PlanGenerator\TrainingPlanGenerator:
+        arguments:
+            $trainingSessionRepository: '@App\Domain\TrainingPlanner\DbalTrainingSessionRepository'
 
     # Autowiring of vendor classes
     League\Flysystem\FilesystemOperator: '@default.storage'

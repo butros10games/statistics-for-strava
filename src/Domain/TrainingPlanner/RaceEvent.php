@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\TrainingPlanner;
 
+use App\Domain\Auth\AppUserId;
 use App\Infrastructure\ValueObject\Time\SerializableDateTime;
 use Doctrine\ORM\Mapping as ORM;
 
@@ -15,6 +16,8 @@ final readonly class RaceEvent
     private function __construct(
         #[ORM\Id, ORM\Column(type: 'string', unique: true)]
         private RaceEventId $raceEventId,
+        #[ORM\Column(type: 'string', nullable: true)]
+        private ?AppUserId $ownerUserId,
         #[ORM\Column(type: 'datetime_immutable')]
         private SerializableDateTime $day,
         #[ORM\Column(type: 'string')]
@@ -51,9 +54,11 @@ final readonly class RaceEvent
         ?int $targetFinishTimeInSeconds,
         SerializableDateTime $createdAt,
         SerializableDateTime $updatedAt,
+        ?AppUserId $ownerUserId = null,
     ): self {
         return self::createWithClassification(
             raceEventId: $raceEventId,
+            ownerUserId: $ownerUserId,
             day: $day,
             family: $type->toFamily(),
             profile: $type->toProfile(),
@@ -69,6 +74,7 @@ final readonly class RaceEvent
 
     public static function createWithClassification(
         RaceEventId $raceEventId,
+        ?AppUserId $ownerUserId,
         SerializableDateTime $day,
         RaceEventFamily $family,
         RaceEventProfile $profile,
@@ -84,6 +90,7 @@ final readonly class RaceEvent
 
         return new self(
             raceEventId: $raceEventId,
+            ownerUserId: $ownerUserId,
             day: $day->setTime(0, 0),
             type: RaceEventType::fromProfile($profile),
             family: $normalizedFamily === $family ? $family : $normalizedFamily,
@@ -101,6 +108,11 @@ final readonly class RaceEvent
     public function getId(): RaceEventId
     {
         return $this->raceEventId;
+    }
+
+    public function getOwnerUserId(): ?AppUserId
+    {
+        return $this->ownerUserId;
     }
 
     public function getDay(): SerializableDateTime

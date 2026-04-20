@@ -7,6 +7,7 @@ namespace App\Domain\Activity\Route;
 use App\Infrastructure\Serialization\Json;
 use App\Infrastructure\ValueObject\Geography\EncodedPolyline;
 use Brick\Geo\Engine\GeosOpEngine;
+use Brick\Geo\Exception\GeometryEngineException;
 use Brick\Geo\Exception\InvalidGeometryException;
 use Brick\Geo\Geometry;
 use Brick\Geo\Io\GeoJson\Feature;
@@ -15,16 +16,22 @@ use Brick\Geo\Io\GeoJsonReader;
 
 final readonly class RouteGeographyAnalyzer
 {
-    private GeosOpEngine $engine;
+    private ?GeosOpEngine $engine;
     private GeoJsonReader $reader;
     /** @var array<string, Geometry|Feature|FeatureCollection> */
     private array $countriesGeometry;
 
     public function __construct()
     {
-        $this->engine = new GeosOpEngine('/usr/bin/geosop');
+        $geosOpPath = $this->resolveGeosOpPath();
+        $this->engine = null === $geosOpPath ? null : new GeosOpEngine($geosOpPath);
         $this->reader = new GeoJsonReader();
-        $this->countriesGeometry = $this->buildCountriesGeometry();
+        $this->countriesGeometry = null === $this->engine ? [] : $this->buildCountriesGeometry();
+    }
+
+    public function isAvailable(): bool
+    {
+        return null !== $this->engine;
     }
 
     /**
@@ -56,12 +63,16 @@ final readonly class RouteGeographyAnalyzer
     public function analyzeForPolyline(EncodedPolyline $polyline): array
     {
         $passedCountries = [];
+        if (null === $this->engine) {
+            return $passedCountries;
+        }
+
         try {
             $routeLineString = $this->reader->read(Json::encode([
                 'type' => 'LineString',
                 'coordinates' => $polyline->decodeAndPairLngLat(),
             ]));
-        } catch (InvalidGeometryException) {
+        } catch (InvalidGeometryException|GeometryEngineException) {
             // Given polyline is somehow not a valid LineString.
             return $passedCountries;
         }
@@ -73,12 +84,46 @@ final readonly class RouteGeographyAnalyzer
             if (!$routeLineString instanceof Geometry) {
                 continue; // @codeCoverageIgnore
             }
-            if (!$this->engine->intersects($countryGeometry, $routeLineString)) {
+            try {
+                $intersects = $this->engine->intersects($countryGeometry, $routeLineString);
+            } catch (GeometryEngineException) {
+                return [];
+            }
+
+            if (!$intersects) {
                 continue;
             }
             $passedCountries[$countryCode] = $countryCode;
         }
 
         return array_values($passedCountries);
+    }
+
+    private function resolveGeosOpPath(): ?string
+    {
+        $candidates = [
+            '/usr/bin/geosop',
+            '/usr/local/bin/geosop',
+            '/opt/homebrew/bin/geosop',
+        ];
+
+        $path = getenv('PATH');
+        if (is_string($path) && '' !== $path) {
+            foreach (explode(PATH_SEPARATOR, $path) as $directory) {
+                if ('' === $directory) {
+                    continue;
+                }
+
+                $candidates[] = rtrim($directory, DIRECTORY_SEPARATOR).DIRECTORY_SEPARATOR.'geosop';
+            }
+        }
+
+        foreach (array_unique($candidates) as $candidate) {
+            if (is_file($candidate) && is_executable($candidate)) {
+                return $candidate;
+            }
+        }
+
+        return null;
     }
 }

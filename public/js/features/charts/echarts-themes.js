@@ -348,7 +348,7 @@ const v5Theme = () => {
 const v5DarkTheme = () => {
     const base = v5Theme();
     const backgroundColor = 'transparent';
-    const contrastColor = '#B9B8CE';
+    const contrastColor = '#d4d4d4';
 
     const axisCommon = function () {
         return {
@@ -359,7 +359,7 @@ const v5DarkTheme = () => {
             },
             splitLine: {
                 lineStyle: {
-                    color: '#484753'
+                    color: '#333333'
                 }
             },
             splitArea: {
@@ -369,7 +369,7 @@ const v5DarkTheme = () => {
             },
             minorSplitLine: {
                 lineStyle: {
-                    color: '#20203B'
+                    color: '#2a2a2a'
                 }
             }
         };
@@ -380,7 +380,7 @@ const v5DarkTheme = () => {
         darkMode: true,
         backgroundColor: backgroundColor,
         loading: {
-            textColor: '#c9d1d9'
+            textColor: '#d4d4d4'
         },
         axisPointer: {
             ...base.axisPointer,
@@ -420,9 +420,9 @@ const v5DarkTheme = () => {
             }
         },
         tooltip: {
-            backgroundColor: '#2a313c',
-            borderColor: '#3d444d',
-            textStyle: { color: '#f0f6fc' }
+            backgroundColor: '#242424',
+            borderColor: '#333333',
+            textStyle: { color: '#f5f5f5' }
         },
         timeAxis: axisCommon(),
         logAxis: axisCommon(),
@@ -436,7 +436,7 @@ const v5DarkTheme = () => {
         })(),
         grid: {
             ...base.grid,
-            borderColor: '#3d444d'
+            borderColor: '#333333'
         },
         visualMap: {
             ...base.visualMap,
@@ -461,10 +461,10 @@ const v5DarkTheme = () => {
         },
         dataZoom: {
             ...base.dataZoom,
-            borderColor: '#3d444d',
-            backgroundColor: 'rgba(33,40,48,0)',
-            handleStyle: { color: '#c9d1d9', borderColor: '#656c76' },
-            textStyle: { color: '#c9d1d9' },
+            borderColor: '#333333',
+            backgroundColor: 'rgba(27,27,27,0)',
+            handleStyle: { color: '#d4d4d4', borderColor: '#555555' },
+            textStyle: { color: '#d4d4d4' },
             selectedDataBackground: { areaStyle: { color: '#539bf520', opacity: 0.2 } }
         }
     };

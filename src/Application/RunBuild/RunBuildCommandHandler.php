@@ -19,9 +19,11 @@ use App\Application\Build\BuildManifest\BuildManifest;
 use App\Application\Build\BuildMilestonesHtml\BuildMilestonesHtml;
 use App\Application\Build\BuildMonthlyStatsHtml\BuildMonthlyStatsHtml;
 use App\Application\Build\BuildPhotosHtml\BuildPhotosHtml;
+use App\Application\Build\BuildRacePlannerHtml\BuildRacePlannerHtml;
 use App\Application\Build\BuildRecordingDevices\BuildRecordingDevices;
 use App\Application\Build\BuildRewindHtml\BuildRewindHtml;
 use App\Application\Build\BuildSegmentsHtml\BuildSegmentsHtml;
+use App\Application\Build\BuildTrainingPlansHtml\BuildTrainingPlansHtml;
 use App\Application\Build\BuildTrainingAdvisorExport\BuildTrainingAdvisorExport;
 use App\Application\Build\ConfigureAppColors\ConfigureAppColors;
 use App\Application\Build\ConfigureAppLocale\ConfigureAppLocale;
@@ -97,6 +99,8 @@ This is not a bug, once all your activities have been imported, your gear statis
             'Building challenges' => new BuildChallengesHtml($now),
             'Building photos' => new BuildPhotosHtml(),
             'Building training advisor export' => new BuildTrainingAdvisorExport($now),
+            'Building race planner' => new BuildRacePlannerHtml($now),
+            'Building plan manager' => new BuildTrainingPlansHtml($now),
             'Building badges' => new BuildBadgeSvg($now),
         ];
 

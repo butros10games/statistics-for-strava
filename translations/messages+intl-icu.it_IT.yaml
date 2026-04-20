@@ -1,13 +1,25 @@
-'42-day fitness trend': 'Trend di forma a 42 giorni'
-'7-day fatigue level': 'Livello di fatica a 7 giorni'
+'10K run': '10K run'
+'2nd run': '2nd run'
+'30d avg': '30d avg'
+'5K run': '5K run'
+7-day: 7-day
+'70.3 triathlon': '70.3 triathlon'
 '< 1.5: Good variety in training': '< 1.5: Buona varietà di allenamento'
 '> 2.0: High monotony, increased risk': '> 2.0: Monotonia elevata, rischio aumentato'
 'A 6-hour week scores higher than a 5-hour week.': 'Una settimana da 6 ore ottiene un punteggio più alto di una da 5 ore.'
 'A high intensity score means a larger share of your training is hard rather than easy.': 'Un punteggio di intensità alto significa che una quota maggiore del tuo allenamento è impegnativa invece che facile.'
 'A high score means you concentrate more training into fewer, heavier days.': 'Un punteggio alto significa che concentri più allenamento in meno giorni, ma più intensi.'
+'A quick self-report helps the app balance objective Garmin data with how recovered you actually feel.': 'A quick self-report helps the app balance objective Garmin data with how recovered you actually feel.'
+'A race': 'A race'
+'A research-informed readiness score that blends load balance, monotony, individualized HRV/sleep baselines, and your latest morning recovery check-in.': 'A research-informed readiness score that blends load balance, monotony, individualized HRV/sleep baselines, and your latest morning recovery check-in.'
+'A-race goal': 'A-race goal'
+'A:C': 'A:C'
 'A:C Ratio': 'Rapporto A:C'
 'A:C optimal in': 'A:C ottimale tra'
+'AI review': 'AI review'
+ATL: ATL
 'ATL (Fatigue)': 'ATL (Fatica)'
+'Account settings': 'Account settings'
 'Accumulated fatigue': 'Fatica accumulata'
 'Active days': 'Giornate attive'
 Activities: Attività
@@ -16,57 +28,123 @@ Activity: Attività
 'Activity heatmap': 'Mappa di calore delle attività'
 'Activity locations': 'Luoghi attività'
 'Activity start times': 'Inizio attività'
+'Activity type': 'Activity type'
+'Activity-type recovery fingerprints': 'Activity-type recovery fingerprints'
 'Acute Training Load (Fatigue) - 7-day exponentially weighted average of your daily training load. Represents short-term fatigue.': 'Carico di Allenamento Acuto (Fatica) - media esponenziale a 7 giorni del tuo carico giornaliero. Rappresenta la fatica a breve termine.'
 'Acute:Chronic Ratio - Ratio of ATL to CTL. Indicates injury risk.': 'Rapporto Acuto:Cronico - Rapporto tra ATL e CTL. Indica il rischio di infortuni.'
 'Adaptive & Inclusive Sports': 'Sport Adattati e Inclusivi'
+Add: Add
+'Add a phase so the planner can show where the season is building, sharpening, or backing off.': 'Add a phase so the planner can show where the season is building, sharpening, or backing off.'
+'Add a race event from the training calendar to get started with race planning.': 'Add a race event from the training calendar to get started with race planning.'
+'Add a session to your training calendar and load forecast.': 'Add a session to your training calendar and load forecast.'
+'Add a target event so the planner can start organizing training around real race goals.': 'Add a target event so the planner can start organizing training around real race goals.'
+'Add repeat block': 'Add repeat block'
+'Add set': 'Add set'
+'Adjust the plan window, linked race, or notes so the season still flows the way you want.': 'Adjust the plan window, linked race, or notes so the season still flows the way you want.'
+'Aerobic durability, long ride quality, and controlled tempo run progression': 'Aerobic durability, long ride quality, and controlled tempo run progression'
 Afternoon: Pomeriggio
 All: Tutti
 'All time': 'Da sempre'
 'Alpine Ski': 'Sci alpino'
 Apr: Apr
+Aquathlon: Aquathlon
 'Ask Mark something...': 'Chiedi qualcosa a Mark...'
 'Athlete profile': 'Profilo atleta'
 Aug: Ago
+Auto-linked: Auto-linked
 'Average gradient': 'Pendenza media'
 Avg: Media
+'Avg load': 'Avg load'
+'B race': 'B race'
+BPM: BPM
+Back: Back
 'Back Country Ski': 'Sci fuoripista'
 Badges: Badges
 Badminton: Badminton
+'Balance the disciplines, keep recovery honest, and make the key work count.': 'Balance the disciplines, keep recovery honest, and make the key work count.'
+'Balanced build keeps the current progression. Speed-endurance build trims volume, keeps key long sessions, and biases the block toward sharper work.': 'Balanced build keeps the current progression. Speed-endurance build trims volume, keeps key long sessions, and biases the block toward sharper work.'
+'Balanced build keeps the current progression. Speed-endurance build trims volume, keeps key long sessions, and makes the block feel sharper.': 'Balanced build keeps the current progression. Speed-endurance build trims volume, keeps key long sessions, and makes the block feel sharper.'
+'Balanced or speed-endurance build': 'Balanced or speed-endurance build'
+Base: Base
+'Based on': 'Based on'
 Basketball: Basket
 Best: Migliore
 'Best effort': 'Miglior sforzo'
 'Best efforts': 'Migliori Sforzi'
 'Best efforts for {sportType}': 'Migliori sforzi per {sportType}'
+Bike: Bike
+'Bike days': 'Bike days'
+'Bike race': 'Bike race'
+'Biking volume': 'Biking volume'
+'Block details': 'Block details'
+'Block label': 'Block label'
+Brick: Brick
+'Brick sessions': 'Brick sessions'
+Build: Build
+'Build toward a race day': 'Build toward a race day'
 'Build zone (–10)': 'Zona di costruzione (–10)'
+'C race': 'C race'
+CTL: CTL
 'CTL (Fitness)': 'CTL (Forma)'
 Cadence: Cadenza
 Calories: Calorie
 'Calories burned': 'Calorie bruciate'
 Canoeing: Canoa
 'Carbon saved': 'Emissioni di carbonio risparmiate'
+'Chain training blocks, anchor races, and keep your season on track.': 'Chain training blocks, anchor races, and keep your season on track.'
 'Challenge consistency': 'Costanza nella sfida'
 Challenges: Sfide
 'Chronic Training Load (Fitness) - 42-day exponentially weighted average of your daily training load. Represents long-term training adaptation.': "Carico di Allenamento Cronico (Forma) - media esponenziale a 42 giorni del tuo carico giornaliero. Rappresenta l'adattamento a lungo termine."
 'Clear chat': 'Cancella chat'
 'Close modal': 'Chiudi modale'
+'Coach notes': 'Coach notes'
+'Collapse block': 'Collapse block'
 'Collapse sidebar': 'Comprimi barra laterale'
 Commutes: 'Spostamenti quotidiani'
 'Commutes only': 'Solo spostamenti quotidiani'
 Compare: Confronta
 'Compare to': 'Confronta con'
+'Complete Rest Timeline': 'Complete Rest Timeline'
+Completed: Completed
 'Completed {threshold} activities': 'Completate {threshold} attività'
+Condition: Condition
+'Confirm match': 'Confirm match'
 'Congrats! You achieved personal bests during this activity.': 'Complimenti! Hai raggiunto record personali durante questa attività.'
 'Consider reducing load': 'Valuta di ridurre il carico'
 Consistency: Consistency
+Continuity: Continuity
+'Copy AI review prompt': 'Copy AI review prompt'
+'Copy failed': 'Copy failed'
+Correlation: Correlation
+'Correlation insights (90 days)': 'Correlation insights (90 days)'
 Country: Country
+'Course notes, pacing idea, nutrition reminders, or key execution cues.': 'Course notes, pacing idea, nutrition reminders, or key execution cues.'
+'Create block': 'Create block'
+'Create first plan': 'Create first plan'
+'Create next plan': 'Create next plan'
+'Create plan': 'Create plan'
+'Create race': 'Create race'
+'Create real plan': 'Create real plan'
+'Create session': 'Create session'
+'Create the next plan in sequence': 'Create the next plan in sequence'
+'Create your first training block or race build. Stack them together to map out the months ahead.': 'Create your first training block or race build. Stack them together to map out the months ahead.'
 Cricket: Cricket
 Crossfit: Crossfit
+Current: Current
 'Current Status': 'Stato attuale'
+'Current biking volume': 'Current biking volume'
+'Current blocks': 'Current blocks'
+'Current fitness': 'Current fitness'
+'Current plan structure': 'Current plan structure'
+'Current running volume': 'Current running volume'
 'Current streaks': 'Serie attuali'
+'Current week': 'Current week'
+'Custom event': 'Custom event'
 'Custom gear disabled': 'Attrezzatura personalizzata disattivata'
 Cycling: Ciclismo
-'Daily TRIMP': 'TRIMP giornaliero'
+'Cycling FTP': 'Cycling FTP'
 'Daily activities': 'Attività giornaliere'
+'Daily load': 'Daily load'
 Dance: Dance
 'Dark mode': 'Modalità scura'
 Dashboard: 'Schermata iniziale'
@@ -75,34 +153,62 @@ Day: Day
 'Days needed': 'Giorni necessari'
 'Daytime stats': 'Statistiche giornaliere'
 Dec: Dic
+'Define sets with time, distance, pace or power, and heart-rate targets.': 'Define sets with time, distance, pace or power, and heart-rate targets.'
+'Define the phase, its time window, and the main focus you want visible in the calendar.': 'Define the phase, its time window, and the main focus you want visible in the calendar.'
+Delete: Delete
+'Delete this planned session?': 'Delete this planned session?'
 Density: Density
 'Detailed instructions are available in the documentation on': 'Istruzioni dettagliate sono disponibili nella documentazione su'
 Details: Dettagli
 Device: Dispositivo
+Discipline: Discipline
+Disciplines: Disciplines
 Distance: Distanza
 'Distance & Elevation': 'Distanza e dislivello'
+'Distance / profile': 'Distance / profile'
 'Distance breakdown': 'Analisi della distanza'
 'Distance in {unit}': 'Distanza in {unit}'
 'Distance over time per gear': 'Distanza nel tempo per attrezzatura'
 'Distance per month per gear': 'Distanza per mese per attrezzatura'
 Distribution: Distribuzione
 'Doing a mix of cycling, running, swimming, and strength work increases your variety score.': 'Alternare ciclismo, corsa, nuoto e lavoro di forza aumenta il tuo punteggio di varietà.'
+'Double run day': 'Double run day'
+'Drag sets or repeat blocks here, or add inside block': 'Drag sets or repeat blocks here, or add inside block'
+'Drag to reorder': 'Drag to reorder'
+Duathlon: Duathlon
+'Duplicate block': 'Duplicate block'
+'Duplicate set': 'Duplicate set'
 Duration: Duration
 'E-Bike Rides': 'Uscite in e-bike'
 'E-Mountain Bike Rides': 'Uscite in e-mountain bike'
+'Early season build, 70.3 prep, marathon bridge…': 'Early season build, 70.3 prep, marathon bridge…'
+'Early summer build': 'Early summer build'
+Easy: Easy
 Eddington: Eddington
+'Edit plan': 'Edit plan'
+'Edit planned session': 'Edit planned session'
+'Edit race event': 'Edit race event'
 'Effort vs heart rate': 'Sforzo vs frequenza cardiaca'
 Elev: Disl.
 Elevation: Dislivello
 'Elevation in {unit}': 'Dislivello in {unit}'
 Elliptical: Ellittica
+'End day': 'End day'
 'Enter fullscreen mode': 'Entra in modalità schermo intero'
+Est.: Est.
 Evening: Sera
+'Event details': 'Event details'
+'Event family': 'Event family'
 'Excludes commutes': 'Esclude gli spostamenti casa-lavoro'
+'Expand block': 'Expand block'
+'Export JSON': 'Export JSON'
+'Export for AI feedback': 'Export for AI feedback'
 'FTP history': 'Storico FTP'
 'Fastest times': 'Tempi più veloci'
+Fatigue: Fatigue
 Favourite: Preferito
 Feb: Feb
+"Fill in today's check-in": "Fill in today's check-in"
 'Filter on KOM segments': 'Filtra sui segmenti KOM'
 'Filter on country': 'Filtra per paese'
 'Filter on sport type': 'Filtra per tipo di sport'
@@ -113,10 +219,16 @@ Firsts: Firsts
 Fitness: 'Forma fisica'
 'Fitness may be declining due to low recent training load': 'La forma potrebbe essere in calo a causa del basso carico di allenamento recente'
 'Fitness may decline': 'La forma potrebbe calare'
+Focus: Focus
+'Focus plan': 'Focus plan'
 'For example, an Eddington number of 70 would imply that a cyclist has cycled at least 70 km or miles in a day on at least 70 occasions. Achieving a high Eddington number is difficult, since moving from, say, 70 to 75 will (probably) require more than five new long-distance workouts, since any workout shorter than 75 km or miles will no longer be included in the reckoning.': 'Ad esempio, un numero di Eddington pari a 70 implicherebbe che un ciclista ha percorso almeno 70 km o miglia al giorno in almeno 70 occasioni. Raggiungere un numero di Eddington elevato è difficile, poiché passare, ad esempio, da 70 a 75 richiederà (probabilmente) più di cinque nuovi allenamenti a lunga distanza, dato che qualsiasi allenamento inferiore a 75 km o miglia non sarà più incluso nel calcolo.'
+Forecast: Forecast
+'Forecast confidence': 'Forecast confidence'
+'Forecast load modifier': 'Forecast load modifier'
 'Form (TSB)': 'Forma (TSB)'
 Fri: Ven
 Friday: Venerdì
+'Full-distance triathlon': 'Full-distance triathlon'
 Gear: Attrezzatura
 'Gear "{gearId}" is referenced in your maintenance config file, but was not imported from Strava. Please check that the gear exists and is correctly synced.': 'L''attrezzatura "{gearId}" è presente nel tuo file di configurazione della manutenzione, ma non è stata importata da Strava. Verifica che esista e sia sincronizzata correttamente.'
 'Gear details': 'Dettagli attrezzatura'
@@ -124,16 +236,23 @@ Gear: Attrezzatura
 'Gear stats': 'Statistiche attrezzatura'
 "Gear that hasn't been used in the last three months, is disabled by default.": 'Attrezzatura che non è stata usata negli ultimi tre mesi, è disabilitata di default.'
 'Gear that is retired is disabled by default.': "L'attrezzatura dismessa è disabilitata di default."
+'Global race planner': 'Global race planner'
 Goal: Goal
 Golf: Golf
-'Good training variety': 'Buona varietà di allenamento'
+'Good variety': 'Good variety'
 'Google searches': 'Ricerche Google'
 Gradient: Gradient
 'Gravel Rides': 'Uscite gravel'
+'Gravel race': 'Gravel race'
 "Guidelines vary by individual; for more information see Joe Friel's 'The Cyclist's Training Bible' or TrainingPeaks' research documentation.": "Le linee guida variano da persona a persona; per maggiori informazioni consulta 'The Cyclist's Training Bible' di Joe Friel o la documentazione di ricerca di TrainingPeaks."
 HIIT: HIIT
 HR: FC
+HRV: HRV
+'HRV trend': 'HRV trend'
+'Half marathon (21.1K)': 'Half marathon (21.1K)'
 'Hand Cycle': Handbike
+Hard: Hard
+Hard/week: Hard/week
 'Heart rate': 'Frequenza cardiaca'
 'Heart rate distribution': 'Distribuzione frequenza cardiaca'
 'Heart rate zone distribution over the past month. For effective polarized training, your workouts should primarily fall within the following zones': "Distribuzione delle zone di frequenza cardiaca nell'ultimo mese. Per un allenamento polarizzato efficace, gli allenamenti dovrebbero ricadere principalmente nelle seguenti zone"
@@ -141,12 +260,14 @@ HR: FC
 Heatmap: 'Mappa di calore'
 High: Alto
 'High fatigue levels may increase injury or burnout risk. Consider reducing load and prioritizing recovery': 'Livelli elevati di fatica possono aumentare il rischio di infortuni o burnout. Valuta di ridurre il carico e dare priorità al recupero'
-'High monotony - increase variety': 'Monotonia elevata - aumenta la varietà'
+'High monotony': 'High monotony'
 'High risk': 'Rischio alto'
+'Higher confidence': 'Higher confidence'
 'Highly recovered and ready to perform': 'Recupero elevato e pronto a performare'
 Hikes: Escursioni
 History: Cronologia
-'History (6 weeks)': 'Storico (6 settimane)'
+'Hold target': 'Hold target'
+Hours: Hours
 'How diverse is your training': 'Quanto è vario il tuo allenamento'
 'How hard is your typical training session': 'Quanto è intensa la tua sessione di allenamento tipica'
 'How long is your typical training session': 'Quanto dura la tua sessione di allenamento tipica'
@@ -155,11 +276,16 @@ History: Cronologia
 'How often do you train': 'Con quale frequenza ti alleni'
 'Ice Skate': 'Pattinaggio su ghiaccio'
 Id: ID
+'Ideal plan': 'Ideal plan'
 'Image "{imgSrc}" is referenced in your maintenance config file, but was not found in "storage/gear-maintenance"': 'L''immagine "{imgSrc}" è referenziata nel tuo file di configurazione della manutenzione, ma non è stata trovata in "storage/gear-maintenance"'
 Imperial: Imperial
+'In progress': 'In progress'
 "In that time, I’ve covered {totalDistance}, that's {numberOfTripsAroundTheWorld} trips around the world 🌍 or {numberOfTripsToTheMoonPercent}% of the way to the moon 🌕, and climbed an elevation of {totalElevation} which is {timesMountEverest} times Mount Everest 🏔. All up that's {totalTimeRecorded} of moving time 🎉.": "In that time, I’ve covered {totalDistance}, that's {numberOfTripsAroundTheWorld} trips around the world 🌍 or {numberOfTripsToTheMoonPercent}% of the way to the moon 🌕, and climbed an elevation of {totalElevation} which is {timesMountEverest} times Mount Everest 🏔. All up that's {totalTimeRecorded} of moving time 🎉."
+'Include hill sessions when terrain allows': 'Include hill sessions when terrain allows'
 'Individual thresholds vary based on fitness level.': 'Le soglie individuali variano in base al livello di forma.'
 'Inline Skate': 'Pattinaggio in linea'
+Insights: Insights
+'Integrated weekly load - Banister-style activity load plus wellness-derived recovery strain from HRV, sleep, sleep score, and steps.': 'Integrated weekly load - Banister-style activity load plus wellness-derived recovery strain from HRV, sleep, sleep score, and steps.'
 Intensity: Intensity
 'It looks like no valid gear is attached to any of the components. Please check your config file.': 'Sembra che nessuna attrezzatura valida sia collegata a un componente. Per favore controlla il tuo file di configurazione.'
 Jan: Gen
@@ -167,23 +293,39 @@ Jul: Lug
 Jun: Giu
 KOM: KOM
 Kayaking: Kayak
+'Keep target races visible so the calendar can plan around them.': 'Keep target races visible so the calendar can plan around them.'
+Key: Key
+'Key reminders, cap sessions, recovery constraints, or how this phase should feel.': 'Key reminders, cap sessions, recovery constraints, or how this phase should feel.'
 'Kite Surf': Kitesurf
+Label: Label
 Lap: Giro
 Laps: Giri
-'Last 7 days training load': 'Carico di allenamento negli ultimi 7 giorni'
+'Last 7 days': 'Last 7 days'
 'Last activity': 'Ultima attività'
 'Last effort': 'Ultimo tentativo'
 'Last effort date': 'Data dell’ultimo sforzo'
 'Last maintenance': 'Ultima manutenzione'
 'Last {numberOfDays} days': 'Ultimi {numberOfDays} giorni'
+Latest: Latest
+'Latest sync': 'Latest sync'
+'Leave this off if you train on flat roads, flat paths, or do not want incline-based workouts in the plan.': 'Leave this off if you train on flat roads, flat paths, or do not want incline-based workouts in the plan.'
+Legend: Legend
+Library: Library
 Lifetime: Lifetime
 'Light fatigue with good readiness. A great balance for quality training or longer efforts': 'Fatica leggera con buona prontezza. Un ottimo equilibrio per allenamenti di qualità o sforzi più lunghi'
+'Linked activity': 'Linked activity'
+'Linked race': 'Linked race'
+'Linked race no longer exists': 'Linked race no longer exists'
 Load: Load
 'Load (CTL/ATL)': 'Carico (CTL/ATL)'
 'Loading data...': 'Caricamento informazioni...'
 Loading...: Caricamento...
+Location: Location
 'Locations over the globe': 'Luoghi nel mondo'
+'Long ride': 'Long ride'
+'Long ride day': 'Long ride day'
 'Long run': 'Corsa lunga'
+'Long run day': 'Long run day'
 'Longest activity': 'Attività più lunga'
 'Longest activity (h)': 'Attività più lunga (h)'
 'Longest distance': 'Distanza più lunga'
@@ -191,57 +333,92 @@ Loading...: Caricamento...
 Low: Basso
 'Low risk': 'Rischio basso'
 'Low training load': 'Carico di allenamento basso'
+'Lower confidence': 'Lower confidence'
 Maintenance: Manutenzione
 'Maintenance history': 'Storico manutenzioni'
+'Mallorca, Belgium, Kona…': 'Mallorca, Belgium, Kona…'
 Mar: Mar
+'Marathon (42.2K)': 'Marathon (42.2K)'
 Max: Massimo
 'Max gradient': 'Pendenza massima'
 May: Mag
 Medium: Medio
+Meters: Meters
 Metric: Metric
 Metrics: Metriche
 Milestones: Milestones
+Min: Min
 'Mind & Body Sports': 'Sport Mente e Corpo'
+Minutes: Minutes
+Moderate: Moderate
+'Moderate confidence': 'Moderate confidence'
 'Moderate fatigue with stable fitness. Well suited for consistent day-to-day training': 'Fatica moderata con forma stabile. Ben adatto a un allenamento costante giorno dopo giorno'
-'Moderate monotony': 'Monotonia moderata'
 Mon: Lun
 Monday: Lunedì
 Monotony: Monotonia
+'Month planner': 'Month planner'
 Monthly: Monthly
 'Monthly stats': 'Statistiche mensili'
 Morning: Mattina
+'Morning recovery check-in': 'Morning recovery check-in'
 'Most elevation': 'Maggiore dislivello'
+'Most recent': 'Most recent'
 'Most recent activities': 'Attività più recenti'
 'Most recent challenges': 'Sfide più recenti'
 'Most recent milestones': 'Traguardi più recenti'
+Motivation: Motivation
 'Mountain Bike Rides': 'Uscite in mountain bike'
 'Moving time': 'Tempo in movimento'
 Name: Nome
+'Needs recovery': 'Needs recovery'
 Neutral: Neutral
 'New personal best for': 'Nuovo record personale per'
+'New plan': 'New plan'
+Next: Next
+'Next start': 'Next start'
+'Next up': 'Next up'
+'Next-day HRV': 'Next-day HRV'
 Night: Notte
+'No active plan': 'No active plan'
 'No activities': 'Nessuna attività'
+'No check-in recorded for today yet. Fill this in to improve readiness and daily load interpretation.': 'No check-in recorded for today yet. Fill this in to improve readiness and daily load interpretation.'
 'No data available': 'Nessun dato disponibile'
+'No estimated planned sessions in the next {days} days yet.': 'No estimated planned sessions in the next {days} days yet.'
+'No gaps or overlaps': 'No gaps or overlaps'
+'No linked race': 'No linked race'
 'No milestones achieved yet': 'Nessun traguardo raggiunto finora'
 'No other options to compare with': "Nessun'altra opzione con cui confrontare"
+'No planned sessions yet for this month.': 'No planned sessions yet for this month.'
+'No planned sessions yet for this week.': 'No planned sessions yet for this week.'
+'No saved recommendations for {activityType} yet. Save a few planned sessions to start building your library.': 'No saved recommendations for {activityType} yet. Save a few planned sessions to start building your library.'
+'No sessions in the next {days} days yet.': 'No sessions in the next {days} days yet.'
+'No training blocks yet. Add base, build, peak, taper, or recovery phases to give the calendar season structure.': 'No training blocks yet. Add base, build, peak, taper, or recovery phases to give the calendar season structure.'
+'No upcoming race targets yet. Add your A, B, and C races to anchor the calendar.': 'No upcoming race targets yet. Add your A, B, and C races to anchor the calendar.'
+'No upcoming races': 'No upcoming races'
 None: Nessuno
 'Nordic Ski': 'Sci nordico'
 Normalized: Normalized
+'Not enough data to generate insights yet. Keep training and logging activities to unlock correlation analysis and recovery fingerprints.': 'Not enough data to generate insights yet. Keep training and logging activities to unlock correlation analysis and recovery fingerprints.'
 'Not supported': 'Non supportato'
+Notes: Notes
 Nov: Nov
 Now: Now
 'Number of activities per month': 'Numero di attività al mese'
 'Number of times completed': 'Numero di completamenti'
 Oct: Ott
 'Older effort': 'Sforzo meno recente'
+'Olympic triathlon': 'Olympic triathlon'
 'On average, that works out to {dailyAverage} per day, a weekly average of {weeklyAverage} and a monthly average of {monthlyAverage} 🐣.': 'In media, questo equivale a {dailyAverage} al giorno, una media settimanale di {weeklyAverage} e una media mensile di {monthlyAverage} 🐣.'
 'One of your gear maintenance tasks is due': "Uno dei tuoi compiti di manutenzione dell'attrezzatura è in scadenza"
+'One or more wellness signals are below baseline. Consider reducing intensity or volume.': 'One or more wellness signals are below baseline. Consider reducing intensity or volume.'
+'Open in race planner': 'Open in race planner'
+'Open-water swim race': 'Open-water swim race'
 'Optimal training range': 'Intervallo di allenamento ottimale'
 Other: Altro
 'Outdoor Sports': "Sport all'aperto"
 Over-fatigued: Over-fatigued
 'Over-fatigued (–30)': 'Sovraffaticamento (–30)'
-'Overall weekly training stress': 'Stress di allenamento settimanale complessivo'
+Overview: Overview
 'PB badges': 'Badge record personali'
 'PET bottles produced': 'Bottiglie PET prodotte'
 PRs: 'Record personali'
@@ -249,22 +426,57 @@ PRs: 'Record personali'
 Pace: Andatura
 'Pace distribution': 'Distribuzione del passo'
 Padel: Padel
+Peak: Peak
 'Peak fresh': 'Picco di freschezza'
 'Peak power outputs': 'Picchi di potenza'
+'Perfect handoff': 'Perfect handoff'
 'Personal Records': 'Record personali'
 'Personal bests': 'Record personali'
+Personalization: Personalization
+Phase: Phase
 Photo: Foto
 Photos: Foto
+'Pick which days you do each sport and mark your long sessions.': 'Pick which days you do each sport and mark your long sessions.'
 'Pickle Ball': Pickleball
 Pilates: Pilates
+'Plan details': 'Plan details'
+'Plan manager': 'Plan manager'
+'Plan mix': 'Plan mix'
+'Plan out of sync': 'Plan out of sync'
+'Plan sessions directly inside the training calendar and keep them linked with completed activities automatically.': 'Plan sessions directly inside the training calendar and keep them linked with completed activities automatically.'
+'Plan type': 'Plan type'
+'Planned session': 'Planned session'
+'Planned sessions': 'Planned sessions'
+'Planned sessions forecast': 'Planned sessions forecast'
+Planner: Planner
+'Planner outlook': 'Planner outlook'
+'Planner view': 'Planner view'
 'Please address these issues': 'Per favore occupati di questi problemi'
-'Polarised training (last 30 days)': 'Allenamento polarizzato (ultimi 30 giorni)'
+'Polarised training (30d)': 'Polarised training (30d)'
+'Pool swim race': 'Pool swim race'
 Power: Potenza
 'Power distribution': 'Distribuzione potenza'
 'Powered by an estimated {caloriesBurned} calories, or roughly {numberOfPizzaSlices} slices of pizza 🍕.': 'Powered by {caloriesBurned} calorie, ovvero circa {numberOfPizzaSlices} fette di pizza 🍕.'
 'Prev year': 'Anno precedente'
 Previous: Previous
+Priority: Priority
+'Profile guidelines': 'Profile guidelines'
+'Projected load': 'Projected load'
+'Prompt copied': 'Prompt copied'
+'Proposed periodization': 'Proposed periodization'
 Race: Gara
+'Race calendar': 'Race calendar'
+'Race day': 'Race day'
+'Race effort': 'Race effort'
+'Race event': 'Race event'
+'Race falls outside plan window': 'Race falls outside plan window'
+'Race plan': 'Race plan'
+'Race planner': 'Race planner'
+'Race targets': 'Race targets'
+'Race week': 'Race week'
+'Race week is here — keep the microcycle sharp and simple.': 'Race week is here — keep the microcycle sharp and simple.'
+Races: Races
+'Races without a plan': 'Races without a plan'
 'Racing Score': 'Punteggio Gara'
 'Racquet & Paddle Sports': 'Sport con racchetta e pagaia'
 'Racquet Ball': Racquetball
@@ -272,72 +484,140 @@ Ranking: Classifica
 'Reached {threshold} hours total moving time': 'Raggiunte {threshold} ore di tempo totale in movimento'
 'Reached {threshold} total distance': 'Raggiunta distanza totale di {threshold}'
 'Reached {threshold} total elevation': 'Raggiunto dislivello totale di {threshold}'
+Readiness: Readiness
+'Readiness adjustment': 'Readiness adjustment'
+'Ready to go': 'Ready to go'
 'Recent effort': 'Sforzo recente'
+'Recent load has been stable enough that this projection should be a stronger directional guide.': 'Recent load has been stable enough that this projection should be a stronger directional guide.'
+'Recent load has been volatile or sparse, so treat this projection as a rough scenario.': 'Recent load has been volatile or sparse, so treat this projection as a rough scenario.'
+Recommendations: Recommendations
+'Recommended sessions': 'Recommended sessions'
 'Recording devices': 'Dispositivi di registrazione'
 'Recording devices details': 'Dettagli dispositivi di registrazione'
-'Recovery Timeline': 'Timeline del recupero'
-'Recovery forecast': 'Previsione di recupero'
+Recovery: Recovery
+'Recovery signals are clearly suppressed. Prioritise sleep, recovery, and a lighter training day.': 'Recovery signals are clearly suppressed. Prioritise sleep, recovery, and a lighter training day.'
+'Recovery signals look acceptable, but not fully exceptional. A normal training day is likely fine.': 'Recovery signals look acceptable, but not fully exceptional. A normal training day is likely fine.'
 'Reduced carbon emission by commuting': 'Emissioni di carbonio ridotte grazie agli spostamenti casa-lavoro'
+'Regenerate upcoming sessions': 'Regenerate upcoming sessions'
 'Relative cost': 'Costo relativo'
-'Rest Days': 'Giorni di riposo'
+'Remove block': 'Remove block'
+'Remove set': 'Remove set'
+'Repeat block': 'Repeat block'
+Reps: Reps
+'Reset to today': 'Reset to today'
+Rest: Rest
 'Rest days': 'Giorni di riposo'
-'Rest days in last 7 days': 'Giorni di riposo negli ultimi 7 giorni'
 'Rest days vs. active days': 'Giorni di riposo vs. giorni attivi'
 'Retired gear': 'Attrezzatura in disuso'
+'Reuse duration and load profile from a recent activity.': 'Reuse duration and load profile from a recent activity.'
 Rewind: Indietro
 'Rewind comparisons are only available on larger screens.': 'I confronti Rewind sono disponibili solo su schermi più grandi.'
+'Ride days': 'Ride days'
 Rides: Gare
 'Risk of detraining': 'Rischio di detraining'
 'Rock Climbing': 'Arrampicata su roccia'
 'Roller Ski': Skiroll
 Rowing: Canottaggio
+Run: Run
+'Run days': 'Run days'
+'Run race': 'Run race'
 Running: Running
+'Running volume': 'Running volume'
+'Running workout default': 'Running workout default'
 Runs: Corse
 Sail: Vela
+Samples: Samples
 Sat: Sab
 Saturday: Sabato
+'Save changes': 'Save changes'
+'Save check-in': 'Save check-in'
+'Save session': 'Save session'
+Schedule: Schedule
+Score: Score
 Search: Cerca
 'Search activity...': 'Cerca attività...'
 'Search segment...': 'Cerca segmento...'
+Sec: Sec
 Segments: Segmenti
+'Select a distance…': 'Select a distance…'
+Select…: Select…
 Sep: Set
+Session: Session
+'Session details': 'Session details'
+'Session notes…': 'Session notes…'
+Sessions: Sessions
+Sessions/week: Sessions/week
+Set: Set
+'Set the plan window and give it a name.': 'Set the plan window and give it a name.'
+Sets: Sets
 'Show information': 'Mostra Informazione'
-'Shows how your TSB (Form) and A:C Ratio will recover over time if you take complete rest days.': 'Mostra come il tuo TSB (Forma) e il rapporto A:C recupereranno nel tempo se fai giorni di riposo completo.'
+'Shows how your TSB (Form) and A:C Ratio may evolve over the next 7 days across a few preset training scenarios.': 'Shows how your TSB (Form) and A:C Ratio may evolve over the next 7 days across a few preset training scenarios.'
 "Since I began using Strava {numberOfDaysAgo} ago on {startDate}, I've logged {totalDaysOfWorkingOut} active days of training and adventure.": 'Da quando ho iniziato a usare Strava {numberOfDaysAgo} fa, il {startDate}, ho registrato {totalDaysOfWorkingOut} giorni attivi di allenamento e avventura.'
 Skateboard: Skateboard
 Skating: Pattinaggio
+Sleep: Sleep
+'Sleep quality': 'Sleep quality'
+'Sleep score': 'Sleep score'
+'Sleep trend': 'Sleep trend'
+'Sleep, HRV and load balance are pointing in a positive direction for quality training.': 'Sleep, HRV and load balance are pointing in a positive direction for quality training.'
 'Slightly fresh': 'Leggermente fresco'
 Snowboard: Snowboard
 Snowshoe: Ciaspolate
+'So paces and loads can be tuned to where you are right now.': 'So paces and loads can be tuned to where you are right now.'
 Soccer: Calcio
 Socials: Social
 'Someone who regularly trains for 90 minutes will score higher than someone doing mostly short sessions.': 'Chi si allena regolarmente per 90 minuti otterrà un punteggio più alto rispetto a chi fa soprattutto sessioni brevi.'
+Soreness: Soreness
+Source: Source
 Speed: Velocità
 'Speed distribution': 'Distribuzione della velocità'
 Splits: Intertempi
 'Sport variety': 'Varietà sportiva'
+'Sprint triathlon': 'Sprint triathlon'
 Squash: Squash
+Stable: Stable
 'Stair Stepper': 'Stepper a gradini'
 'Stand Up Paddling': 'Stand up paddle'
+'Start day': 'Start day'
 'Start slideshow': 'Avvia presentazione'
 'Start times': 'Orari di partenza'
-'Statistics for Strava': 'Statistiche per Strava'
+'Start your season plan': 'Start your season plan'
+'Statistics for Strava': Tempo
 'Stats per weekday': 'Statistiche giornaliere'
 Status: Status
+Steps: Steps
+'Steps trend': 'Steps trend'
+Strain: Strain
 'Strava profile': 'Profilo Strava'
 'Streak started on {date}': 'Serie iniziata il {date}'
 Streaks: Serie
+Stress: Stress
+'Structured preview': 'Structured preview'
+'Suggested match': 'Suggested match'
 Sun: Dom
 Sunday: Domenica
 Surfing: Surf
 Swim: Nuoto
+'Swim CSS': 'Swim CSS'
+'Swim days': 'Swim days'
+'Switch this on only if you have access to hills or a treadmill incline and want hill reps in the workout mix.': 'Switch this on only if you have access to hills or a treadmill incline and want hill reps in the workout mix.'
+'Sync plan': 'Sync plan'
+TSB: TSB
 'TSB (Form)': 'TSB (Forma)'
 'TSB positive in': 'TSB positivo tra'
 'Table Tennis': 'Tennis tavolo'
 Tag: Etichetta
 'Tag "{maintenanceTaskTag}" was used on "{activityName}", but the gear referenced on that activity is not attached to this component.': 'L''etichetta "{maintenanceTaskTag}" è stata usata su "{activityName}", ma l''attrezzatura associata a quell''attività non è collegata a questo componente.'
+Taper: Taper
 'Taper sweet-spot (+15)': 'Zona ideale di tapering (+15)'
+Target: Target
+'Target finish': 'Target finish'
+'Target load': 'Target load'
+'Target race': 'Target race'
+'Target time': 'Target time'
+'Targets & estimation': 'Targets & estimation'
 'Team Sports': 'Sport di squadra'
+'Template activity': 'Template activity'
 Tennis: Tennis
 "That's 1.5 times the distance to the edge of space": "That's 1.5 times the distance to the edge of space"
 "That's 100 days of commitment, triple digits!": "That's 100 days of commitment, triple digits!"
@@ -431,31 +711,69 @@ Tennis: Tennis
 Thinking...: Elaborazione...
 'This chart summarizes how you train. Each axis reflects a different normalized training habit, so higher values mean stronger emphasis.': 'Questo grafico riassume come ti alleni. Ogni asse riflette una diversa abitudine di allenamento normalizzata, quindi valori più alti indicano un’enfasi maggiore.'
 'This feature is currently disabled': 'Questa funzionalità è attualmente disattivata'
+'This plan starts the day after': 'This plan starts the day after'
+'This sets the default for generated running workouts. Individual sessions can still switch to the better format.': 'This sets the default for generated running workouts. Individual sessions can still switch to the better format.'
+'This week': 'This week'
+'Threshold pace': 'Threshold pace'
 Thu: Gio
 Thursday: Giovedì
 Time: Tempo
+'Time trial': 'Time trial'
 'Times completed': 'Volte completate'
+Title: Title
 'To enable it, configure {configFile} and rebuild the files for the changes to take effect': 'Per abilitarla, configura {configFile} e rigenera i file affinché le modifiche abbiano effetto'
+"Today's check-in already exists. Adjust it here if your recovery status changed.": "Today's check-in already exists. Adjust it here if your recovery status changed."
+"Today's recovery check-in is logged. Update it if your legs suddenly start negotiating.": "Today's recovery check-in is logged. Update it if your legs suddenly start negotiating."
 'Toggle sidebar': 'Mostra/Nascondi barra laterale'
+Tomorrow: Tomorrow
 'Top 10': 'Primi 10'
+'Top drivers': 'Top drivers'
 'Total distance per month': 'Distanza totale per mese'
 'Total elevation per month': 'Dislivello totale per mese'
 'Total hours': 'Ore totali'
 'Total hours spent per gear': 'Ore totali per attrezzatura'
 'Total hours spent per sport type': 'Ore totali per tipo di sport'
 'Total kudos and comments received': 'Totale di kudos e commenti ricevuti'
+'Total load': 'Total load'
+'Total planned load': 'Total planned load'
+Toward: Toward
+Towards: Towards
 'Trail Runs': 'Corse trail'
+Training: Training
 'Training 4–5 days every week scores higher than doing everything in one or two days.': 'Allenarsi 4–5 giorni ogni settimana ottiene un punteggio più alto rispetto a concentrare tutto in uno o due giorni.'
-'Training Impulse - Training load metric that accounts for intensity and duration.': 'Training Impulse - metrica del carico di allenamento che tiene conto di intensità e durata.'
 'Training Load Analysis': 'Analisi del carico di allenamento'
 'Training Monotony - Ratio of average daily load to standard deviation. Indicates training variety.': "Monotonia di allenamento - rapporto tra carico giornaliero medio e deviazione standard. Indica la varietà dell'allenamento."
 'Training Stress Balance (Form) – The difference between fitness (CTL) and fatigue (ATL). Reflects how ready you are to perform.': 'Training Stress Balance (Forma) – differenza tra forma (CTL) e fatica (ATL). Indica quanto sei pronto a rendere al meglio.'
+'Training block': 'Training block'
+'Training block style': 'Training block style'
+'Training blocks': 'Training blocks'
+'Training calendar': 'Training calendar'
+'Training days': 'Training days'
+'Training focus': 'Training focus'
 'Training goals': 'Obiettivi di allenamento'
 'Training load is accumulating, recovery days are important': 'Il carico di allenamento si sta accumulando, i giorni di recupero sono importanti'
+'Training plan': 'Training plan'
+'Training planner': 'Training planner'
+Triathlon: Triathlon
 Tue: Mar
 Tuesday: Martedì
+Unlink: Unlink
+Unlinked: Unlinked
 Unspecified: 'Non specificato'
+Upcoming: Upcoming
+'Update plan': 'Update plan'
+'Update the event your block, taper, and key sessions should build toward.': 'Update the event your block, taper, and key sessions should build toward.'
+'Update the phase guiding the current stretch of training.': 'Update the phase guiding the current stretch of training.'
+'Update this session to keep your load forecast aligned.': 'Update this session to keep your load forecast aligned.'
+"Update today's check-in": "Update today's check-in"
 'Updated on': 'Aggiornato il'
+'Use 1 = very low/poor and 5 = very high/good. Higher fatigue, soreness, and stress reduce readiness.': 'Use 1 = very low/poor and 5 = very high/good. Higher fatigue, soreness, and stress reduce readiness.'
+'Use a recent session from your library as a starting point for this sport.': 'Use a recent session from your library as a starting point for this sport.'
+'Use caution': 'Use caution'
+'Use session': 'Use session'
+'Use this as the default for generated running sessions. The plan can still switch per workout when distance or time fits better.': 'Use this as the default for generated running sessions. The plan can still switch per workout when distance or time fits better.'
+'Use this projection as a directional guide rather than a precise prediction.': 'Use this projection as a directional guide rather than a precise prediction.'
+Used: Used
 'User badge': 'Badge utente'
 'Velo Mobiles': Velomobili
 'Very high': 'Molto alto'
@@ -474,32 +792,45 @@ Walks: Passeggiate
 Wed: Mer
 Wednesday: Mercoledì
 Weekly: Weekly
-'Weekly Strain': 'Sforzo settimanale'
 'Weekly Strain - Product of weekly training load and monotony. Overall training stress.': 'Sforzo settimanale - prodotto tra il carico settimanale e la monotonia. Indica lo stress complessivo.'
-'Weekly TRIMP': 'TRIMP settimanale'
+'Weekly schedule': 'Weekly schedule'
 'Weekly stats': 'Statistiche settimanali'
+'Weekly structure': 'Weekly structure'
 Weight: Weight
 'Weight Training': 'Allenamento con i pesi'
 'Weight history': 'Storico peso'
+Wellness: Wellness
+'What are you training for?': 'What are you training for?'
+'What kind of plan?': 'What kind of plan?'
+'What should this stretch focus on, protect, or prepare for?': 'What should this stretch focus on, protect, or prepare for?'
 Wheelchair: 'Sedia a rotelle'
+'Which day is your long ride?': 'Which day is your long ride?'
+'Which day is your long run?': 'Which day is your long run?'
 'Wind Surf': Windsurf
 'Winter Sports': 'Sport invernali'
 Workout: Allenamento
 'Workout assistant': 'Assistente allenamento'
+'Workout preview': 'Workout preview'
 'Workout type': 'Tipo di allenamento'
 YTD: YTD
 Year: Anno
 Yearly: Yearly
 'Yearly stats': 'Statistiche annuali'
+'Yes': 'Yes'
 Yoga: Yoga
+"You have not filled in today's recovery check-in yet. A quick self-report helps balance your objective Garmin data with how you actually feel.": "You have not filled in today's recovery check-in yet. A quick self-report helps balance your objective Garmin data with how you actually feel."
 "You recorded workouts in {numberOfCountriesWithWorkouts} different countries, that's {percentage} of all countries 🌍": 'Hai registrato allenamenti in {numberOfCountriesWithWorkouts} paesi diversi, pari al {percentage} di tutti i paesi 🌍'
 'Your PB badge': 'Il tuo badge record personale'
 'Your Strava badge': 'Il tuo badge Strava'
 'Your Strava {year} rewind will be available on the 24th of December.': 'Il tuo Rewind Strava {year} sarà disponibile il 24 dicembre.'
 'Your Zwift badge': 'Il tuo badge Zwift'
 'Your badge(s)': 'I tuoi badge'
+'Your saved planned sessions are now included as their own forecast scenario for the next 7 days.': 'Your saved planned sessions are now included as their own forecast scenario for the next 7 days.'
+Z1-2: Z1-2
 'Z1-2 (Low)': 'Z1-2 (Basso)'
+Z3: Z3
 'Z3 (Mod)': 'Z3 (Moderato)'
+Z4-5: Z4-5
 'Z4-5 (High)': 'Z4-5 (Alto)'
 'Zone 1 (recovery)': 'Zona 1 (recupero)'
 'Zone 2 (aerobic)': 'Zona 2 (aerobica)'
@@ -513,34 +844,50 @@ activities: attività
 and: e
 'average gradient': 'pendenza media'
 avg: media
+before: before
 bpm: bpm
 clear: pulisci
 comments: commenti
 compare: confronta
+day: day
 day(s): day(s)
 days: giorni
 'days needed for next Eddington': 'Giorni necessari per il prossimo Eddington'
+'days to go': 'days to go'
+ends.: ends.
+gaps: gaps
 history: cronologia
 hours: ore
 hrs: ore
+key: key
 kudos: kudos
 'last {numberOfDays} days': 'ultimi {numberOfDays} giorni'
+load: load
 max: max
 'max gradient': 'pendenza massima'
 min: min
 months: mesi
 more: altro
+'more steps': 'more steps'
 n/a: n/d
 never: mai
 'on': il
+overlaps: overlaps
 per: per
 'per activity': 'per attività'
 'per hour': 'per ora'
 'reached Eddington number {number}': 'raggiunto numero di Eddington {number}'
+repeats: repeats
+session: session
+sessions: sessions
+suggested: suggested
 to: a
 total: totale
 weeks: settimane
+with: with
 workouts: allenamenti
+'{days, plural, one {Gap of # day} other {Gap of # days}}': '{days, plural, one {Gap of # day} other {Gap of # days}}'
+'{days, plural, one {Overlap of # day} other {Overlap of # days}}': '{days, plural, one {Overlap of # day} other {Overlap of # days}}'
 '{daysSinceLastTagged} days': '{daysSinceLastTagged} giorni'
 '{days} consecutive days of activity': '{days} giorni consecutivi di attività'
 '{hoursSinceLastTagged} hours': '{hoursSinceLastTagged} ore'

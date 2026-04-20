@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\Strava\Webhook\ProcessWebhookEvent;
 
+use App\Domain\Strava\Connection\AppUserStravaConnectionRepository;
 use App\Domain\Strava\Webhook\WebhookAspectType;
 use App\Domain\Strava\Webhook\WebhookEvent;
 use App\Domain\Strava\Webhook\WebhookEventRepository;
@@ -14,6 +15,7 @@ final readonly class ProcessWebhookEventCommandHandler implements CommandHandler
 {
     public function __construct(
         private WebhookEventRepository $webhookEventRepository,
+        private AppUserStravaConnectionRepository $stravaConnectionRepository,
     ) {
     }
 
@@ -28,6 +30,13 @@ final readonly class ProcessWebhookEventCommandHandler implements CommandHandler
         }
         if (!$aspectType = WebhookAspectType::tryFrom($payload['aspect_type'])) {
             throw new \RuntimeException(sprintf('Aspect type "%s" not supported', $payload['aspect_type']));
+        }
+
+        $connection = isset($payload['owner_id'])
+            ? $this->stravaConnectionRepository->findByAthleteId((string) $payload['owner_id'])
+            : null;
+        if (null !== $connection) {
+            $payload['app_user_id'] = (string) $connection->getAppUserId();
         }
 
         $this->webhookEventRepository->add(WebhookEvent::create(

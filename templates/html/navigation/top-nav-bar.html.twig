@@ -24,7 +24,7 @@
                 <span class="sr-only">{{ "Toggle sidebar"|trans }}</span>
             </button>
             <a href="#" data-router-navigate="{{ relativeUrl('dashboard') }}" class="flex items-center justify-between mr-4">
-                <img src="{{ relativeUrl('assets/images/logo.svg') }}" class="rounded-full mr-3 h-8" alt="Statistics for Strava Logo"/>
+                <img src="{{ relativeUrl('assets/images/logo.svg') }}" class="rounded-full mr-3 h-8" alt="Tempo Logo"/>
                 <div class="flex gap-x-1 sm:text-lg md:text-2xl font-semibold whitespace-nowrap">
                     <div>{{ "Statistics for Strava"|trans }}</div>
                     {% if subTitle %}
@@ -142,6 +142,16 @@
                                     </g>
                 </svg>
                                 {{ "Badges"|trans }}
+                            </a>
+                        </li>
+                        <li>
+                                     <a href="{{ relativeUrl('account/settings') }}" data-router-navigate="{{ relativeUrl('account/settings') }}" data-router-server
+                               class="inline-flex items-center w-full p-2 hover:bg-gray-50 rounded">
+                                <svg class="size-4 me-1.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewBox="0 0 24 24">
+                                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19a1 1 0 0 1-1.106-1.447l.323-.646A1 1 0 0 0 8.382 15.5H7.618a1 1 0 0 0-.835 1.407l.323.646A1 1 0 0 1 6 19H5a1 1 0 0 1-.894-.553l-.764-1.528a1 1 0 0 1 .2-1.15l.457-.457a1 1 0 0 0 0-1.414l-.457-.457a1 1 0 0 1-.2-1.15l.764-1.528A1 1 0 0 1 5 8h1a1 1 0 0 1 1.106 1.447l-.323.646A1 1 0 0 0 7.618 11.5h.764a1 1 0 0 0 .835-1.407l-.323-.646A1 1 0 0 1 10 8h4a1 1 0 0 1 1.106 1.447l-.323.646A1 1 0 0 0 15.618 11.5h.764a1 1 0 0 0 .835-1.407l-.323-.646A1 1 0 0 1 18 8h1a1 1 0 0 1 .894.553l.764 1.528a1 1 0 0 1-.2 1.15l-.457.457a1 1 0 0 0 0 1.414l.457.457a1 1 0 0 1 .2 1.15l-.764 1.528A1 1 0 0 1 19 19h-1a1 1 0 0 1-1.106-1.447l.323-.646A1 1 0 0 0 16.382 15.5h-.764a1 1 0 0 0-.835 1.407l.323.646A1 1 0 0 1 14 19h-4Z"/>
+                                    <path stroke="currentColor" stroke-width="2" d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"/>
+                                </svg>
+                                {{ "Account settings"|trans }}
                             </a>
                         </li>
                         <li>

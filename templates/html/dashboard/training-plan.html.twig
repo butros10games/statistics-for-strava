@@ -1,0 +1,716 @@
+{% set uniqueId = uniqueNumberForId('trainingPlan') %}
+    {% set isEdit = trainingPlan is not null %}
+    {% set defaultDiscipline = trainingPlanDefaultDiscipline.value|default('') %}
+    {% set defaultRunningWorkoutTargetMode = trainingPlanDefaultRunningWorkoutTargetMode.value|default('time') %}
+    {% set defaultRunHillSessionsEnabled = trainingPlanDefaultRunHillSessionsEnabled|default(false) %}
+    {% set perfMetrics = trainingPlanDefaultPerformanceMetrics|default({}) %}
+    {% set sportSched = trainingPlanDefaultSportSchedule|default({}) %}
+    {% set dayLabels = ['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'] %}
+
+    <div class="modal-header flex items-center justify-between">
+        <div class="min-w-0">
+            <h3>
+                {% if isEdit %}
+                    <span>{{ "Edit plan"|trans }}</span>
+                {% else %}
+                    <span>{{ "New plan"|trans }}</span>
+                {% endif %}
+            </h3>
+            {% if isEdit %}
+                <div class="mt-0.5 text-xs font-normal text-gray-500">
+                    {{ "Adjust the plan window, linked race, or notes so the season still flows the way you want."|trans }}
+                </div>
+            {% endif %}
+        </div>
+        <div class="flex items-center gap-2">
+            {% if not isEdit %}
+                <div class="flex items-center gap-1 text-[11px] text-gray-400" data-wizard-step-indicator>
+                    {% for n in 1..4 %}
+                        <span data-wizard-dot="{{ n }}" class="inline-block h-1.5 w-1.5 rounded-full {{ n == 1 ? 'bg-strava-orange' : 'bg-gray-300' }}"></span>
+                    {% endfor %}
+                </div>
+            {% endif %}
+            <button type="button" class="close">
+                <svg class="w-3 h-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 14 14">
+                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 6 6m0 0 6 6M7 7l6-6M7 7l-6 6"/>
+                </svg>
+                <span class="sr-only">{{ "Close modal"|trans }}</span>
+            </button>
+        </div>
+    </div>
+    <div class="modal-body">
+        {% if afterTrainingPlan and not isEdit %}
+            <div class="mb-4 rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">
+                <div class="font-semibold">{{ "Create the next plan in sequence"|trans }}</div>
+                <div class="mt-1 text-emerald-700">
+                    {{ 'This plan starts the day after'|trans }} {{ afterTrainingPlan.getTitle() ?: (afterTrainingPlan.getType()|trans) }} {{ 'ends.'|trans }}
+                </div>
+            </div>
+        {% endif %}
+
+        <form id="training-plan-form-{{ uniqueId }}" action="/training-plan" method="post">
+            {% if isEdit %}
+                <input type="hidden" name="trainingPlanId" value="{{ trainingPlan.getId() }}" />
+            {% endif %}
+            <input type="hidden" name="redirectTo" value="{{ redirectTo|default('/training-plans') }}" />
+
+            {% if isEdit %}
+                {# ── EDIT MODE: compact single-panel layout ── #}
+                <div class="space-y-4">
+                    <div class="rounded-lg border border-gray-200 bg-white shadow-xs dark:border-gray-600 dark:bg-gray-800">
+                        <div class="px-4 py-3">
+                            <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+                                <div>
+                                    <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400" for="training-plan-discipline-{{ uniqueId }}">{{ "Discipline"|trans }}</label>
+                                    <select id="training-plan-discipline-{{ uniqueId }}" name="discipline" class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-amber-500 focus:ring-amber-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white" data-discipline-select>
+                                        <option value="">—</option>
+                                        {% for d in trainingPlanDisciplineOptions %}
+                                            <option value="{{ d.value }}"{% if defaultDiscipline == d.value %} selected{% endif %}>{{ d|trans }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400" for="training-plan-type-{{ uniqueId }}">{{ "Plan type"|trans }}</label>
+                                    <select id="training-plan-type-{{ uniqueId }}" name="type" class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-amber-500 focus:ring-amber-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white" data-edit-type-select>
+                                        {% for trainingPlanType in trainingPlanTypeOptions %}
+                                            <option value="{{ trainingPlanType.value }}"{% if trainingPlanDefaultType.value == trainingPlanType.value %} selected{% endif %}>{{ trainingPlanType|trans }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400" for="training-plan-title-{{ uniqueId }}">{{ "Title"|trans }}</label>
+                                    <input id="training-plan-title-{{ uniqueId }}" name="title" type="text" value="{{ trainingPlanDefaultTitle ?? '' }}" placeholder="{{ 'Early season build, 70.3 prep, marathon bridge…'|trans }}" class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-amber-500 focus:ring-amber-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
+                                </div>
+                                <div>
+                                    <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400" for="training-plan-start-day-{{ uniqueId }}">{{ "Start day"|trans }}</label>
+                                    <input id="training-plan-start-day-{{ uniqueId }}" name="startDay" type="date" value="{{ trainingPlanDefaultStartDay }}" class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-amber-500 focus:ring-amber-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
+                                </div>
+                                <div>
+                                    <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400" for="training-plan-end-day-{{ uniqueId }}">{{ "End day"|trans }}</label>
+                                    <input id="training-plan-end-day-{{ uniqueId }}" name="endDay" type="date" value="{{ trainingPlanDefaultEndDay }}" class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-amber-500 focus:ring-amber-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
+                                </div>
+                                <div class="{{ trainingPlanDefaultType.value == 'race' ? '' : 'hidden' }}" data-edit-linked-race>
+                                    <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400" for="training-plan-target-race-{{ uniqueId }}">{{ "Linked race"|trans }}</label>
+                                    <select id="training-plan-target-race-{{ uniqueId }}" name="targetRaceEventId" class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-amber-500 focus:ring-amber-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                                        <option value="">{{ 'No linked race'|trans }}</option>
+                                        {% for raceEvent in trainingPlanRaceEventOptions %}
+                                            <option value="{{ raceEvent.getId() }}"{% if trainingPlanDefaultTargetRaceEventId == raceEvent.getId() ~ '' %} selected{% endif %}>{{ raceEvent.getDay().format('Y-m-d') }} · {{ raceEvent.getTitle() ?: raceEvent.getProfile().value }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400" for="training-plan-race-profile-{{ uniqueId }}">{{ "Distance"|trans }}</label>
+                                    <select id="training-plan-race-profile-{{ uniqueId }}" name="targetRaceProfile" class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-amber-500 focus:ring-amber-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white" data-race-profile-select>
+                                        <option value="">—</option>
+                                        {% for group in trainingPlanRaceProfileOptionGroups %}
+                                            {% for option in group.options %}
+                                                {% set profile = option.profile %}
+                                                <option value="{{ profile.value }}" data-family="{{ group.family.value }}" data-disciplines="{{ option.disciplineValues|join(',') }}"{% if trainingPlanDefaultTargetRaceProfile is not null and trainingPlanDefaultTargetRaceProfile.value == profile.value %} selected{% endif %}>{{ profile|trans }}</option>
+                                            {% endfor %}
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                <div class="{{ trainingPlanDefaultType.value == 'training' ? '' : 'hidden' }}" data-edit-training-focus>
+                                    <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400" for="training-plan-block-style-{{ uniqueId }}">{{ "Training block style"|trans }}</label>
+                                    <select id="training-plan-block-style-{{ uniqueId }}" name="trainingBlockStyle" class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-amber-500 focus:ring-amber-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                                        {% for style in trainingPlanTrainingBlockStyleOptions %}
+                                            <option value="{{ style.value }}"{% if trainingPlanDefaultTrainingBlockStyle is not null and trainingPlanDefaultTrainingBlockStyle.value == style.value %} selected{% endif %}>{{ style|trans }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <div class="mt-1 text-[11px] text-gray-500 dark:text-gray-400">{{ 'Balanced build keeps the current progression. Speed-endurance build trims volume, keeps key long sessions, and makes the block feel sharper.'|trans }}</div>
+                                </div>
+                                <div class="{{ trainingPlanDefaultType.value == 'training' and defaultDiscipline == 'triathlon' ? '' : 'hidden' }}" data-edit-training-focus-section>
+                                    <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400" for="training-plan-focus-{{ uniqueId }}">{{ "Training focus"|trans }}</label>
+                                    <select id="training-plan-focus-{{ uniqueId }}" name="trainingFocus" class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-amber-500 focus:ring-amber-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                                        <option value="">—</option>
+                                        {% for focus in trainingPlanTrainingFocusOptions %}
+                                            <option value="{{ focus.value }}"{% if trainingPlanDefaultTrainingFocus is not null and trainingPlanDefaultTrainingFocus.value == focus.value %} selected{% endif %}>{{ focus|trans }}</option>
+                                        {% endfor %}
+                                    </select>
+                                </div>
+                                {# ── Edit: Sport schedule (discipline-aware) ── #}
+                                {% set editSched = trainingPlanDefaultSportSchedule|default({}) %}
+
+                                {# Triathlon: swim + bike + run + long ride + long run #}
+                                <div class="md:col-span-2 {{ defaultDiscipline == 'triathlon' ? '' : 'hidden' }}" data-edit-sched-tri>
+                                    <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+                                        <div>
+                                            <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">{{ "Swim days"|trans }}</label>
+                                            <div class="flex gap-1.5" data-sport-day-picker="swimDays">
+                                                {% for i in 1..7 %}
+                                                    {% set isActive = editSched.swimDays is defined and i in editSched.swimDays %}
+                                                    <button type="button" data-day-value="{{ i }}"
+                                                        class="flex h-8 w-8 items-center justify-center rounded-full border text-[10px] font-semibold transition-colors
+                                                        {{ isActive ? 'border-strava-orange bg-strava-orange text-white' : 'border-gray-300 bg-white text-gray-600 hover:border-gray-400' }}">
+                                                        {{ dayLabels[i - 1]|trans }}
+                                                    </button>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label class="mb-1 block text-xs font-medium text-gray-600">{{ "Bike days"|trans }}</label>
+                                            <div class="flex gap-1.5" data-sport-day-picker="bikeDays">
+                                                {% for i in 1..7 %}
+                                                    {% set isActive = editSched.bikeDays is defined and i in editSched.bikeDays %}
+                                                    <button type="button" data-day-value="{{ i }}"
+                                                        class="flex h-8 w-8 items-center justify-center rounded-full border text-[10px] font-semibold transition-colors
+                                                        {{ isActive ? 'border-strava-orange bg-strava-orange text-white' : 'border-gray-300 bg-white text-gray-600 hover:border-gray-400' }}">
+                                                        {{ dayLabels[i - 1]|trans }}
+                                                    </button>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label class="mb-1 block text-xs font-medium text-gray-600">{{ "Run days"|trans }}</label>
+                                            <div class="flex gap-1.5" data-sport-day-picker="runDays">
+                                                {% for i in 1..7 %}
+                                                    {% set isActive = editSched.runDays is defined and i in editSched.runDays %}
+                                                    <button type="button" data-day-value="{{ i }}"
+                                                        class="flex h-8 w-8 items-center justify-center rounded-full border text-[10px] font-semibold transition-colors
+                                                        {{ isActive ? 'border-strava-orange bg-strava-orange text-white' : 'border-gray-300 bg-white text-gray-600 hover:border-gray-400' }}">
+                                                        {{ dayLabels[i - 1]|trans }}
+                                                    </button>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                        <div class="grid grid-cols-2 gap-2">
+                                            <div>
+                                                <label class="mb-1 block text-xs font-medium text-gray-600">{{ "Long ride"|trans }}</label>
+                                                <div class="flex gap-1" data-sport-day-picker="longRideDays">
+                                                    {% for i in 1..7 %}
+                                                        {% set isActive = editSched.longRideDays is defined and i in editSched.longRideDays %}
+                                                        <button type="button" data-day-value="{{ i }}"
+                                                            class="flex h-7 w-7 items-center justify-center rounded-full border text-[9px] font-semibold transition-colors
+                                                            {{ isActive ? 'border-strava-orange bg-strava-orange text-white' : 'border-gray-300 bg-white text-gray-600 hover:border-gray-400' }}">
+                                                            {{ dayLabels[i - 1]|trans }}
+                                                        </button>
+                                                    {% endfor %}
+                                                </div>
+                                            </div>
+                                            <div>
+                                                <label class="mb-1 block text-xs font-medium text-gray-600">{{ "Long run"|trans }}</label>
+                                                <div class="flex gap-1" data-sport-day-picker="longRunDays">
+                                                    {% for i in 1..7 %}
+                                                        {% set isActive = editSched.longRunDays is defined and i in editSched.longRunDays %}
+                                                        <button type="button" data-day-value="{{ i }}"
+                                                            class="flex h-7 w-7 items-center justify-center rounded-full border text-[9px] font-semibold transition-colors
+                                                            {{ isActive ? 'border-strava-orange bg-strava-orange text-white' : 'border-gray-300 bg-white text-gray-600 hover:border-gray-400' }}">
+                                                            {{ dayLabels[i - 1]|trans }}
+                                                        </button>
+                                                    {% endfor %}
+                                                </div>
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {# Running: run days + long run #}
+                                <div class="md:col-span-2 {{ defaultDiscipline == 'running' ? '' : 'hidden' }}" data-edit-sched-run>
+                                    <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+                                        <div>
+                                            <label class="mb-1 block text-xs font-medium text-gray-600">{{ "Run days"|trans }}</label>
+                                            <div class="flex gap-1.5" data-sport-day-picker="runDays">
+                                                {% for i in 1..7 %}
+                                                    {% set isActive = editSched.runDays is defined and i in editSched.runDays %}
+                                                    <button type="button" data-day-value="{{ i }}"
+                                                        class="flex h-8 w-8 items-center justify-center rounded-full border text-[10px] font-semibold transition-colors
+                                                        {{ isActive ? 'border-strava-orange bg-strava-orange text-white' : 'border-gray-300 bg-white text-gray-600 hover:border-gray-400' }}">
+                                                        {{ dayLabels[i - 1]|trans }}
+                                                    </button>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label class="mb-1 block text-xs font-medium text-gray-600">{{ "Long run day"|trans }}</label>
+                                            <div class="flex gap-1.5" data-sport-day-picker="longRunDays">
+                                                {% for i in 1..7 %}
+                                                    {% set isActive = editSched.longRunDays is defined and i in editSched.longRunDays %}
+                                                    <button type="button" data-day-value="{{ i }}"
+                                                        class="flex h-8 w-8 items-center justify-center rounded-full border text-[10px] font-semibold transition-colors
+                                                        {{ isActive ? 'border-strava-orange bg-strava-orange text-white' : 'border-gray-300 bg-white text-gray-600 hover:border-gray-400' }}">
+                                                        {{ dayLabels[i - 1]|trans }}
+                                                    </button>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {# Cycling: bike days + long ride #}
+                                <div class="md:col-span-2 {{ defaultDiscipline == 'cycling' ? '' : 'hidden' }}" data-edit-sched-bike>
+                                    <div class="grid grid-cols-1 gap-3 md:grid-cols-2">
+                                        <div>
+                                            <label class="mb-1 block text-xs font-medium text-gray-600">{{ "Ride days"|trans }}</label>
+                                            <div class="flex gap-1.5" data-sport-day-picker="bikeDays">
+                                                {% for i in 1..7 %}
+                                                    {% set isActive = editSched.bikeDays is defined and i in editSched.bikeDays %}
+                                                    <button type="button" data-day-value="{{ i }}"
+                                                        class="flex h-8 w-8 items-center justify-center rounded-full border text-[10px] font-semibold transition-colors
+                                                        {{ isActive ? 'border-strava-orange bg-strava-orange text-white' : 'border-gray-300 bg-white text-gray-600 hover:border-gray-400' }}">
+                                                        {{ dayLabels[i - 1]|trans }}
+                                                    </button>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                        <div>
+                                            <label class="mb-1 block text-xs font-medium text-gray-600">{{ "Long ride day"|trans }}</label>
+                                            <div class="flex gap-1.5" data-sport-day-picker="longRideDays">
+                                                {% for i in 1..7 %}
+                                                    {% set isActive = editSched.longRideDays is defined and i in editSched.longRideDays %}
+                                                    <button type="button" data-day-value="{{ i }}"
+                                                        class="flex h-8 w-8 items-center justify-center rounded-full border text-[10px] font-semibold transition-colors
+                                                        {{ isActive ? 'border-strava-orange bg-strava-orange text-white' : 'border-gray-300 bg-white text-gray-600 hover:border-gray-400' }}">
+                                                        {{ dayLabels[i - 1]|trans }}
+                                                    </button>
+                                                {% endfor %}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                {# ── Edit: Performance metrics (conditional) ── #}
+                                <div class="{{ defaultDiscipline in ['triathlon', 'cycling'] ? '' : 'hidden' }}" data-edit-perf-ftp>
+                                    <label class="mb-1 block text-xs font-medium text-gray-600">{{ "Cycling FTP"|trans }}</label>
+                                    <div class="flex items-center gap-1.5">
+                                        <input name="cyclingFtp" type="number" min="50" max="500" step="1" value="{{ perfMetrics.cyclingFtp|default('') }}" placeholder="—" class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-amber-500 focus:ring-amber-500" />
+                                        <span class="text-xs text-gray-400">W</span>
+                                    </div>
+                                </div>
+                                <div class="{{ defaultDiscipline in ['triathlon', 'running'] ? '' : 'hidden' }}" data-edit-perf-pace>
+                                    <label class="mb-1 block text-xs font-medium text-gray-600">{{ "Threshold pace"|trans }}</label>
+                                    <div class="flex items-center gap-1.5">
+                                        <input name="runningThresholdPaceDisplay" type="text" value="{{ perfMetrics.runningThresholdPace is defined and perfMetrics.runningThresholdPace ? '%d:%02d'|format((perfMetrics.runningThresholdPace / 60)|round(0, 'floor'), perfMetrics.runningThresholdPace % 60) : '' }}" placeholder="4:30" pattern="[0-9]{1,2}:[0-5][0-9]" class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-amber-500 focus:ring-amber-500" data-pace-input />
+                                        <input type="hidden" name="runningThresholdPace" value="{{ perfMetrics.runningThresholdPace|default('') }}" data-pace-seconds />
+                                        <span class="text-xs text-gray-400 whitespace-nowrap">/km</span>
+                                    </div>
+                                </div>
+                                <div class="{{ defaultDiscipline == 'triathlon' ? '' : 'hidden' }}" data-edit-perf-css>
+                                    <label class="mb-1 block text-xs font-medium text-gray-600">{{ "Swim CSS"|trans }}</label>
+                                    <div class="flex items-center gap-1.5">
+                                        <input name="swimmingCssDisplay" type="text" value="{{ perfMetrics.swimmingCss is defined and perfMetrics.swimmingCss ? '%d:%02d'|format((perfMetrics.swimmingCss / 60)|round(0, 'floor'), perfMetrics.swimmingCss % 60) : '' }}" placeholder="1:35" pattern="[0-9]{1,2}:[0-5][0-9]" class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-amber-500 focus:ring-amber-500" data-pace-input />
+                                        <input type="hidden" name="swimmingCss" value="{{ perfMetrics.swimmingCss|default('') }}" data-pace-seconds />
+                                        <span class="text-xs text-gray-400 whitespace-nowrap">/100m</span>
+                                    </div>
+                                </div>
+                                <div class="{{ defaultDiscipline in ['triathlon', 'running'] ? '' : 'hidden' }}" data-edit-perf-run-vol>
+                                    <label class="mb-1 block text-xs font-medium text-gray-600">{{ "Running volume"|trans }}</label>
+                                    <div class="flex items-center gap-1.5">
+                                        <input name="weeklyRunningVolume" type="number" min="0" max="300" step="0.1" value="{{ perfMetrics.weeklyRunningVolume|default('') }}" placeholder="—" class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-amber-500 focus:ring-amber-500" />
+                                        <span class="text-xs text-gray-400 whitespace-nowrap">km/wk</span>
+                                    </div>
+                                </div>
+                                <div class="{{ defaultDiscipline in ['triathlon', 'running'] ? '' : 'hidden' }}" data-edit-run-target-mode>
+                                    <label class="mb-1 block text-xs font-medium text-gray-600" for="training-plan-run-target-mode-{{ uniqueId }}">{{ "Running workout default"|trans }}</label>
+                                    <select id="training-plan-run-target-mode-{{ uniqueId }}" name="runningWorkoutTargetMode" class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-amber-500 focus:ring-amber-500">
+                                        {% for mode in trainingPlanRunningWorkoutTargetModeOptions %}
+                                            <option value="{{ mode.value }}"{% if defaultRunningWorkoutTargetMode == mode.value %} selected{% endif %}>{{ mode|trans }}</option>
+                                        {% endfor %}
+                                    </select>
+                                    <div class="mt-1 text-[11px] text-gray-500">{{ 'This sets the default for generated running workouts. Individual sessions can still switch to the better format.'|trans }}</div>
+                                </div>
+                                <div class="{{ defaultDiscipline in ['triathlon', 'running'] ? '' : 'hidden' }}" data-edit-run-hill-sessions>
+                                    <label class="flex items-start gap-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">
+                                        <input type="checkbox" name="runHillSessionsEnabled" value="1" class="mt-0.5 h-4 w-4 rounded border-gray-300 text-strava-orange focus:ring-amber-500"{% if defaultRunHillSessionsEnabled %} checked{% endif %} />
+                                        <span>
+                                            <span class="block font-medium text-gray-900">{{ 'Include hill sessions when terrain allows'|trans }}</span>
+                                            <span class="mt-0.5 block text-[11px] text-gray-500">{{ 'Leave this off if you train on flat roads, flat paths, or do not want incline-based workouts in the plan.'|trans }}</span>
+                                        </span>
+                                    </label>
+                                </div>
+                                <div class="{{ defaultDiscipline in ['triathlon', 'cycling'] ? '' : 'hidden' }}" data-edit-perf-bike-vol>
+                                    <label class="mb-1 block text-xs font-medium text-gray-600">{{ "Biking volume"|trans }}</label>
+                                    <div class="flex items-center gap-1.5">
+                                        <input name="weeklyBikingVolume" type="number" min="0" max="40" step="0.1" value="{{ perfMetrics.weeklyBikingVolume|default('') }}" placeholder="—" class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-amber-500 focus:ring-amber-500" />
+                                        <span class="text-xs text-gray-400 whitespace-nowrap">hrs/wk</span>
+                                    </div>
+                                </div>
+
+                                <div class="md:col-span-2">
+                                    <label class="mb-1 block text-xs font-medium text-gray-600" for="training-plan-notes-{{ uniqueId }}">{{ "Notes"|trans }}</label>
+                                    <textarea id="training-plan-notes-{{ uniqueId }}" name="notes" rows="3" placeholder="{{ 'What should this stretch focus on, protect, or prepare for?'|trans }}" class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-amber-500 focus:ring-amber-500">{{ trainingPlan.getNotes() }}</textarea>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            {% else %}
+                {# ── CREATE MODE: 5-step wizard ── #}
+
+                {# ─── STEP 1 — Discipline & Plan type ─── #}
+                <div data-wizard-step="1">
+                    <div class="mb-3 text-sm font-medium text-gray-700 dark:text-gray-200">{{ "What are you training for?"|trans }}</div>
+
+                    {# Discipline cards #}
+                    <div class="grid grid-cols-3 gap-2 mb-4" data-discipline-cards>
+                        <button type="button" data-discipline-value="triathlon"
+                            class="group rounded-lg border-2 p-3 text-center transition-all
+                            {{ defaultDiscipline == 'triathlon' ? 'border-strava-orange bg-orange-50 ring-1 ring-strava-orange/20 dark:bg-orange-900/40' : 'border-gray-200 bg-white hover:border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:hover:border-gray-500' }}">
+                            <div class="mx-auto mb-1.5 flex h-8 w-8 items-center justify-center rounded-lg {{ defaultDiscipline == 'triathlon' ? 'bg-strava-orange text-white' : 'bg-gray-100 text-gray-500 dark:bg-gray-600 dark:text-gray-300' }}">
+                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M11.48 3.499a.562.562 0 0 1 1.04 0l2.125 5.111a.563.563 0 0 0 .475.345l5.518.442c.499.04.701.663.321.988l-4.204 3.602a.563.563 0 0 0-.182.557l1.285 5.385a.562.562 0 0 1-.84.61l-4.725-2.885a.562.562 0 0 0-.586 0L6.982 20.54a.562.562 0 0 1-.84-.61l1.285-5.386a.562.562 0 0 0-.182-.557l-4.204-3.602a.562.562 0 0 1 .321-.988l5.518-.442a.563.563 0 0 0 .475-.345L11.48 3.5Z" /></svg>
+                            </div>
+                            <div class="text-xs font-semibold text-gray-900 dark:text-white">{{ "Triathlon"|trans }}</div>
+                        </button>
+                        <button type="button" data-discipline-value="running"
+                            class="group rounded-lg border-2 p-3 text-center transition-all
+                            {{ defaultDiscipline == 'running' ? 'border-strava-orange bg-orange-50 ring-1 ring-strava-orange/20 dark:bg-orange-900/40' : 'border-gray-200 bg-white hover:border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:hover:border-gray-500' }}">
+                            <div class="mx-auto mb-1.5 flex h-8 w-8 items-center justify-center rounded-lg {{ defaultDiscipline == 'running' ? 'bg-strava-orange text-white' : 'bg-gray-100 text-gray-500 dark:bg-gray-600 dark:text-gray-300' }}">
+                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M15.75 6a3.75 3.75 0 1 1-7.5 0 3.75 3.75 0 0 1 7.5 0ZM4.501 20.118a7.5 7.5 0 0 1 14.998 0A17.933 17.933 0 0 1 12 21.75c-2.676 0-5.216-.584-7.499-1.632Z" /></svg>
+                            </div>
+                            <div class="text-xs font-semibold text-gray-900 dark:text-white">{{ "Running"|trans }}</div>
+                        </button>
+                        <button type="button" data-discipline-value="cycling"
+                            class="group rounded-lg border-2 p-3 text-center transition-all
+                            {{ defaultDiscipline == 'cycling' ? 'border-strava-orange bg-orange-50 ring-1 ring-strava-orange/20 dark:bg-orange-900/40' : 'border-gray-200 bg-white hover:border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:hover:border-gray-500' }}">
+                            <div class="mx-auto mb-1.5 flex h-8 w-8 items-center justify-center rounded-lg {{ defaultDiscipline == 'cycling' ? 'bg-strava-orange text-white' : 'bg-gray-100 text-gray-500 dark:bg-gray-600 dark:text-gray-300' }}">
+                                <svg class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5"><path stroke-linecap="round" stroke-linejoin="round" d="M8.25 18.75a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h6m-9 0H3.375a1.125 1.125 0 0 1-1.125-1.125V14.25m17.25 4.5a1.5 1.5 0 0 1-3 0m3 0a1.5 1.5 0 0 0-3 0m3 0h1.125c.621 0 1.129-.504 1.09-1.124a17.902 17.902 0 0 0-3.213-9.193 2.056 2.056 0 0 0-1.58-.86H14.25M16.5 18.75h-2.25m0-11.177v-.958c0-.568-.422-1.048-.987-1.106a48.554 48.554 0 0 0-10.026 0 1.106 1.106 0 0 0-.987 1.106v7.635m12-6.677v6.677m0 4.5v-4.5m0 0h-12" /></svg>
+                            </div>
+                            <div class="text-xs font-semibold text-gray-900 dark:text-white">{{ "Cycling"|trans }}</div>
+                        </button>
+                    </div>
+                    <input type="hidden" name="discipline" value="{{ defaultDiscipline }}" data-discipline-input />
+
+                    {# Plan type cards #}
+                    <div class="mb-3 text-sm font-medium text-gray-700 dark:text-gray-200">{{ "What kind of plan?"|trans }}</div>
+                    <div class="grid grid-cols-2 gap-3" data-plan-type-cards>
+                        <button type="button" data-type-value="race"
+                            class="group relative rounded-lg border-2 p-4 text-left transition-all
+                            {{ trainingPlanDefaultType.value == 'race' ? 'border-strava-orange bg-orange-50 ring-1 ring-strava-orange/20 dark:bg-orange-900/40' : 'border-gray-200 bg-white hover:border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:hover:border-gray-500' }}">
+                            <div class="mb-2 flex h-9 w-9 items-center justify-center rounded-lg {{ trainingPlanDefaultType.value == 'race' ? 'bg-strava-orange text-white' : 'bg-gray-100 text-gray-500 dark:bg-gray-600 dark:text-gray-300' }}">
+                                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 3v1.5M3 21v-6m0 0 2.77-.693a9 9 0 0 1 6.208.682l.108.054a9 9 0 0 0 6.086.71l3.114-.732a48.524 48.524 0 0 1-.005-10.499l-3.11.732a9 9 0 0 1-6.085-.711l-.108-.054a9 9 0 0 0-6.208-.682L3 4.5M3 15V4.5" />
+                                </svg>
+                            </div>
+                            <div class="text-sm font-semibold text-gray-900 dark:text-white">{{ "Race plan"|trans }}</div>
+                            <div class="mt-0.5 text-[11px] text-gray-500 dark:text-gray-400">{{ "Build toward a race day"|trans }}</div>
+                        </button>
+
+                        <button type="button" data-type-value="training"
+                            class="group relative rounded-lg border-2 p-4 text-left transition-all
+                            {{ trainingPlanDefaultType.value == 'training' ? 'border-strava-orange bg-orange-50 ring-1 ring-strava-orange/20 dark:bg-orange-900/40' : 'border-gray-200 bg-white hover:border-gray-300 dark:border-gray-600 dark:bg-gray-700 dark:hover:border-gray-500' }}">
+                            <div class="mb-2 flex h-9 w-9 items-center justify-center rounded-lg {{ trainingPlanDefaultType.value == 'training' ? 'bg-strava-orange text-white' : 'bg-gray-100 text-gray-500 dark:bg-gray-600 dark:text-gray-300' }}">
+                                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M3.75 3v11.25A2.25 2.25 0 0 0 6 16.5h2.25M3.75 3h-1.5m1.5 0h16.5m0 0h1.5m-1.5 0v11.25A2.25 2.25 0 0 1 18 16.5h-2.25m-7.5 0h7.5m-7.5 0-1 3m8.5-3 1 3m0 0 .5 1.5m-.5-1.5h-9.5m0 0-.5 1.5m.75-9 3-3 2.148 2.148A12.061 12.061 0 0 1 16.5 7.605" />
+                                </svg>
+                            </div>
+                            <div class="text-sm font-semibold text-gray-900 dark:text-white">{{ "Training block"|trans }}</div>
+                            <div class="mt-0.5 text-[11px] text-gray-500 dark:text-gray-400">{{ "Balanced or speed-endurance build"|trans }}</div>
+                        </button>
+                    </div>
+                    <input type="hidden" name="type" value="{{ trainingPlanDefaultType.value }}" data-type-input />
+
+                    {# Target distance — available for race plans and training blocks #}
+                    <div class="mt-4" data-race-profile-section>
+                        <div>
+                            <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400" for="training-plan-wizard-race-profile-{{ uniqueId }}">{{ "Distance"|trans }}</label>
+                            <select id="training-plan-wizard-race-profile-{{ uniqueId }}" name="targetRaceProfile" class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-amber-500 focus:ring-amber-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white" data-race-profile-select>
+                                <option value="">{{ 'Select a distance…'|trans }}</option>
+                                {% for group in trainingPlanRaceProfileOptionGroups %}
+                                    {% for option in group.options %}
+                                        {% set profile = option.profile %}
+                                        <option value="{{ profile.value }}" data-family="{{ group.family.value }}" data-disciplines="{{ option.disciplineValues|join(',') }}"{% if trainingPlanDefaultTargetRaceProfile is not null and trainingPlanDefaultTargetRaceProfile.value == profile.value %} selected{% endif %}>{{ profile|trans }}</option>
+                                    {% endfor %}
+                                {% endfor %}
+                            </select>
+                        </div>
+                    </div>
+
+                    {# Training-only controls — shown when Training block is selected #}
+                    <div class="mt-4 {{ trainingPlanDefaultType.value == 'training' ? '' : 'hidden' }}" data-training-only-section>
+                        <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400" for="training-plan-wizard-block-style-{{ uniqueId }}">{{ "Training block style"|trans }}</label>
+                        <select id="training-plan-wizard-block-style-{{ uniqueId }}" name="trainingBlockStyle" class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-amber-500 focus:ring-amber-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                            {% for style in trainingPlanTrainingBlockStyleOptions %}
+                                <option value="{{ style.value }}"{% if trainingPlanDefaultTrainingBlockStyle is not null and trainingPlanDefaultTrainingBlockStyle.value == style.value %} selected{% endif %}>{{ style|trans }}</option>
+                            {% endfor %}
+                        </select>
+                        <div class="mt-1 text-[11px] text-gray-500 dark:text-gray-400">{{ 'Balanced build keeps the current progression. Speed-endurance build trims volume, keeps key long sessions, and biases the block toward sharper work.'|trans }}</div>
+                    </div>
+
+                    <div class="mt-4 {{ trainingPlanDefaultType.value == 'training' and defaultDiscipline == 'triathlon' ? '' : 'hidden' }}" data-training-focus-section>
+                        <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400" for="training-plan-wizard-focus-{{ uniqueId }}">{{ "Training focus"|trans }}</label>
+                        <select id="training-plan-wizard-focus-{{ uniqueId }}" name="trainingFocus" class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-amber-500 focus:ring-amber-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                            <option value="">{{ 'Select…'|trans }}</option>
+                            {% for focus in trainingPlanTrainingFocusOptions %}
+                                <option value="{{ focus.value }}"{% if trainingPlanDefaultTrainingFocus is not null and trainingPlanDefaultTrainingFocus.value == focus.value %} selected{% endif %}>{{ focus|trans }}</option>
+                            {% endfor %}
+                        </select>
+                    </div>
+
+                    {% if trainingPlanRaceEventOptions|length > 0 %}
+                        <div class="mt-4 {{ trainingPlanDefaultType.value == 'race' ? '' : 'hidden' }}" data-linked-race-section>
+                            <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400" for="training-plan-target-race-{{ uniqueId }}">{{ "Target race"|trans }}</label>
+                            {% if trainingPlanSuggestedRaceEvent and not isEdit %}
+                                <div class="mb-2 rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-[11px] text-amber-800 dark:border-amber-700 dark:bg-amber-900/40 dark:text-amber-300">
+                                    {{ trainingPlanSuggestedRaceEvent.getTitle() ?: trainingPlanSuggestedRaceEvent.getProfile()|trans }} {{ 'on'|trans }} {{ trainingPlanSuggestedRaceEvent.getDay().format('M j, Y') }} {{ 'suggested'|trans }}
+                                </div>
+                            {% endif %}
+                            <select id="training-plan-target-race-{{ uniqueId }}" name="targetRaceEventId" class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-amber-500 focus:ring-amber-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white">
+                                <option value="">{{ 'No linked race'|trans }}</option>
+                                {% for raceEvent in trainingPlanRaceEventOptions %}
+                                    <option value="{{ raceEvent.getId() }}"{% if trainingPlanDefaultTargetRaceEventId == raceEvent.getId() ~ '' %} selected{% endif %}>{{ raceEvent.getDay().format('Y-m-d') }} · {{ raceEvent.getTitle() ?: raceEvent.getProfile()|trans }}</option>
+                                {% endfor %}
+                            </select>
+                        </div>
+                    {% else %}
+                        <input type="hidden" name="targetRaceEventId" value="" />
+                    {% endif %}
+                </div>
+
+                {# ─── STEP 2 — Weekly schedule ─── #}
+                <div data-wizard-step="2" class="hidden">
+                    <div class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">{{ "Weekly schedule"|trans }}</div>
+                    <div class="mb-4 text-[11px] text-gray-400">{{ "Pick which days you do each sport and mark your long sessions."|trans }}</div>
+
+                    {# Triathlon: swim + bike + run day pickers + long markers #}
+                    <div data-sport-schedule-tri class="hidden space-y-4">
+                        <div>
+                            <label class="mb-2 block text-xs font-medium text-gray-600 dark:text-gray-400">{{ "Swim days"|trans }}</label>
+                            <div class="grid grid-cols-7 gap-2" data-sport-day-picker="swimDays">
+                                {% for i in 1..7 %}
+                                    <button type="button" data-day-value="{{ i }}"
+                                        class="flex flex-col items-center justify-center rounded-xl border-2 py-2 transition-all border-gray-200 bg-white text-gray-500 hover:border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-400 dark:hover:border-gray-500 dark:hover:bg-gray-600">
+                                        <span class="text-[10px] font-semibold uppercase tracking-wide">{{ dayLabels[i - 1]|trans }}</span>
+                                    </button>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div>
+                            <label class="mb-2 block text-xs font-medium text-gray-600 dark:text-gray-400">{{ "Bike days"|trans }}</label>
+                            <div class="grid grid-cols-7 gap-2" data-sport-day-picker="bikeDays">
+                                {% for i in 1..7 %}
+                                    <button type="button" data-day-value="{{ i }}"
+                                        class="flex flex-col items-center justify-center rounded-xl border-2 py-2 transition-all border-gray-200 bg-white text-gray-500 hover:border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-400 dark:hover:border-gray-500 dark:hover:bg-gray-600">
+                                        <span class="text-[10px] font-semibold uppercase tracking-wide">{{ dayLabels[i - 1]|trans }}</span>
+                                    </button>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div>
+                            <label class="mb-2 block text-xs font-medium text-gray-600 dark:text-gray-400">{{ "Run days"|trans }}</label>
+                            <div class="grid grid-cols-7 gap-2" data-sport-day-picker="runDays">
+                                {% for i in 1..7 %}
+                                    <button type="button" data-day-value="{{ i }}"
+                                        class="flex flex-col items-center justify-center rounded-xl border-2 py-2 transition-all border-gray-200 bg-white text-gray-500 hover:border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-400 dark:hover:border-gray-500 dark:hover:bg-gray-600">
+                                        <span class="text-[10px] font-semibold uppercase tracking-wide">{{ dayLabels[i - 1]|trans }}</span>
+                                    </button>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div class="grid grid-cols-2 gap-4">
+                            <div>
+                                <label class="mb-2 block text-xs font-medium text-gray-600 dark:text-gray-400">{{ "Long ride day"|trans }}</label>
+                                <div class="grid grid-cols-7 gap-1" data-sport-day-picker="longRideDays">
+                                    {% for i in 1..7 %}
+                                        <button type="button" data-day-value="{{ i }}"
+                                            class="flex flex-col items-center justify-center rounded-xl border-2 py-2 transition-all border-gray-200 bg-white text-gray-500 hover:border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-400 dark:hover:border-gray-500 dark:hover:bg-gray-600">
+                                            <span class="text-[9px] font-semibold uppercase tracking-wide">{{ dayLabels[i - 1]|trans }}</span>
+                                        </button>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                            <div>
+                                <label class="mb-2 block text-xs font-medium text-gray-600 dark:text-gray-400">{{ "Long run day"|trans }}</label>
+                                <div class="grid grid-cols-7 gap-1" data-sport-day-picker="longRunDays">
+                                    {% for i in 1..7 %}
+                                        <button type="button" data-day-value="{{ i }}"
+                                            class="flex flex-col items-center justify-center rounded-xl border-2 py-2 transition-all border-gray-200 bg-white text-gray-500 hover:border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-400 dark:hover:border-gray-500 dark:hover:bg-gray-600">
+                                            <span class="text-[9px] font-semibold uppercase tracking-wide">{{ dayLabels[i - 1]|trans }}</span>
+                                        </button>
+                                    {% endfor %}
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    {# Running: run days + long run day #}
+                    <div data-sport-schedule-run class="hidden space-y-4">
+                        <div>
+                            <label class="mb-2 block text-xs font-medium text-gray-600 dark:text-gray-400">{{ "Run days"|trans }}</label>
+                            <div class="grid grid-cols-7 gap-2" data-sport-day-picker="runDays">
+                                {% for i in 1..7 %}
+                                    <button type="button" data-day-value="{{ i }}"
+                                        class="flex flex-col items-center justify-center rounded-xl border-2 py-2.5 transition-all border-gray-200 bg-white text-gray-500 hover:border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-400 dark:hover:border-gray-500 dark:hover:bg-gray-600">
+                                        <span class="text-[10px] font-semibold uppercase tracking-wide">{{ dayLabels[i - 1]|trans }}</span>
+                                    </button>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div>
+                            <label class="mb-2 block text-xs font-medium text-gray-600 dark:text-gray-400">{{ "Which day is your long run?"|trans }}</label>
+                            <div class="grid grid-cols-7 gap-2" data-sport-day-picker="longRunDays">
+                                {% for i in 1..7 %}
+                                    <button type="button" data-day-value="{{ i }}"
+                                        class="flex flex-col items-center justify-center rounded-xl border-2 py-2.5 transition-all border-gray-200 bg-white text-gray-500 hover:border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-400 dark:hover:border-gray-500 dark:hover:bg-gray-600">
+                                        <span class="text-[10px] font-semibold uppercase tracking-wide">{{ dayLabels[i - 1]|trans }}</span>
+                                    </button>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+
+                    {# Cycling: ride days + long ride day #}
+                    <div data-sport-schedule-bike class="hidden space-y-4">
+                        <div>
+                            <label class="mb-2 block text-xs font-medium text-gray-600 dark:text-gray-400">{{ "Ride days"|trans }}</label>
+                            <div class="grid grid-cols-7 gap-2" data-sport-day-picker="bikeDays">
+                                {% for i in 1..7 %}
+                                    <button type="button" data-day-value="{{ i }}"
+                                        class="flex flex-col items-center justify-center rounded-xl border-2 py-2.5 transition-all border-gray-200 bg-white text-gray-500 hover:border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-400 dark:hover:border-gray-500 dark:hover:bg-gray-600">
+                                        <span class="text-[10px] font-semibold uppercase tracking-wide">{{ dayLabels[i - 1]|trans }}</span>
+                                    </button>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div>
+                            <label class="mb-2 block text-xs font-medium text-gray-600 dark:text-gray-400">{{ "Which day is your long ride?"|trans }}</label>
+                            <div class="grid grid-cols-7 gap-2" data-sport-day-picker="longRideDays">
+                                {% for i in 1..7 %}
+                                    <button type="button" data-day-value="{{ i }}"
+                                        class="flex flex-col items-center justify-center rounded-xl border-2 py-2.5 transition-all border-gray-200 bg-white text-gray-500 hover:border-gray-300 hover:bg-gray-50 dark:border-gray-600 dark:bg-gray-700 dark:text-gray-400 dark:hover:border-gray-500 dark:hover:bg-gray-600">
+                                        <span class="text-[10px] font-semibold uppercase tracking-wide">{{ dayLabels[i - 1]|trans }}</span>
+                                    </button>
+                                {% endfor %}
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {# ─── STEP 3 — Current fitness ─── #}
+                <div data-wizard-step="3" class="hidden">
+                    <div class="mb-1 text-sm font-medium text-gray-700 dark:text-gray-200">{{ "Current fitness"|trans }}</div>
+                    <div class="mb-4 text-[11px] text-gray-400">{{ "So paces and loads can be tuned to where you are right now."|trans }}</div>
+
+                    <div class="space-y-4">
+                        {# Cycling FTP — shown for triathlon & cycling #}
+                        <div data-perf-ftp class="hidden">
+                            <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">{{ "Cycling FTP"|trans }}</label>
+                            <div class="flex items-center gap-2">
+                                <input name="cyclingFtp" type="number" min="50" max="500" step="1" value="{{ perfMetrics.cyclingFtp|default('') }}" placeholder="—" class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-amber-500 focus:ring-amber-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
+                                <span class="text-xs font-medium text-gray-400">W</span>
+                            </div>
+                        </div>
+
+                        {# Running threshold pace — shown for triathlon & running #}
+                        <div data-perf-pace class="hidden">
+                            <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">{{ "Threshold pace"|trans }}</label>
+                            <div class="flex items-center gap-2">
+                                <input name="runningThresholdPaceDisplay" type="text" value="{{ perfMetrics.runningThresholdPace is defined and perfMetrics.runningThresholdPace ? '%d:%02d'|format((perfMetrics.runningThresholdPace / 60)|round(0, 'floor'), perfMetrics.runningThresholdPace % 60) : '' }}" placeholder="4:30" pattern="[0-9]{1,2}:[0-5][0-9]" class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-amber-500 focus:ring-amber-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white" data-pace-input />
+                                <input type="hidden" name="runningThresholdPace" value="{{ perfMetrics.runningThresholdPace|default('') }}" data-pace-seconds />
+                                <span class="text-xs font-medium text-gray-400 whitespace-nowrap">min/km</span>
+                            </div>
+                        </div>
+
+                        {# Swimming CSS — shown for triathlon only #}
+                        <div data-perf-css class="hidden">
+                            <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">{{ "Swim CSS"|trans }}</label>
+                            <div class="flex items-center gap-2">
+                                <input name="swimmingCssDisplay" type="text" value="{{ perfMetrics.swimmingCss is defined and perfMetrics.swimmingCss ? '%d:%02d'|format((perfMetrics.swimmingCss / 60)|round(0, 'floor'), perfMetrics.swimmingCss % 60) : '' }}" placeholder="1:35" pattern="[0-9]{1,2}:[0-5][0-9]" class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-amber-500 focus:ring-amber-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white" data-pace-input />
+                                <input type="hidden" name="swimmingCss" value="{{ perfMetrics.swimmingCss|default('') }}" data-pace-seconds />
+                                <span class="text-xs font-medium text-gray-400 whitespace-nowrap">min/100m</span>
+                            </div>
+                        </div>
+
+                        {# Running volume — shown for triathlon & running #}
+                        <div data-perf-run-vol class="hidden">
+                            <label class="mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400">{{ "Current running volume"|trans }}</label>
+                            <div class="flex items-center gap-2">
+                                <input name="weeklyRunningVolume" type="number" min="0" max="300" step="0.1" value="{{ perfMetrics.weeklyRunningVolume|default('') }}" placeholder="—" class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-amber-500 focus:ring-amber-500 dark:border-gray-600 dark:bg-gray-700 dark:text-white" />
+                                <span class="text-xs font-medium text-gray-400 whitespace-nowrap">km/week</span>
+                            </div>
+                        </div>
+
+                        <div data-run-target-mode-section class="hidden">
+                            <label class="mb-1 block text-xs font-medium text-gray-600" for="training-plan-run-target-mode-wizard-{{ uniqueId }}">{{ "Running workout default"|trans }}</label>
+                            <select id="training-plan-run-target-mode-wizard-{{ uniqueId }}" name="runningWorkoutTargetMode" class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-amber-500 focus:ring-amber-500">
+                                {% for mode in trainingPlanRunningWorkoutTargetModeOptions %}
+                                    <option value="{{ mode.value }}"{% if defaultRunningWorkoutTargetMode == mode.value %} selected{% endif %}>{{ mode|trans }}</option>
+                                {% endfor %}
+                            </select>
+                            <div class="mt-1 text-[11px] text-gray-400">{{ 'Use this as the default for generated running sessions. The plan can still switch per workout when distance or time fits better.'|trans }}</div>
+                        </div>
+
+                        <div data-run-hill-section class="hidden">
+                            <label class="flex items-start gap-3 rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm text-gray-700">
+                                <input type="checkbox" name="runHillSessionsEnabled" value="1" class="mt-0.5 h-4 w-4 rounded border-gray-300 text-strava-orange focus:ring-amber-500"{% if defaultRunHillSessionsEnabled %} checked{% endif %} />
+                                <span>
+                                    <span class="block font-medium text-gray-900">{{ 'Include hill sessions when terrain allows'|trans }}</span>
+                                    <span class="mt-0.5 block text-[11px] text-gray-500">{{ 'Switch this on only if you have access to hills or a treadmill incline and want hill reps in the workout mix.'|trans }}</span>
+                                </span>
+                            </label>
+                        </div>
+
+                        {# Biking volume — shown for triathlon & cycling #}
+                        <div data-perf-bike-vol class="hidden">
+                            <label class="mb-1 block text-xs font-medium text-gray-600">{{ "Current biking volume"|trans }}</label>
+                            <div class="flex items-center gap-2">
+                                <input name="weeklyBikingVolume" type="number" min="0" max="40" step="0.1" value="{{ perfMetrics.weeklyBikingVolume|default('') }}" placeholder="—" class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-amber-500 focus:ring-amber-500" />
+                                <span class="text-xs font-medium text-gray-400 whitespace-nowrap">hrs/week</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                {# ─── STEP 4 — Plan details ─── #}
+                <div data-wizard-step="4" class="hidden">
+                    <div class="mb-1 text-sm font-medium text-gray-700">{{ "Plan details"|trans }}</div>
+                    <div class="mb-4 text-[11px] text-gray-400">{{ "Set the plan window and give it a name."|trans }}</div>
+
+                    <div class="space-y-3">
+                        <div>
+                            <label class="mb-1 block text-xs font-medium text-gray-600" for="training-plan-start-day-{{ uniqueId }}">{{ "Start day"|trans }}</label>
+                            <input id="training-plan-start-day-{{ uniqueId }}" name="startDay" type="date" value="{{ trainingPlanDefaultStartDay }}" class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-amber-500 focus:ring-amber-500" data-start-day-input />
+                        </div>
+                        <div>
+                            <label class="mb-2 block text-xs font-medium text-gray-600">{{ "Duration"|trans }}</label>
+                            <div class="flex flex-wrap gap-1.5" data-week-duration-picker>
+                                {% for w in [4, 6, 8, 10, 12, 14, 16, 18, 20, 24] %}
+                                    <button type="button" data-weeks-value="{{ w }}"
+                                        class="flex items-center justify-center rounded-full border-2 px-2.5 py-1.5 text-xs font-semibold transition-all border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:bg-gray-50">
+                                        {{ w }}w
+                                    </button>
+                                {% endfor %}
+                            </div>
+                        </div>
+                        <div>
+                            <label class="mb-1 block text-xs font-medium text-gray-600" for="training-plan-end-day-{{ uniqueId }}">{{ "End day"|trans }}</label>
+                            <input id="training-plan-end-day-{{ uniqueId }}" name="endDay" type="date" value="{{ trainingPlanDefaultEndDay }}" class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-amber-500 focus:ring-amber-500" data-end-day-input />
+                            <div class="mt-1 text-[11px] text-gray-400" data-duration-label></div>
+                        </div>
+                        <div>
+                            <label class="mb-1 block text-xs font-medium text-gray-600" for="training-plan-title-{{ uniqueId }}">{{ "Title"|trans }}</label>
+                            <input id="training-plan-title-{{ uniqueId }}" name="title" type="text" value="{{ trainingPlanDefaultTitle ?? '' }}" placeholder="{{ 'Early season build, 70.3 prep, marathon bridge…'|trans }}" class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-amber-500 focus:ring-amber-500" />
+                        </div>
+                        <div>
+                            <label class="mb-1 block text-xs font-medium text-gray-600" for="training-plan-notes-{{ uniqueId }}">{{ "Notes"|trans }}</label>
+                            <textarea id="training-plan-notes-{{ uniqueId }}" name="notes" rows="3" placeholder="{{ 'What should this stretch focus on, protect, or prepare for?'|trans }}" class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-amber-500 focus:ring-amber-500"></textarea>
+                        </div>
+                    </div>
+                </div>
+            {% endif %}
+        </form>
+
+        {% if isEdit %}
+            <form id="training-plan-delete-form-{{ uniqueId }}" action="/training-plan/delete" method="post">
+                <input type="hidden" name="trainingPlanId" value="{{ trainingPlan.getId() }}" />
+                <input type="hidden" name="redirectTo" value="{{ redirectTo|default('/training-plans') }}" />
+            </form>
+        {% endif %}
+
+        {# ── Footer: wizard nav or save/delete ── #}
+        {% if isEdit %}
+            <div class="mt-4 flex items-center justify-between gap-3">
+                <button type="submit" form="training-plan-delete-form-{{ uniqueId }}" class="inline-flex items-center rounded-lg border border-red-300 px-3 py-2 text-sm font-medium text-red-700 hover:bg-red-50">{{ "Delete"|trans }}</button>
+                <button type="submit" form="training-plan-form-{{ uniqueId }}" class="inline-flex items-center rounded-lg bg-strava-orange px-3 py-2 text-sm font-medium text-white hover:bg-orange-600 focus:ring-4 focus:outline-hidden focus:ring-orange-300">{{ 'Save changes'|trans }}</button>
+            </div>
+        {% else %}
+            <div class="mt-4 hidden rounded-lg border border-amber-200 bg-amber-50 px-3 py-2 text-sm text-amber-800" data-wizard-error></div>
+            <div class="mt-4 flex items-center justify-between gap-3" data-wizard-nav>
+                <div>
+                    <button type="button" data-wizard-back class="hidden items-center rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">{{ "Back"|trans }}</button>
+                </div>
+                <div>
+                    <button type="button" data-wizard-next class="inline-flex items-center rounded-lg bg-strava-orange px-3 py-2 text-sm font-medium text-white hover:bg-orange-600 focus:ring-4 focus:outline-hidden focus:ring-orange-300">{{ "Next"|trans }}</button>
+                    <button type="submit" form="training-plan-form-{{ uniqueId }}" data-wizard-submit class="hidden items-center rounded-lg bg-strava-orange px-3 py-2 text-sm font-medium text-white hover:bg-orange-600 focus:ring-4 focus:outline-hidden focus:ring-orange-300">{{ 'Create plan'|trans }}</button>
+                </div>
+            </div>
+        {% endif %}
+    </div>

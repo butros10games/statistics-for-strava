@@ -7,7 +7,7 @@ export default class WorkoutEditor {
     };
 
     init(rootNode) {
-        this.initPlannerOutlookToggles(rootNode);
+        this.initTrainingSessionRecommendations(rootNode);
 
         rootNode.querySelectorAll('[data-workout-editor]').forEach((editorNode) => {
             if (editorNode.dataset.workoutEditorInitialized === 'true') {
@@ -1214,26 +1214,265 @@ export default class WorkoutEditor {
         }
     }
 
-    initPlannerOutlookToggles(rootNode) {
-        rootNode.querySelectorAll('[data-planner-outlook-toggle]').forEach((toggleNode) => {
-            if (toggleNode.dataset.plannerOutlookInitialized === 'true') {
+    initTrainingSessionRecommendations(rootNode) {
+        rootNode.querySelectorAll('[data-training-session-recommendations]').forEach((containerNode) => {
+            const formNode = this.getTrainingSessionRecommendationForm(containerNode);
+            if (!formNode) {
                 return;
             }
 
-            toggleNode.dataset.plannerOutlookInitialized = 'true';
-            const contentNode = toggleNode.parentElement?.querySelector('[data-planner-outlook-content]');
-            if (!contentNode) {
+            if (containerNode.dataset.trainingSessionRecommendationsInitialized === 'true') {
+                this.refreshTrainingSessionRecommendationVisibility(containerNode, formNode);
+
                 return;
             }
 
-            toggleNode.setAttribute('aria-expanded', 'false');
+            containerNode.dataset.trainingSessionRecommendationsInitialized = 'true';
+            containerNode.addEventListener('click', (event) => {
+                const applyButton = event.target.closest('[data-training-session-apply]');
+                if (!applyButton || !containerNode.contains(applyButton)) {
+                    return;
+                }
 
-            toggleNode.addEventListener('click', () => {
-                const isExpanded = toggleNode.getAttribute('aria-expanded') === 'true';
-                toggleNode.setAttribute('aria-expanded', isExpanded ? 'false' : 'true');
-                contentNode.classList.toggle('hidden', isExpanded);
+                event.preventDefault();
+                this.applyTrainingSessionRecommendation(formNode, applyButton, containerNode);
             });
+
+            const activityTypeField = this.getPlannerField(formNode, '[data-planned-session-activity-type]');
+            activityTypeField?.addEventListener('change', () => {
+                this.refreshTrainingSessionRecommendationVisibility(containerNode, formNode);
+            });
+
+            this.refreshTrainingSessionRecommendationVisibility(containerNode, formNode);
         });
+    }
+
+    getTrainingSessionRecommendationForm(containerNode) {
+        const formId = containerNode?.dataset.plannedSessionFormId ?? '';
+
+        return formId ? document.getElementById(formId) : null;
+    }
+
+    refreshTrainingSessionRecommendationVisibility(containerNode, formNode = this.getTrainingSessionRecommendationForm(containerNode)) {
+        if (!containerNode || !formNode) {
+            return;
+        }
+
+        const selectedActivityType = this.getPlannerField(formNode, '[data-planned-session-activity-type]')?.value ?? 'Run';
+        containerNode.querySelectorAll('[data-training-session-group]').forEach((groupNode) => {
+            groupNode.classList.toggle('hidden', (groupNode.dataset.trainingSessionGroup ?? '') !== selectedActivityType);
+        });
+
+        const selectedActivityTypeLabel = containerNode.querySelector('[data-training-session-selected-activity-label]');
+        if (selectedActivityTypeLabel) {
+            selectedActivityTypeLabel.textContent = selectedActivityType;
+        }
+    }
+
+    applyTrainingSessionRecommendation(formNode, applyButton, containerNode = null) {
+        const recommendation = this.parseTrainingSessionRecommendationPayload(applyButton);
+        const editorNode = formNode?.querySelector('[data-workout-editor]');
+        if (!recommendation || !editorNode) {
+            return;
+        }
+
+        const activityTypeField = this.getPlannerField(formNode, '[data-planned-session-activity-type]');
+        if (activityTypeField && recommendation.activityType) {
+            activityTypeField.value = recommendation.activityType;
+        }
+
+        const titleInput = this.getPlannerField(formNode, 'input[name="title"]');
+        if (titleInput) {
+            titleInput.value = recommendation.title ?? '';
+        }
+
+        const notesInput = formNode.querySelector('textarea[name="notes"]');
+        if (notesInput) {
+            notesInput.value = recommendation.notes ?? '';
+        }
+
+        const intensityField = this.getPlannerField(formNode, '[data-planned-session-intensity]');
+        if (intensityField) {
+            intensityField.value = recommendation.targetIntensity ?? '';
+        }
+
+        const templateField = this.getPlannerField(formNode, '[data-planned-session-template-activity]');
+        if (templateField) {
+            const templateActivityId = recommendation.templateActivityId ?? '';
+            const hasMatchingOption = Array.from(templateField.options).some((optionNode) => optionNode.value === templateActivityId);
+            templateField.value = hasMatchingOption ? templateActivityId : '';
+        }
+
+        this.replaceWorkoutItems(editorNode, recommendation.workoutSteps ?? []);
+
+        const durationMinutesField = this.getPlannerField(formNode, '[data-planned-session-target-duration-minutes]');
+        if (durationMinutesField) {
+            durationMinutesField.value = recommendation.targetDurationInMinutes ?? '';
+        }
+
+        const durationSecondsField = this.getPlannerField(formNode, '[data-planned-session-target-duration-seconds]');
+        if (durationSecondsField) {
+            durationSecondsField.value = recommendation.targetDurationInSecondsPart ?? '';
+        }
+
+        const loadInput = this.getPlannerField(formNode, '[data-planned-session-target-load]');
+        if (loadInput) {
+            loadInput.value = recommendation.targetLoad !== undefined && recommendation.targetLoad !== null
+                ? this.formatLoadValue(Number(recommendation.targetLoad))
+                : '';
+        }
+
+        this.setManualTargetLoadOverride(
+            formNode,
+            Boolean(recommendation.manualTargetLoadOverride)
+                && recommendation.targetLoad !== undefined
+                && recommendation.targetLoad !== null
+                && String(recommendation.targetLoad).trim() !== '',
+        );
+
+        this.refreshPlannerAutofill(editorNode);
+        this.refreshTrainingSessionRecommendationVisibility(containerNode, formNode);
+    }
+
+    parseTrainingSessionRecommendationPayload(applyButton) {
+        try {
+            return JSON.parse(applyButton?.dataset.trainingSessionPayload ?? '{}');
+        } catch {
+            return null;
+        }
+    }
+
+    replaceWorkoutItems(editorNode, workoutSteps) {
+        const topLevelDropzone = this.getTopLevelDropzone(editorNode);
+        if (!topLevelDropzone) {
+            return;
+        }
+
+        Array.from(topLevelDropzone.children)
+            .filter((childNode) => childNode.matches('[data-workout-item]'))
+            .forEach((childNode) => childNode.remove());
+
+        if (Array.isArray(workoutSteps) && workoutSteps.length > 0) {
+            this.appendRecommendationWorkoutItems(editorNode, topLevelDropzone, workoutSteps, '', '');
+        }
+
+        this.refreshEditor(editorNode);
+    }
+
+    appendRecommendationWorkoutItems(editorNode, containerNode, workoutSteps, payloadParentBlockId = '', actualParentBlockId = '') {
+        if (!containerNode || !Array.isArray(workoutSteps)) {
+            return;
+        }
+
+        workoutSteps
+            .filter((workoutStep) => (workoutStep?.parentBlockId ?? '') === payloadParentBlockId)
+            .forEach((workoutStep) => {
+                if ((workoutStep?.type ?? '') === 'repeatBlock') {
+                    const blockNode = this.createBlockNode(editorNode, actualParentBlockId);
+                    if (!blockNode) {
+                        return;
+                    }
+
+                    this.hydrateRecommendationBlockNode(blockNode, workoutStep);
+                    containerNode.appendChild(blockNode);
+
+                    this.appendRecommendationWorkoutItems(
+                        editorNode,
+                        blockNode.querySelector('[data-workout-block-steps]'),
+                        workoutSteps,
+                        workoutStep?.itemId ?? '',
+                        blockNode.dataset.itemId ?? '',
+                    );
+
+                    return;
+                }
+
+                const stepNode = this.createStepNode(editorNode, actualParentBlockId, workoutStep?.type ?? 'steady');
+                if (!stepNode) {
+                    return;
+                }
+
+                this.hydrateRecommendationStepNode(stepNode, workoutStep);
+                containerNode.appendChild(stepNode);
+            });
+    }
+
+    hydrateRecommendationBlockNode(blockNode, workoutStep) {
+        const labelInput = this.getWorkoutItemField(blockNode, 'label');
+        if (labelInput) {
+            labelInput.value = workoutStep?.label ?? '';
+        }
+
+        const repetitionsInput = this.getWorkoutItemField(blockNode, 'repetitions');
+        if (repetitionsInput) {
+            repetitionsInput.value = workoutStep?.repetitions ?? '1';
+        }
+
+        this.refreshBlockRepsBadge(blockNode);
+    }
+
+    hydrateRecommendationStepNode(stepNode, workoutStep) {
+        const typeSelect = this.getWorkoutItemField(stepNode, 'type');
+        if (typeSelect) {
+            typeSelect.value = workoutStep?.type ?? 'steady';
+        }
+
+        const labelInput = this.getWorkoutItemField(stepNode, 'label');
+        if (labelInput) {
+            labelInput.value = workoutStep?.label ?? '';
+        }
+
+        const repetitionsInput = this.getWorkoutItemField(stepNode, 'repetitions');
+        if (repetitionsInput) {
+            repetitionsInput.value = workoutStep?.repetitions ?? '1';
+        }
+
+        const targetTypeSelect = this.getWorkoutItemField(stepNode, 'targetType');
+        if (targetTypeSelect) {
+            targetTypeSelect.value = workoutStep?.targetType ?? 'time';
+        }
+
+        const conditionTypeSelect = this.getWorkoutItemField(stepNode, 'conditionType');
+        if (conditionTypeSelect) {
+            conditionTypeSelect.value = workoutStep?.conditionType ?? '';
+        }
+
+        const durationMinutesInput = this.getWorkoutItemField(stepNode, 'durationInMinutes');
+        if (durationMinutesInput) {
+            durationMinutesInput.value = workoutStep?.durationInMinutes ?? '';
+        }
+
+        const durationSecondsInput = this.getWorkoutItemField(stepNode, 'durationInSecondsPart');
+        if (durationSecondsInput) {
+            durationSecondsInput.value = workoutStep?.durationInSecondsPart ?? '';
+        }
+
+        const distanceInput = this.getWorkoutItemField(stepNode, 'distanceInMeters');
+        if (distanceInput) {
+            distanceInput.value = workoutStep?.distanceInMeters ?? '';
+        }
+
+        const paceInput = this.getWorkoutItemField(stepNode, 'targetPace');
+        if (paceInput) {
+            paceInput.value = workoutStep?.targetPace ?? '';
+        }
+
+        const powerInput = this.getWorkoutItemField(stepNode, 'targetPower');
+        if (powerInput) {
+            powerInput.value = workoutStep?.targetPower ?? '';
+        }
+
+        const heartRateInput = this.getWorkoutItemField(stepNode, 'targetHeartRate');
+        if (heartRateInput) {
+            heartRateInput.value = workoutStep?.targetHeartRate ?? '';
+        }
+
+        this.refreshTargetFields(stepNode);
+        this.refreshStepTypeIndicator(stepNode);
+    }
+
+    getWorkoutItemField(itemNode, fieldName) {
+        return itemNode?.querySelector(`[name$="[${fieldName}]"], [data-name-template$="[${fieldName}]"]`) ?? null;
     }
 
     refreshBlockEmptyState(blockNode) {

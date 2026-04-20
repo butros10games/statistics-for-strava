@@ -1,47 +1,51 @@
 Buildingapp...
 
 
-0%[>---------------------------]0/21-Initializing...
+0%[>---------------------------]0/23-Initializing...
 
-4%[=>--------------------------]1/21-Configuringlocale
+4%[=>--------------------------]1/23-Configuringlocale
 
-9%[==>-------------------------]2/21-Configuringthemecolors
+8%[==>-------------------------]2/23-Configuringthemecolors
 
-14%[====>-----------------------]3/21-BuildingManifest
+13%[===>------------------------]3/23-BuildingManifest
 
-19%[=====>----------------------]4/21-Buildingindex
+17%[====>-----------------------]4/23-Buildingindex
 
-23%[======>---------------------]5/21-Buildingdashboard
+21%[======>---------------------]5/23-Buildingdashboard
 
-28%[========>-------------------]6/21-Buildingactivities
+26%[=======>--------------------]6/23-Buildingactivities
 
-33%[=========>------------------]7/21-Buildinggpxfiles
+30%[========>-------------------]7/23-Buildinggpxfiles
 
-38%[==========>-----------------]8/21-Buildingmonthlystats
+34%[=========>------------------]8/23-Buildingmonthlystats
 
-42%[============>---------------]9/21-Buildinggearstats
+39%[==========>-----------------]9/23-Buildinggearstats
 
-47%[=============>--------------]10/21-Buildinggearmaintenance
+43%[============>---------------]10/23-Buildinggearmaintenance
 
-52%[==============>-------------]11/21-Buildingrecordingdevices
+47%[=============>--------------]11/23-Buildingrecordingdevices
 
-57%[================>-----------]12/21-Buildingeddington
+52%[==============>-------------]12/23-Buildingeddington
 
-61%[=================>----------]13/21-Buildingmilestones
+56%[===============>------------]13/23-Buildingmilestones
 
-66%[==================>---------]14/21-Buildingsegments
+60%[=================>----------]14/23-Buildingsegments
 
-71%[====================>-------]15/21-Buildingheatmap
+65%[==================>---------]15/23-Buildingheatmap
 
-76%[=====================>------]16/21-Buildingbestefforts
+69%[===================>--------]16/23-Buildingbestefforts
 
-80%[======================>-----]17/21-Buildingrewind
+73%[====================>-------]17/23-Buildingrewind
 
-85%[========================>---]18/21-Buildingchallenges
+78%[=====================>------]18/23-Buildingchallenges
 
-90%[=========================>--]19/21-Buildingphotos
+82%[=======================>----]19/23-Buildingphotos
 
-95%[==========================>-]20/21-Buildingtrainingadvisorexport
+86%[========================>---]20/23-Buildingtrainingadvisorexport
 
-100%[============================]21/21-Buildingbadges
+91%[=========================>--]21/23-Buildingraceplanner
+
+95%[==========================>-]22/23-Buildingplanmanager
+
+100%[============================]23/23-Buildingbadges
 

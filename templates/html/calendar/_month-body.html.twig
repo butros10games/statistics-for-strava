@@ -48,8 +48,162 @@
         </div>
     </div>
     {% endif %}
-    <div class="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_18rem]">
-        <div class="flex flex-col">
+    <div class="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_18rem]" data-mobile-sidebar-tabs>
+        {# ── Mobile tab bar (visible < lg) ── #}
+        <div class="col-span-full flex rounded-lg border border-gray-200 bg-gray-100 p-0.5 text-sm font-medium lg:hidden" role="tablist">
+            <button type="button" role="tab" data-mobile-tab-trigger="content" aria-selected="true" class="active flex-1 rounded-md px-3 py-2 text-center transition-colors [&.active]:bg-white [&.active]:text-gray-900 [&.active]:shadow-xs [&:not(.active)]:text-gray-500">
+                {{ "Calendar"|trans }}
+            </button>
+            <button type="button" role="tab" data-mobile-tab-trigger="sidebar" aria-selected="false" class="flex-1 rounded-md px-3 py-2 text-center transition-colors [&.active]:bg-white [&.active]:text-gray-900 [&.active]:shadow-xs [&:not(.active)]:text-gray-500">
+                {{ "Week & Info"|trans }}
+            </button>
+        </div>
+
+        <div data-mobile-tab-panel="content" class="flex flex-col">
+            {# ── Mobile agenda view (visible < md) ── #}
+            <div class="md:hidden space-y-px">
+                {% set prevDayWeek = null %}
+                {% for day in calendar.getDays() %}
+                    {% if day.isCurrentMonth %}
+                        {% set dayTrainingBlock = day.getTrainingBlocks()|first %}
+                        {% set dayTrainingBlockPhase = dayTrainingBlock ? dayTrainingBlock.getPhase().value : null %}
+                        {% set dayRacePriority = day.getRaceEvents() is empty
+                            ? null
+                            : (day.getRaceEvents()|filter(raceEvent => raceEvent.getPriority().value == 'a') is not empty
+                                ? 'a'
+                                : (day.getRaceEvents()|filter(raceEvent => raceEvent.getPriority().value == 'b') is not empty ? 'b' : 'c')) %}
+                        {% set dayBlockTextClass = dayTrainingBlockPhase == 'base'
+                            ? 'text-emerald-600'
+                            : (dayTrainingBlockPhase == 'build'
+                                ? 'text-sky-600'
+                                : (dayTrainingBlockPhase == 'peak'
+                                    ? 'text-violet-600'
+                                    : (dayTrainingBlockPhase == 'taper'
+                                        ? 'text-amber-600'
+                                        : 'text-slate-500'))) %}
+                        {% set dayRaceBadgeClasses = dayRacePriority == 'a'
+                            ? 'bg-rose-100 text-rose-700 ring-rose-200'
+                            : (dayRacePriority == 'b'
+                                ? 'bg-amber-100 text-amber-700 ring-amber-200'
+                                : 'bg-sky-100 text-sky-700 ring-sky-200') %}
+                        {% set isToday = day.getDate().format('Y-m-d') == "now"|date('Y-m-d') %}
+                        {% set hasContent = day.getRaceEvents() is not empty or day.getPlannedSessions() is not empty or not day.getActivities().isEmpty() %}
+                        {% set currentDayWeek = day.getDate().format('W') %}
+
+                        {# Week separator #}
+                        {% if prevDayWeek is not null and currentDayWeek != prevDayWeek %}
+                            <div class="border-t border-gray-200 my-1"></div>
+                        {% endif %}
+                        {% set prevDayWeek = currentDayWeek %}
+
+                        {% if hasContent or isToday %}
+                            <div class="rounded-lg border border-gray-200 bg-white p-3 {{ isToday ? 'ring-1 ring-inset ring-strava-orange/30' : '' }}">
+                                <div class="flex items-center justify-between gap-2">
+                                    <div class="flex items-center gap-2">
+                                        {% if isToday %}
+                                            <span class="inline-flex size-7 items-center justify-center rounded-full bg-strava-orange text-xs font-bold text-white">{{ day.getDayNumber() }}</span>
+                                        {% else %}
+                                            <span class="text-sm font-medium text-gray-700">{{ day.getDayNumber() }}</span>
+                                        {% endif %}
+                                        <span class="text-xs text-gray-400">{{ day.getDate().format('D') }}</span>
+                                        {% if dayTrainingBlock %}
+                                            <span class="text-[10px] font-semibold uppercase {{ dayBlockTextClass }}">{{ dayTrainingBlock.getPhase()|trans }}</span>
+                                        {% endif %}
+                                        {% if dayRacePriority %}
+                                            <span class="inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[9px] font-semibold uppercase ring-1 {{ dayRaceBadgeClasses }}">
+                                                {{ svg('trophy', 'size-2.5 shrink-0') }}
+                                                {{ 'Race'|trans }}
+                                            </span>
+                                        {% endif %}
+                                    </div>
+                                    <a href="#" data-model-content-url="/planned-session?day={{ day.getDate().format('Y-m-d') }}" class="inline-flex items-center rounded-full bg-gray-100 px-2.5 py-1.5 text-xs font-semibold text-strava-orange hover:bg-gray-200">
+                                        + {{ "Session"|trans }}
+                                    </a>
+                                </div>
+                                {% if hasContent %}
+                                    <div class="mt-2 space-y-1.5">
+                                        {% set linkedActivityIds = [] %}
+                                        {% if day.getRaceEvents() is not empty %}
+                                            {% for raceEvent in day.getRaceEvents() %}
+                                                {% set raceTitle = raceEvent.getTitle() ?: (raceEvent.getType()|trans) %}
+                                                {% set racePriority = raceEvent.getPriority().value %}
+                                                {% set raceItemClasses = racePriority == 'a'
+                                                    ? 'border-l-rose-500 bg-rose-50/[.65]'
+                                                    : (racePriority == 'b'
+                                                        ? 'border-l-amber-500 bg-amber-50/[.7]'
+                                                        : 'border-l-sky-500 bg-sky-50/[.75]') %}
+                                                {% set raceMetaClasses = racePriority == 'a'
+                                                    ? 'text-rose-700'
+                                                    : (racePriority == 'b'
+                                                        ? 'text-amber-700'
+                                                        : 'text-sky-700') %}
+                                                <div class="rounded-md border-l-2 {{ raceItemClasses }} px-2.5 py-1.5">
+                                                    <a href="#" data-model-content-url="/race-event?raceEventId={{ raceEvent.getId() }}" class="flex items-center gap-1.5 text-sm font-medium {{ raceMetaClasses }} hover:underline">
+                                                        {{ svg('trophy', 'size-3.5 shrink-0') }}
+                                                        <span class="truncate">{{ raceTitle }}</span>
+                                                    </a>
+                                                    <div class="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-xs {{ raceMetaClasses }}">
+                                                        <span>{{ raceEvent.getType()|trans }}</span>
+                                                        <span>·</span>
+                                                        <span>{{ raceEvent.getPriority()|trans }}</span>
+                                                    </div>
+                                                </div>
+                                            {% endfor %}
+                                        {% endif %}
+                                        {% if day.getPlannedSessions() is not empty %}
+                                            {% for plannedSession in day.getPlannedSessions() %}
+                                                {% set plannedColor = plannedSession.getActivityType().getColor() %}
+                                                {% set plannedTitle = plannedSession.getTitle() ?: (plannedSession.getActivityType()|trans) %}
+                                                {% set plannedLinkStatus = plannedSession.getLinkStatus().value %}
+                                                {% set linkedActivity = null %}
+                                                {% if plannedLinkStatus == 'linked' and plannedSession.getLinkedActivityId() is not null %}
+                                                    {% set linkedActivityId = plannedSession.getLinkedActivityId() ~ '' %}
+                                                    {% set linkedActivityIds = linkedActivityIds|merge([linkedActivityId]) %}
+                                                    {% set linkedActivity = (day.getActivities()|filter(activity => activity.getId() ~ '' == linkedActivityId))|first %}
+                                                {% endif %}
+                                                <div class="rounded-md border-l-2 border-l-{{ plannedColor }} bg-{{ plannedColor }}/[.10] px-2.5 py-1.5">
+                                                    {% if linkedActivity %}
+                                                        <div class="min-w-0 truncate text-sm">
+                                                            {{ linkedActivity|activityLink(truncate: true) }}
+                                                        </div>
+                                                        <a href="#" data-model-content-url="/planned-session?plannedSessionId={{ plannedSession.getId() }}" class="mt-0.5 inline-flex items-center gap-1 text-xs text-gray-500 hover:text-blue-600 hover:underline">
+                                                            {{ svg('calendar', 'size-3 shrink-0 text-strava-orange') }}
+                                                            <span class="truncate">{{ plannedTitle }}</span>
+                                                        </a>
+                                                    {% else %}
+                                                        <a href="#" data-model-content-url="/planned-session?plannedSessionId={{ plannedSession.getId() }}" class="flex items-center gap-1.5 text-sm font-medium text-blue-600 hover:underline">
+                                                            {{ svg('calendar', 'size-3.5 shrink-0 text-strava-orange') }}
+                                                            <span class="truncate">{{ plannedTitle }}</span>
+                                                        </a>
+                                                        <div class="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-xs text-gray-500">
+                                                            <span>{{ plannedSession.getActivityType()|trans }}</span>
+                                                            <span>·</span>
+                                                            <span>{{ plannedLinkStatus|replace({'_': ' '})|title }}</span>
+                                                        </div>
+                                                    {% endif %}
+                                                </div>
+                                            {% endfor %}
+                                        {% endif %}
+                                        {% if not day.getActivities().isEmpty() %}
+                                            {% for activity in day.getActivities() %}
+                                                {% if (activity.getId() ~ '') not in linkedActivityIds %}
+                                                    {% set color = activity.getSportType().getActivityType().getColor() %}
+                                                    <div class="truncate rounded-md border-l-2 border-l-{{ color }} bg-{{ color }}/[.1] px-2.5 py-1.5 text-sm">
+                                                        {{ activity|activityLink(truncate: true) }}
+                                                    </div>
+                                                {% endif %}
+                                            {% endfor %}
+                                        {% endif %}
+                                    </div>
+                                {% endif %}
+                            </div>
+                        {% endif %}
+                    {% endif %}
+                {% endfor %}
+            </div>
+
+            {# ── Desktop calendar grid (visible >= md) ── #}
+            <div class="hidden md:flex md:flex-col">
             <div class="grid grid-cols-7 gap-px leading-6 font-semibold text-xs text-center border border-b-0">
                 <div class="py-2 bg-white">
                     {{ "Mon"|trans }}
@@ -238,8 +392,9 @@
                     </div>
                 {% endfor %}
             </div>
+            </div>
         </div>
-        <aside class="lg:sticky lg:top-2 lg:max-h-[calc(100vh-1rem)] flex h-full min-h-0 flex-col gap-3 overflow-y-auto pt-1 pr-1 pb-4">
+        <aside data-mobile-tab-panel="sidebar" class="hidden lg:flex lg:sticky lg:top-2 lg:max-h-[calc(100vh-1rem)] h-full min-h-0 flex-col gap-3 overflow-y-auto pt-1 pr-1 pb-4">
             {# ──────────────────────────────────────────────
                SECTION 1 — CURRENT WEEK  (always visible, hero)
                ────────────────────────────────────────────── #}
@@ -685,6 +840,24 @@
                     {% endif %}
                 </div>
             </details>
+
+            {# ──────────────────────────────────────────────
+               SECTION 5 — RACE PLANNER  (compact link)
+               ────────────────────────────────────────────── #}
+            {% if upcomingRaceEvents is not empty %}
+                <a href="{{ relativeUrl('race-planner') }}" data-router-navigate="{{ relativeUrl('race-planner') }}"
+                   class="group flex items-center justify-between rounded-xl border border-gray-200 bg-white px-4 py-2.5 shadow-xs transition hover:bg-gray-50">
+                    <div class="flex items-center gap-2">
+                        <svg class="size-3.5 text-gray-400 group-hover:text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                            <path stroke-linecap="round" stroke-linejoin="round" d="M3 3v1.5M3 21v-6m0 0 2.77-.693a9 9 0 0 1 6.208.682l.108.054a9 9 0 0 0 6.086.71l3.114-.732a48.524 48.524 0 0 1-.005-10.499l-3.11.732a9 9 0 0 1-6.085-.711l-.108-.054a9 9 0 0 0-6.208-.682L3 4.5M3 15V4.5"/>
+                        </svg>
+                        <span class="text-[10px] font-semibold uppercase tracking-widest text-gray-400 group-hover:text-gray-600">{{ "Race planner"|trans }}</span>
+                    </div>
+                    <svg class="size-3.5 text-gray-300 group-hover:text-gray-500" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                        <path stroke-linecap="round" stroke-linejoin="round" d="m8.25 4.5 7.5 7.5-7.5 7.5"/>
+                    </svg>
+                </a>
+            {% endif %}
         </aside>
     </div>
 </div>

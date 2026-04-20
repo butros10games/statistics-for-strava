@@ -1,68 +1,80 @@
 <?php
 
+declare(strict_types=1);
+
 namespace App\Tests\Controller;
 
-use App\Controller\AppRequestHandler;
-use App\Domain\Strava\InvalidStravaAccessToken;
-use App\Domain\Strava\Strava;
-use App\Tests\ContainerTestCase;
-use PHPUnit\Framework\MockObject\MockObject;
-use Spatie\Snapshots\MatchesSnapshots;
-use Symfony\Component\HttpFoundation\RedirectResponse;
-use Symfony\Component\HttpFoundation\Response;
-use Twig\Environment;
+use App\Domain\Auth\AppUser;
+use App\Domain\Auth\AppUserId;
+use App\Domain\Auth\AppUserRepository;
+use App\Infrastructure\Serialization\Json;
+use App\Infrastructure\Time\Clock\Clock;
+use Doctrine\DBAL\Connection;
+use Doctrine\ORM\EntityManagerInterface;
+use Doctrine\ORM\Tools\SchemaTool;
+use Symfony\Bundle\FrameworkBundle\KernelBrowser;
+use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
-class AppRequestHandlerTest extends ContainerTestCase
+final class AppRequestHandlerTest extends WebTestCase
 {
-    use MatchesSnapshots;
+    private KernelBrowser $client;
 
-    private AppRequestHandler $appRequestHandler;
-    private MockObject $strava;
-
-    public function testHandle(): void
+    protected function setUp(): void
     {
-        /** @var \League\Flysystem\InMemory\InMemoryFilesystemAdapter $buildStorage */
-        $buildStorage = $this->getContainer()->get('build.storage');
-        $buildStorage->write('index.html', 'I am the index', []);
+        parent::setUp();
 
-        $this->strava
-            ->expects($this->never())
-            ->method('verifyAccessToken');
+        self::ensureKernelShutdown();
+        $this->client = self::createClient();
 
-        $this->assertMatchesHtmlSnapshot($this->appRequestHandler->handle()->getContent());
-    }
-
-    public function testHandleWhenInvalidRefreshToken(): void
-    {
-        $this->strava
-            ->expects($this->once())
-            ->method('verifyAccessToken')
-            ->willThrowException(new InvalidStravaAccessToken());
-
-        $response = $this->appRequestHandler->handle();
-
-        $this->assertEquals(
-            new RedirectResponse('/strava-oauth', Response::HTTP_FOUND),
-            $response,
-        );
-    }
-
-    public function testHandleWhenValidRefreshTokenButNoBuild(): void
-    {
-        $this->strava
-            ->expects($this->once())
-            ->method('verifyAccessToken');
-
-        $this->assertMatchesHtmlSnapshot($this->appRequestHandler->handle()->getContent());
+        $entityManager = $this->client->getContainer()->get(EntityManagerInterface::class);
+        $connection = $entityManager->getConnection();
+        if ($connection->isConnected()) {
+            $connection->close();
+        }
+        $schemaTool = new SchemaTool($entityManager);
+        $schemaTool->dropDatabase();
+        $schemaTool->createSchema($entityManager->getMetadataFactory()->getAllMetadata());
     }
 
     #[\Override]
-    protected function setUp(): void
+    protected function tearDown(): void
     {
-        $this->appRequestHandler = new AppRequestHandler(
-            $this->getContainer()->get('build.storage'),
-            $this->strava = $this->createMock(Strava::class),
-            $this->getContainer()->get(Environment::class),
+        self::ensureKernelShutdown();
+
+        parent::tearDown();
+    }
+
+    public function testHandleRendersIndexForAuthenticatedUsersWithAthlete(): void
+    {
+        $container = $this->client->getContainer();
+        $clock = $container->get(Clock::class);
+        $userRepository = $container->get(AppUserRepository::class);
+        $connection = $container->get(Connection::class);
+        assert($userRepository instanceof AppUserRepository);
+
+        $user = AppUser::register(
+            appUserId: AppUserId::random(),
+            email: 'owner@example.test',
+            passwordHash: '$2y$13$9vAAdgrJ7ikvHq0wX1AXmO9w9cbQ3VIAtF5NCz7L3A5kZZgwyU0EO',
+            createdAt: $clock->getCurrentDateTimeImmutable(),
         );
+        $userRepository->save($user);
+
+        $connection->insert('AthleteProfile', [
+            'appUserId' => (string) $user->getId(),
+            'payload' => Json::encode([
+                'id' => 'athlete-42',
+                'firstname' => 'Ada',
+                'lastname' => 'Lovelace',
+                'birthDate' => '1990-01-01',
+            ]),
+        ]);
+
+        $this->client->loginUser($user);
+        $this->client->request('GET', '/');
+
+        self::assertResponseIsSuccessful();
+        self::assertStringContainsString('Tempo | Ada Lovelace', (string) $this->client->getResponse()->getContent());
+        self::assertStringContainsString('id="js-loaded-content"', (string) $this->client->getResponse()->getContent());
     }
 }

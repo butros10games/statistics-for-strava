@@ -1,0 +1,40 @@
+{% autoescape false %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>{{ "Account settings"|trans }} | {{ "Statistics for Strava"|trans }}</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <meta name="theme-color" content="#F26822">
+    <meta name="mobile-web-app-title" content="{{ 'Statistics for Strava'|trans }}">
+    <meta name="mobile-web-app-capable" content="yes">
+    <link rel="icon" type="image/x-icon" href="{{ relativeUrl('assets/images/logo.svg') }}">
+    <script>
+        document.documentElement.setAttribute('data-theme', localStorage.getItem('theme') || 'light');
+    </script>
+    <link href="{{ relativeUrl(asset('css/dist/tailwind.min.css')) }}" rel="stylesheet"/>
+</head>
+<body class="min-h-screen bg-gray-50 text-gray-900">
+<div class="mx-auto max-w-5xl px-4 py-6 sm:px-6 lg:px-8">
+    <div class="mb-6 flex flex-col gap-3 border-b border-gray-200 pb-4 sm:flex-row sm:items-center sm:justify-between">
+        <a href="{{ relativeUrl('/') }}" class="inline-flex items-center gap-3 text-gray-900">
+            <img src="{{ relativeUrl('assets/images/logo.svg') }}" class="h-10 rounded-full bg-white p-1 shadow-sm" alt="Tempo Logo"/>
+            <div>
+                <div class="text-lg font-semibold">{{ "Statistics for Strava"|trans }}</div>
+                <div class="text-sm text-gray-500">{{ "Manage your account and connected services"|trans }}</div>
+            </div>
+        </a>
+        <a href="{{ relativeUrl('/') }}" class="inline-flex items-center gap-1.5 self-start rounded-lg border border-gray-300 bg-white px-3.5 py-2 text-sm font-medium text-gray-700 shadow-sm transition hover:bg-gray-50 sm:self-auto">
+            <svg class="size-4" fill="none" viewBox="0 0 24 24" stroke-width="1.5" stroke="currentColor"><path stroke-linecap="round" stroke-linejoin="round" d="M10.75 19.25 3.75 12m0 0 7-7.25M3.75 12h16.5"/></svg>
+            {{ "Back to app"|trans }}
+        </a>
+    </div>
+
+    {% include 'account/settings.html.twig' with {
+        appUser: appUser,
+        stravaConnection: stravaConnection,
+    } only %}
+</div>
+</body>
+</html>
+{% endautoescape %}

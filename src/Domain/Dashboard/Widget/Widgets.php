@@ -56,7 +56,8 @@ final class Widgets implements \IteratorAggregate
 
             $renderedWidgets[] = new RenderedWidget(
                 renderedHtml: $render,
-                width: $configuredWidget['width']
+                width: $configuredWidget['width'],
+                section: $configuredWidget['section'] ?? null,
             );
         }
 

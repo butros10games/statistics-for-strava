@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Infrastructure\DependencyInjection;
 
+use App\Infrastructure\Localisation\IntlCompatibility;
 use App\Infrastructure\Localisation\Locale;
 use Money\Currencies\ISOCurrencies;
 use Money\Formatter\IntlMoneyFormatter;
@@ -19,7 +20,7 @@ final readonly class MoneyFormatterFactory
     public function __invoke(): MoneyFormatter
     {
         $numberFormatter = new \NumberFormatter(
-            locale: $this->locale->value,
+            locale: IntlCompatibility::getNumberFormattingLocale($this->locale->value),
             style: \NumberFormatter::CURRENCY
         );
 

@@ -29,10 +29,12 @@ class Strava
 {
     use ConsoleOutputAware;
 
-    public static ?string $cachedAccessToken = null;
-    /** @var array<mixed>|null */
-    public static ?array $cachedActivitiesResponse = null;
-    private static ?StravaRateLimits $stravaRateLimits = null;
+    /** @var array<string, string> */
+    public static array $cachedAccessTokens = [];
+    /** @var array<string, array<mixed>> */
+    public static array $cachedActivitiesResponses = [];
+    /** @var array<string, StravaRateLimits> */
+    private static array $stravaRateLimitsByKey = [];
 
     public function __construct(
         private readonly Client $client,
@@ -46,6 +48,7 @@ class Strava
         private readonly Sleep $sleep,
         private readonly LoggerInterface $logger,
         private readonly Clock $clock,
+        private readonly ?StravaRefreshTokenResolver $stravaRefreshTokenResolver = null,
     ) {
     }
 
@@ -102,7 +105,7 @@ class Strava
         ));
 
         if (($stravaRateLimits = StravaRateLimits::fromResponse($response)) instanceof StravaRateLimits) {
-            self::$stravaRateLimits = $stravaRateLimits;
+            self::$stravaRateLimitsByKey[$this->resolveCacheKey()] = $stravaRateLimits;
             if ($stravaRateLimits->fifteenMinReadRateLimitHasBeenReached()) {
                 // The next request will hit the 15-minute rate limit. Pause and make sure the import does not crash.
                 $this->getConsoleOutput()->writeln(sprintf(
@@ -118,7 +121,7 @@ class Strava
 
     public function getRateLimit(): ?StravaRateLimits
     {
-        return self::$stravaRateLimits;
+        return self::$stravaRateLimitsByKey[$this->resolveCacheKey()] ?? null;
     }
 
     public function verifyAccessToken(): void
@@ -155,8 +158,10 @@ class Strava
 
     public function getAccessToken(): string
     {
-        if (!is_null(Strava::$cachedAccessToken)) {
-            return Strava::$cachedAccessToken;
+        $cacheKey = $this->resolveCacheKey();
+
+        if (isset(self::$cachedAccessTokens[$cacheKey])) {
+            return self::$cachedAccessTokens[$cacheKey];
         }
 
         $response = $this->request('oauth/token', 'POST', [
@@ -164,7 +169,7 @@ class Strava
                 'client_id' => (string) $this->stravaClientId,
                 'client_secret' => (string) $this->stravaClientSecret,
                 'grant_type' => 'refresh_token',
-                'refresh_token' => (string) $this->stravaRefreshToken,
+                'refresh_token' => (string) $this->resolveRefreshToken(),
             ],
         ]);
 
@@ -173,7 +178,7 @@ class Strava
             throw new \RuntimeException('Could not fetch Strava accessToken');
         }
 
-        Strava::$cachedAccessToken = $decodedResponse['access_token'];
+        self::$cachedAccessTokens[$cacheKey] = $decodedResponse['access_token'];
 
         return $decodedResponse['access_token'];
     }
@@ -195,11 +200,13 @@ class Strava
      */
     public function getActivities(): array
     {
-        if (!is_null(Strava::$cachedActivitiesResponse)) {
-            return Strava::$cachedActivitiesResponse;
+        $cacheKey = $this->resolveCacheKey();
+
+        if (isset(self::$cachedActivitiesResponses[$cacheKey])) {
+            return self::$cachedActivitiesResponses[$cacheKey];
         }
 
-        Strava::$cachedActivitiesResponse = [];
+        self::$cachedActivitiesResponses[$cacheKey] = [];
 
         $page = 1;
         do {
@@ -213,14 +220,24 @@ class Strava
                 ],
             ]));
 
-            Strava::$cachedActivitiesResponse = array_merge(
-                Strava::$cachedActivitiesResponse,
+            self::$cachedActivitiesResponses[$cacheKey] = array_merge(
+                self::$cachedActivitiesResponses[$cacheKey],
                 $activities
             );
             ++$page;
         } while (count($activities) > 0);
 
-        return Strava::$cachedActivitiesResponse;
+        return self::$cachedActivitiesResponses[$cacheKey];
+    }
+
+    private function resolveRefreshToken(): StravaRefreshToken
+    {
+        return $this->stravaRefreshTokenResolver?->resolve() ?? $this->stravaRefreshToken;
+    }
+
+    private function resolveCacheKey(): string
+    {
+        return $this->stravaRefreshTokenResolver?->cacheKey() ?? 'global';
     }
 
     /**

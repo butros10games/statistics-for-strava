@@ -78,7 +78,7 @@ class UpdateDataConsoleCommandTest extends ConsoleCommandTestCase
         $display = $commandTester->getDisplay();
         self::assertStringContainsString('Refreshing Garmin wellness bridge (givemydata)', $display);
         self::assertStringContainsString('Garmin bridge updated.', $display);
-        self::assertStringContainsString('Statistics for Strava', $display);
+        self::assertStringContainsString('Tempo', $display);
         self::assertCount(3, $dispatchedCommands);
         self::assertInstanceOf(RunImport::class, $dispatchedCommands[0]);
         self::assertInstanceOf(RunBuild::class, $dispatchedCommands[1]);

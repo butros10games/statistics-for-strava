@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Application\Build\BuildMonthlyStatsHtml\BuildMonthlyStatsHtml;
+use App\Application\Build\BuildRacePlannerHtml\BuildRacePlannerHtml;
 use App\Domain\TrainingPlanner\DbalRaceEventRepository;
 use App\Domain\TrainingPlanner\DbalTrainingBlockRepository;
 use App\Domain\TrainingPlanner\TrainingBlock;
@@ -60,7 +61,7 @@ final readonly class TrainingBlockRequestHandler
         );
 
         $this->repository->upsert($trainingBlock);
-        $this->commandBus->dispatch(new BuildMonthlyStatsHtml($now));
+        $this->rebuildPlannerViews($now);
 
         return $this->createRedirectResponse($request);
     }
@@ -71,7 +72,7 @@ final readonly class TrainingBlockRequestHandler
         $trainingBlockId = $request->request->getString('trainingBlockId');
         if ('' !== $trainingBlockId) {
             $this->repository->delete(TrainingBlockId::fromString($trainingBlockId));
-            $this->commandBus->dispatch(new BuildMonthlyStatsHtml($this->clock->getCurrentDateTimeImmutable()));
+            $this->rebuildPlannerViews($this->clock->getCurrentDateTimeImmutable());
         }
 
         return $this->createRedirectResponse($request);
@@ -106,6 +107,14 @@ final readonly class TrainingBlockRequestHandler
             $earliestRaceEvent->getDay()->setTime(0, 0),
             $latestRaceEvent->getDay()->setTime(23, 59, 59),
         ));
+    }
+
+    private function rebuildPlannerViews(?SerializableDateTime $now = null): void
+    {
+        $now ??= $this->clock->getCurrentDateTimeImmutable();
+
+        $this->commandBus->dispatch(new BuildMonthlyStatsHtml($now));
+        $this->commandBus->dispatch(new BuildRacePlannerHtml($now));
     }
 
     private function nullableString(?string $value): ?string

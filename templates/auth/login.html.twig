@@ -1,0 +1,38 @@
+{% extends 'auth/_auth-shell.html.twig' %}
+
+{% block auth_body %}
+    <div class="space-y-6">
+        <div class="text-center">
+            <h2 class="text-2xl font-bold text-gray-900">{{ "Welcome back"|trans }}</h2>
+            <p class="mt-1 text-sm text-gray-500">{{ "Sign in to your account to continue"|trans }}</p>
+        </div>
+
+        {% if app.request.query.getBoolean('registered') %}
+            <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">Your account was created. Sign in to continue.</div>
+        {% endif %}
+        {% if app.request.query.getBoolean('passwordReset') %}
+            <div class="rounded-xl border border-emerald-200 bg-emerald-50 px-4 py-3 text-sm text-emerald-800">Your password was updated. Sign in with the new one.</div>
+        {% endif %}
+        {% if error %}
+            <div class="rounded-xl border border-rose-200 bg-rose-50 px-4 py-3 text-sm text-rose-800">{{ error.messageKey|trans(error.messageData, 'security') }}</div>
+        {% endif %}
+
+        <form method="post" action="{{ path('app_login') }}" class="space-y-4">
+            <input type="hidden" name="_csrf_token" value="{{ csrf_token('authenticate') }}">
+            <div>
+                <label class="mb-1 block text-sm font-medium text-gray-700" for="username">Email</label>
+                <input id="username" name="_username" type="email" value="{{ lastUsername }}" required autocomplete="email" class="block w-full rounded-xl border border-gray-300 px-4 py-3 text-sm shadow-sm focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-200">
+            </div>
+            <div>
+                <label class="mb-1 block text-sm font-medium text-gray-700" for="password">Password</label>
+                <input id="password" name="_password" type="password" required autocomplete="current-password" class="block w-full rounded-xl border border-gray-300 px-4 py-3 text-sm shadow-sm focus:border-orange-500 focus:outline-none focus:ring-2 focus:ring-orange-200">
+            </div>
+            <button type="submit" class="inline-flex w-full items-center justify-center rounded-xl bg-strava-orange px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-500 focus:ring-offset-2">{{ "Sign in"|trans }}</button>
+        </form>
+
+        <div class="flex items-center justify-between text-sm">
+            <a href="/register" class="font-medium text-strava-orange hover:text-orange-600">{{ "Create an account"|trans }}</a>
+            <a href="/reset-password" class="text-gray-500 hover:text-gray-700">{{ "Forgot password?"|trans }}</a>
+        </div>
+    </div>
+{% endblock %}

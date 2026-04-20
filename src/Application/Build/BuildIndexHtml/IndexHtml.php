@@ -15,10 +15,10 @@ use App\Domain\Athlete\AthleteRepository;
 use App\Domain\Challenge\ChallengeRepository;
 use App\Domain\Gear\GearRepository;
 use App\Domain\Gear\Maintenance\Task\Progress\MaintenanceTaskProgressCalculator;
+use App\Infrastructure\Localisation\IntlCompatibility;
 use App\Infrastructure\Serialization\Json;
 use App\Infrastructure\ValueObject\Measurement\UnitSystem;
 use App\Infrastructure\ValueObject\Time\SerializableDateTime;
-use Symfony\Component\Intl\Countries;
 use Symfony\Component\Translation\LocaleSwitcher;
 
 final readonly class IndexHtml
@@ -68,7 +68,7 @@ final readonly class IndexHtml
             'maintenanceTaskIsDue' => !$this->maintenanceTaskProgressCalculator->getGearIdsThatHaveDueTasks()->isEmpty(),
             'hasBestEfforts' => $this->activityBestEffortRepository->hasData(),
             'javascriptWindowConstants' => Json::encode([
-                'countries' => Countries::getNames($this->localeSwitcher->getLocale()),
+                'countries' => IntlCompatibility::getCountryNames($this->localeSwitcher->getLocale()),
                 'appUrl' => [
                     'basePath' => $this->appUrl->getBasePath() ?? '',
                 ],

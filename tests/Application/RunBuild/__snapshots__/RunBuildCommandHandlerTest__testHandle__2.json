@@ -98,6 +98,18 @@
         }
     },
     {
+        "commandName": "App\\Application\\Build\\BuildRacePlannerHtml\\BuildRacePlannerHtml",
+        "payload": {
+            "now": "2023-10-17 16:15:04"
+        }
+    },
+    {
+        "commandName": "App\\Application\\Build\\BuildTrainingPlansHtml\\BuildTrainingPlansHtml",
+        "payload": {
+            "now": "2023-10-17 16:15:04"
+        }
+    },
+    {
         "commandName": "App\\Application\\Build\\BuildBadgeSvg\\BuildBadgeSvg",
         "payload": {
             "now": "2023-10-17 16:15:04"

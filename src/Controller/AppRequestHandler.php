@@ -4,10 +4,14 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
-use App\Domain\Strava\InsufficientStravaAccessTokenScopes;
-use App\Domain\Strava\InvalidStravaAccessToken;
-use App\Domain\Strava\Strava;
-use League\Flysystem\FilesystemOperator;
+use App\Application\Build\BuildIndexHtml\IndexHtml;
+use App\Application\Router;
+use App\Domain\Athlete\AthleteRepository;
+use App\Domain\Strava\Connection\AppUserStravaConnectionRepository;
+use App\Infrastructure\Exception\EntityNotFound;
+use App\Infrastructure\Time\Clock\Clock;
+use App\Infrastructure\User\CurrentAppUser;
+use Ramsey\Uuid\Uuid;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\AsController;
@@ -18,8 +22,11 @@ use Twig\Environment;
 final readonly class AppRequestHandler
 {
     public function __construct(
-        private FilesystemOperator $buildStorage,
-        private Strava $strava,
+        private CurrentAppUser $currentAppUser,
+        private AthleteRepository $athleteRepository,
+        private AppUserStravaConnectionRepository $stravaConnectionRepository,
+        private IndexHtml $indexHtml,
+        private Clock $clock,
         private Environment $twig,
     ) {
     }
@@ -27,16 +34,27 @@ final readonly class AppRequestHandler
     #[Route(path: '/{wildcard?}', requirements: ['wildcard' => '.*'], methods: ['GET'], priority: -10)]
     public function handle(): Response
     {
-        if ($this->buildStorage->fileExists('index.html')) {
-            return new Response($this->buildStorage->read('index.html'), Response::HTTP_OK);
-        }
-        try {
-            $this->strava->verifyAccessToken();
-        } catch (InvalidStravaAccessToken|InsufficientStravaAccessTokenScopes) {
-            // Refresh token has not been set up properly or does not have the required scopes, initialize authorization flow.
-            return new RedirectResponse('/strava-oauth', Response::HTTP_FOUND);
+        if (null === $this->currentAppUser->get()) {
+            return new RedirectResponse('/login', Response::HTTP_FOUND);
         }
 
-        return new Response($this->twig->render('html/setup.html.twig'), Response::HTTP_OK);
+        try {
+            $athlete = $this->athleteRepository->find();
+        } catch (EntityNotFound) {
+            $appUser = $this->currentAppUser->require();
+
+            return new Response($this->twig->render('html/setup.html.twig', [
+                'appUser' => $appUser,
+                'stravaConnection' => $this->stravaConnectionRepository->findByUserId($appUser->getId()),
+            ]), Response::HTTP_OK);
+        }
+
+        $context = $this->indexHtml->getContext($this->clock->getCurrentDateTimeImmutable());
+
+        return new Response($this->twig->render('html/index.html.twig', [
+            'router' => Router::SINGLE_PAGE,
+            'easterEggPageUrl' => Uuid::uuid5(Uuid::NAMESPACE_DNS, $athlete->getAthleteId()),
+            ...$context,
+        ]), Response::HTTP_OK);
     }
 }

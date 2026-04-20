@@ -240,8 +240,8 @@ final class RaceReadinessContextBuilder
     private function isHardPlannedSession(PlannedSession $plannedSession, array $plannedSessionEstimatesById): bool
     {
         $targetIntensity = $plannedSession->getTargetIntensity();
-        if (PlannedSessionIntensity::HARD === $targetIntensity || PlannedSessionIntensity::RACE === $targetIntensity) {
-            return true;
+        if (null !== $targetIntensity) {
+            return PlannedSessionIntensity::HARD === $targetIntensity || PlannedSessionIntensity::RACE === $targetIntensity;
         }
 
         return ($plannedSessionEstimatesById[(string) $plannedSession->getId()] ?? 0.0) >= 110.0;

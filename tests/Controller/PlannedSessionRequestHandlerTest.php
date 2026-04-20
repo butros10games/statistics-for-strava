@@ -6,6 +6,7 @@ namespace App\Tests\Controller;
 
 use App\Application\Build\BuildDashboardHtml\BuildDashboardHtml;
 use App\Application\Build\BuildMonthlyStatsHtml\BuildMonthlyStatsHtml;
+use App\Application\Build\BuildRacePlannerHtml\BuildRacePlannerHtml;
 use App\Controller\PlannedSessionRequestHandler;
 use App\Domain\Activity\ActivityId;
 use App\Domain\Activity\ActivityRepository;
@@ -20,8 +21,13 @@ use App\Domain\TrainingPlanner\DbalPlannedSessionRepository;
 use App\Domain\TrainingPlanner\PlannedSessionEstimationSource;
 use App\Domain\TrainingPlanner\PlannedSessionForecastBuilder;
 use App\Domain\TrainingPlanner\PlannedSessionId;
+use App\Domain\TrainingPlanner\PlannedSessionIntensity;
 use App\Domain\TrainingPlanner\PlannedSessionLinkStatus;
 use App\Domain\TrainingPlanner\PlannedSessionLoadEstimator;
+use App\Domain\TrainingPlanner\DbalTrainingSessionRepository;
+use App\Domain\TrainingPlanner\TrainingSession;
+use App\Domain\TrainingPlanner\TrainingSessionId;
+use App\Domain\TrainingPlanner\TrainingSessionLibrarySynchronizer;
 use App\Infrastructure\CQRS\Command\Bus\CommandBus;
 use App\Infrastructure\ValueObject\Time\SerializableDateTime;
 use App\Tests\ContainerTestCase;
@@ -36,6 +42,7 @@ final class PlannedSessionRequestHandlerTest extends ContainerTestCase
 {
     private PlannedSessionRequestHandler $requestHandler;
     private DbalPlannedSessionRepository $repository;
+    private DbalTrainingSessionRepository $trainingSessionRepository;
     private MockObject $commandBus;
 
     public function testHandleGetRendersPlannerModal(): void
@@ -77,6 +84,60 @@ final class PlannedSessionRequestHandlerTest extends ContainerTestCase
         self::assertStringContainsString('No estimated planned sessions in the next 14 days yet.', (string) $response->getContent());
     }
 
+    public function testHandleGetShowsRecommendedTrainingSessions(): void
+    {
+        $this->seedTrainingSessionRecommendation(
+            activityType: ActivityType::RUN,
+            title: 'Progression long run',
+            lastPlannedOn: '2026-04-08 00:00:00',
+            targetLoad: 92.4,
+            targetDurationInSeconds: 5700,
+            targetIntensity: PlannedSessionIntensity::MODERATE,
+            notes: 'Start relaxed, finish marathon steady.',
+            workoutSteps: [
+                [
+                    'itemId' => 'steady-run',
+                    'parentBlockId' => null,
+                    'type' => 'steady',
+                    'label' => 'Progression block',
+                    'repetitions' => 1,
+                    'targetType' => 'time',
+                    'conditionType' => '',
+                    'durationInSeconds' => 5700,
+                    'distanceInMeters' => null,
+                    'targetPace' => '4:50/km',
+                    'targetPower' => null,
+                    'targetHeartRate' => null,
+                    'recoveryAfterInSeconds' => null,
+                ],
+            ],
+        );
+        $this->seedTrainingSessionRecommendation(
+            activityType: ActivityType::RIDE,
+            title: 'Tempo ride',
+            lastPlannedOn: '2026-04-06 00:00:00',
+            targetLoad: 115.0,
+            targetDurationInSeconds: 7200,
+            targetIntensity: PlannedSessionIntensity::HARD,
+        );
+        $this->commandBus->expects(self::never())->method('dispatch');
+
+        if (!class_exists(\MessageFormatter::class)) {
+            self::assertTrue(true);
+
+            return;
+        }
+
+        $response = $this->requestHandler->handle(new Request(query: ['day' => '2026-04-12']));
+
+        self::assertSame(Response::HTTP_OK, $response->getStatusCode());
+        self::assertStringContainsString('Recommended sessions', (string) $response->getContent());
+        self::assertStringContainsString('Progression long run', (string) $response->getContent());
+        self::assertStringContainsString('Use session', (string) $response->getContent());
+        self::assertStringContainsString('data-training-session-payload=', (string) $response->getContent());
+        self::assertStringContainsString('Tempo ride', (string) $response->getContent());
+    }
+
     public function testHandlePostPersistsPlannedSession(): void
     {
         $this->expectPlannerRebuilds();
@@ -103,6 +164,53 @@ final class PlannedSessionRequestHandlerTest extends ContainerTestCase
         self::assertSame(78.5, $records[0]->getTargetLoad());
         self::assertSame(5130, $records[0]->getTargetDurationInSeconds());
         self::assertSame(PlannedSessionEstimationSource::MANUAL_TARGET_LOAD, $records[0]->getEstimationSource());
+
+        $trainingSession = $this->trainingSessionRepository->findBySourcePlannedSessionId($records[0]->getId());
+        self::assertNotNull($trainingSession);
+        self::assertSame('Sunday long run', $trainingSession->getTitle());
+        self::assertSame(78.5, $trainingSession->getTargetLoad());
+        self::assertSame('2026-04-12 00:00:00', $trainingSession->getLastPlannedOn()?->format('Y-m-d H:i:s'));
+    }
+
+    public function testHandlePostDeduplicatesEquivalentTrainingSessionsBeforeSaving(): void
+    {
+        $this->expectPlannerRebuilds(2);
+
+        $firstResponse = $this->requestHandler->handle(new Request(
+            request: [
+                'day' => '2026-04-12',
+                'title' => 'Sunday long run',
+                'activityType' => 'Run',
+                'targetLoad' => '78.5',
+                'targetDurationInMinutes' => '85',
+                'targetDurationInSecondsPart' => '30',
+                'targetIntensity' => 'moderate',
+                'notes' => 'Keep it controlled',
+            ],
+            server: ['REQUEST_METHOD' => 'POST'],
+        ));
+        $secondResponse = $this->requestHandler->handle(new Request(
+            request: [
+                'day' => '2026-04-19',
+                'title' => 'Sunday long run',
+                'activityType' => 'Run',
+                'targetLoad' => '78.5',
+                'targetDurationInMinutes' => '85',
+                'targetDurationInSecondsPart' => '30',
+                'targetIntensity' => 'moderate',
+                'notes' => 'Keep it controlled',
+            ],
+            server: ['REQUEST_METHOD' => 'POST'],
+        ));
+
+        self::assertEquals(new RedirectResponse('/dashboard', Response::HTTP_FOUND), $firstResponse);
+        self::assertEquals(new RedirectResponse('/dashboard', Response::HTTP_FOUND), $secondResponse);
+
+        $recommendedTrainingSessions = $this->trainingSessionRepository->findRecommended(ActivityType::RUN, 10);
+
+        self::assertCount(1, $recommendedTrainingSessions);
+        self::assertSame('Sunday long run', $recommendedTrainingSessions[0]->getTitle());
+        self::assertSame('2026-04-19 00:00:00', $recommendedTrainingSessions[0]->getLastPlannedOn()?->format('Y-m-d H:i:s'));
     }
 
     public function testHandlePostKeepsWorkoutEstimateSourceWhenManualOverrideIsDisabled(): void
@@ -657,6 +765,10 @@ final class PlannedSessionRequestHandlerTest extends ContainerTestCase
 
         self::assertEquals(new RedirectResponse('/monthly-stats#/month/month-2026-04.html', Response::HTTP_FOUND), $response);
         self::assertSame([], $this->repository->findByDay(SerializableDateTime::fromString('2026-04-12 00:00:00')));
+
+        $trainingSession = $this->trainingSessionRepository->findRecommended(ActivityType::RUN, 1)[0] ?? null;
+        self::assertNotNull($trainingSession);
+        self::assertSame('Sunday long run', $trainingSession->getTitle());
     }
 
     #[\Override]
@@ -666,8 +778,11 @@ final class PlannedSessionRequestHandlerTest extends ContainerTestCase
 
         $this->seedAthlete();
         $this->repository = new DbalPlannedSessionRepository($this->getConnection());
+        $this->trainingSessionRepository = new DbalTrainingSessionRepository($this->getConnection());
         $this->requestHandler = new PlannedSessionRequestHandler(
             repository: $this->repository,
+            trainingSessionRepository: $this->trainingSessionRepository,
+            trainingSessionLibrarySynchronizer: $this->getContainer()->get(TrainingSessionLibrarySynchronizer::class),
             activityRepository: $this->getContainer()->get(DbalActivityRepository::class),
             plannedSessionActivityMatcher: $this->getContainer()->get(PlannedSessionActivityMatcher::class),
             plannedSessionLoadEstimator: $this->getContainer()->get(PlannedSessionLoadEstimator::class),
@@ -705,14 +820,48 @@ final class PlannedSessionRequestHandlerTest extends ContainerTestCase
         ));
     }
 
+    /**
+     * @param list<array<string, mixed>> $workoutSteps
+     */
+    private function seedTrainingSessionRecommendation(
+        ActivityType $activityType,
+        string $title,
+        string $lastPlannedOn,
+        ?float $targetLoad = null,
+        ?int $targetDurationInSeconds = null,
+        ?PlannedSessionIntensity $targetIntensity = null,
+        ?string $notes = null,
+        array $workoutSteps = [],
+    ): void {
+        $lastPlannedOnDate = SerializableDateTime::fromString($lastPlannedOn);
+
+        $this->trainingSessionRepository->upsert(TrainingSession::create(
+            trainingSessionId: TrainingSessionId::random(),
+            sourcePlannedSessionId: null,
+            activityType: $activityType,
+            title: $title,
+            notes: $notes,
+            targetLoad: $targetLoad,
+            targetDurationInSeconds: $targetDurationInSeconds,
+            targetIntensity: $targetIntensity,
+            templateActivityId: null,
+            estimationSource: [] === $workoutSteps ? PlannedSessionEstimationSource::MANUAL_TARGET_LOAD : PlannedSessionEstimationSource::WORKOUT_TARGETS,
+            lastPlannedOn: $lastPlannedOnDate,
+            createdAt: $lastPlannedOnDate,
+            updatedAt: $lastPlannedOnDate,
+            workoutSteps: $workoutSteps,
+        ));
+    }
+
     private function expectPlannerRebuilds(int $times = 1): void
     {
         $this->commandBus
-            ->expects(self::exactly($times * 2))
+            ->expects(self::exactly($times * 3))
             ->method('dispatch')
             ->with(self::logicalOr(
                 self::isInstanceOf(BuildDashboardHtml::class),
                 self::isInstanceOf(BuildMonthlyStatsHtml::class),
+                self::isInstanceOf(BuildRacePlannerHtml::class),
             ));
     }
 }

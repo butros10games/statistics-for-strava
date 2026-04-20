@@ -17,7 +17,7 @@ trait ProvideConsoleIntro
     {
         $output->block(
             messages: [
-                sprintf('Statistics for Strava %s', AppVersion::getSemanticVersion()),
+                sprintf('Tempo %s', AppVersion::getSemanticVersion()),
             ],
             style: 'fg=black;bg=green',
             padding: true
@@ -29,7 +29,7 @@ trait ProvideConsoleIntro
     {
         $output->block(
             messages: [
-                sprintf('Statistics for Strava %s | DAEMON', AppVersion::getSemanticVersion()),
+                sprintf('Tempo %s | DAEMON', AppVersion::getSemanticVersion()),
                 sprintf('Started on %s', $clock->getCurrentDateTimeImmutable()->format('d-m-Y H:i:s')),
             ],
             style: 'fg=black;bg=green',

@@ -23,32 +23,41 @@ final readonly class DashboardLayout implements \IteratorAggregate
     public static function default(): array
     {
         return [
-            ['widget' => 'mostRecentActivities', 'width' => 66, 'enabled' => true, 'config' => ['numberOfActivitiesToDisplay' => 5]],
-            ['widget' => 'introText', 'width' => 33, 'enabled' => true],
-            ['widget' => 'trainingGoals', 'width' => 33, 'enabled' => false, 'config' => ['goals' => []]],
-            ['widget' => 'weeklyStats', 'width' => 100, 'enabled' => true, 'config' => ['metricsDisplayOrder' => ['distance', 'movingTime', 'elevation']]],
-            ['widget' => 'activityGrid', 'width' => 100, 'enabled' => true],
-            ['widget' => 'streaks', 'width' => 33, 'enabled' => true, 'config' => ['subtitle' => null, 'sportTypesToInclude' => []]],
-            ['widget' => 'athleteProfile', 'width' => 33, 'enabled' => true],
-            ['widget' => 'eddington', 'width' => 33, 'enabled' => true],
-            ['widget' => 'peakPowerOutputs', 'width' => 50, 'enabled' => true],
-            ['widget' => 'heartRateZones', 'width' => 50, 'enabled' => true],
-            ['widget' => 'monthlyStats', 'width' => 66, 'enabled' => true, 'config' => [
+            // ── Training & Recovery ──
+            ['widget' => 'trainingLoad', 'width' => 100, 'enabled' => true, 'section' => 'Training & Recovery'],
+            ['widget' => 'wellness', 'width' => 50, 'enabled' => false, 'section' => 'Training & Recovery'],
+            ['widget' => 'trainingGoals', 'width' => 50, 'enabled' => false, 'section' => 'Training & Recovery', 'config' => ['goals' => []]],
+
+            // ── Recent Activity ──
+            ['widget' => 'mostRecentActivities', 'width' => 66, 'enabled' => true, 'section' => 'Recent Activity', 'config' => ['numberOfActivitiesToDisplay' => 5]],
+            ['widget' => 'streaks', 'width' => 33, 'enabled' => true, 'section' => 'Recent Activity', 'config' => ['subtitle' => null, 'sportTypesToInclude' => []]],
+            ['widget' => 'weeklyStats', 'width' => 100, 'enabled' => true, 'section' => 'Recent Activity', 'config' => ['metricsDisplayOrder' => ['distance', 'movingTime', 'elevation']]],
+            ['widget' => 'activityGrid', 'width' => 100, 'enabled' => true, 'section' => 'Recent Activity'],
+
+            // ── Performance ──
+            ['widget' => 'athleteProfile', 'width' => 33, 'enabled' => true, 'section' => 'Performance'],
+            ['widget' => 'peakPowerOutputs', 'width' => 66, 'enabled' => true, 'section' => 'Performance'],
+            ['widget' => 'heartRateZones', 'width' => 50, 'enabled' => true, 'section' => 'Performance'],
+            ['widget' => 'eddington', 'width' => 50, 'enabled' => true, 'section' => 'Performance'],
+            ['widget' => 'ftpHistory', 'width' => 100, 'enabled' => true, 'section' => 'Performance'],
+
+            // ── Analytics ──
+            ['widget' => 'monthlyStats', 'width' => 66, 'enabled' => true, 'section' => 'Analytics', 'config' => [
                 'enableLastXYearsByDefault' => 10, 'metricsDisplayOrder' => ['distance', 'movingTime', 'elevation'],
             ]],
-            ['widget' => 'mostRecentMilestones', 'width' => 33, 'enabled' => true, 'config' => ['numberOfMilestonesToDisplay' => 5]],
-            ['widget' => 'trainingLoad', 'width' => 100, 'enabled' => true],
-            ['widget' => 'weekdayStats', 'width' => 50, 'enabled' => true],
-            ['widget' => 'dayTimeStats', 'width' => 50, 'enabled' => true],
-            ['widget' => 'distanceBreakdown', 'width' => 50, 'enabled' => true],
-            ['widget' => 'gearStats', 'width' => 50, 'enabled' => true, 'config' => ['includeRetiredGear' => true]],
-            ['widget' => 'yearlyStats', 'width' => 100, 'enabled' => true, 'config' => ['enableLastXYearsByDefault' => 10, 'metricsDisplayOrder' => ['distance', 'movingTime', 'elevation']]],
-            ['widget' => 'zwiftStats', 'width' => 50, 'enabled' => true],
-            ['widget' => 'ftpHistory', 'width' => 50, 'enabled' => true],
-            ['widget' => 'challengeConsistency', 'width' => 50, 'enabled' => true, 'config' => ['challenges' => []]],
-            ['widget' => 'mostRecentChallengesCompleted', 'width' => 50, 'enabled' => true, 'config' => ['numberOfChallengesToDisplay' => 5]],
-            ['widget' => 'athleteWeightHistory', 'width' => 50, 'enabled' => true],
-            ['widget' => 'wellness', 'width' => 50, 'enabled' => false],
+            ['widget' => 'mostRecentMilestones', 'width' => 33, 'enabled' => true, 'section' => 'Analytics', 'config' => ['numberOfMilestonesToDisplay' => 5]],
+            ['widget' => 'weekdayStats', 'width' => 50, 'enabled' => true, 'section' => 'Analytics'],
+            ['widget' => 'dayTimeStats', 'width' => 50, 'enabled' => true, 'section' => 'Analytics'],
+            ['widget' => 'distanceBreakdown', 'width' => 50, 'enabled' => true, 'section' => 'Analytics'],
+            ['widget' => 'yearlyStats', 'width' => 100, 'enabled' => true, 'section' => 'Analytics', 'config' => ['enableLastXYearsByDefault' => 10, 'metricsDisplayOrder' => ['distance', 'movingTime', 'elevation']]],
+            ['widget' => 'athleteWeightHistory', 'width' => 50, 'enabled' => true, 'section' => 'Analytics'],
+
+            // ── Gear & Challenges ──
+            ['widget' => 'gearStats', 'width' => 50, 'enabled' => true, 'section' => 'Gear & Challenges', 'config' => ['includeRetiredGear' => true]],
+            ['widget' => 'mostRecentChallengesCompleted', 'width' => 50, 'enabled' => true, 'section' => 'Gear & Challenges', 'config' => ['numberOfChallengesToDisplay' => 5]],
+            ['widget' => 'challengeConsistency', 'width' => 50, 'enabled' => false, 'section' => 'Gear & Challenges', 'config' => ['challenges' => []]],
+            ['widget' => 'zwiftStats', 'width' => 50, 'enabled' => false, 'section' => 'Gear & Challenges'],
+            ['widget' => 'introText', 'width' => 33, 'enabled' => false],
         ];
     }
 

@@ -5,6 +5,8 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Application\Build\BuildMonthlyStatsHtml\BuildMonthlyStatsHtml;
+use App\Application\Build\BuildRacePlannerHtml\BuildRacePlannerHtml;
+use App\Application\Build\BuildTrainingPlansHtml\BuildTrainingPlansHtml;
 use App\Domain\TrainingPlanner\DbalRaceEventRepository;
 use App\Domain\TrainingPlanner\RaceEvent;
 use App\Domain\TrainingPlanner\RaceEventFamily;
@@ -50,6 +52,7 @@ final readonly class RaceEventRequestHandler
 
         $raceEvent = RaceEvent::createWithClassification(
             raceEventId: $existing?->getId() ?? RaceEventId::random(),
+            ownerUserId: $existing?->getOwnerUserId(),
             day: SerializableDateTime::fromString($request->request->getString('day', $now->format('Y-m-d'))),
             family: $family,
             profile: $profile,
@@ -66,7 +69,7 @@ final readonly class RaceEventRequestHandler
         );
 
         $this->repository->upsert($raceEvent);
-        $this->commandBus->dispatch(new BuildMonthlyStatsHtml($now));
+        $this->rebuildPlannerViews($now);
 
         return $this->createRedirectResponse($request);
     }
@@ -77,7 +80,7 @@ final readonly class RaceEventRequestHandler
         $raceEventId = $request->request->getString('raceEventId');
         if ('' !== $raceEventId) {
             $this->repository->delete(RaceEventId::fromString($raceEventId));
-            $this->commandBus->dispatch(new BuildMonthlyStatsHtml($this->clock->getCurrentDateTimeImmutable()));
+            $this->rebuildPlannerViews($this->clock->getCurrentDateTimeImmutable());
         }
 
         return $this->createRedirectResponse($request);
@@ -134,6 +137,15 @@ final readonly class RaceEventRequestHandler
         }
 
         return intdiv($seconds % 3600, 60);
+    }
+
+    private function rebuildPlannerViews(?SerializableDateTime $now = null): void
+    {
+        $now ??= $this->clock->getCurrentDateTimeImmutable();
+
+        $this->commandBus->dispatch(new BuildMonthlyStatsHtml($now));
+        $this->commandBus->dispatch(new BuildRacePlannerHtml($now));
+        $this->commandBus->dispatch(new BuildTrainingPlansHtml($now));
     }
 
     private function nullableString(?string $value): ?string

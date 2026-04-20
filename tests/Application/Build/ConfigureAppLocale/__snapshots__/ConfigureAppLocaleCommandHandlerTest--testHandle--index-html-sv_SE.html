@@ -1,13 +1,13 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>Statistics for Strava | Robin Ingelbrecht</title>
+    <title>Tempo | Robin Ingelbrecht</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width">
     <meta name="theme-color" content="#F26822">
-    <meta name="mobile-web-app-title" content="Statistics for Strava | Robin Ingelbrecht">
+    <meta name="mobile-web-app-title" content="Tempo | Robin Ingelbrecht">
     <meta name="mobile-web-app-capable" content="yes">
-    <meta name="apple-mobile-web-app-title" content="Statistics for Strava">
+    <meta name="apple-mobile-web-app-title" content="Tempo">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <link rel="apple-touch-icon" sizes="180x180" href="/assets/images/manifest/icon-apple-180.maskable.png">
     <link href="/manifest.json?0025176c-5652-11ee-923d-02424dd627d5" rel="manifest" crossorigin="use-credentials">
@@ -41,14 +41,14 @@
                 <svg aria-hidden="true" class="hidden w-6 h-6" fill="currentColor" viewbox="0 0 20 20" xmlns="http://www.w3.org/2000/svg">
                     <path fill-rule="evenodd" d="M4.293 4.293a1 1 0 011.414 0L10 8.586l4.293-4.293a1 1 0 111.414 1.414L11.414 10l4.293 4.293a1 1 0 01-1.414 1.414L10 11.414l-4.293 4.293a1 1 0 01-1.414-1.414L8.586 10 4.293 5.707a1 1 0 010-1.414z" clip-rule="evenodd"></path>
                 </svg>
-                <span class="sr-only">Visa/D&ouml;lj sidof&auml;lt</span>
+                <span class="sr-only">Visa/Dölj sidofält</span>
             </button>
             <a href="#" data-router-navigate="/dashboard" class="flex items-center justify-between mr-4">
-                <img src="/assets/images/logo.svg" class="rounded-full mr-3 h-8" alt="Statistics for Strava Logo">
+                <img src="/assets/images/logo.svg" class="rounded-full mr-3 h-8" alt="Tempo Logo">
                 <div class="flex gap-x-1 sm:text-lg md:text-2xl font-semibold whitespace-nowrap">
-                    <div>Statistics for Strava</div>
+                    <div>Tempo</div>
                                             <div class="hidden md:block">|</div>
-                        <div class="hidden md:block">Robin The King &#128081;</div>
+                        <div class="hidden md:block">Robin The King 👑</div>
                                     </div>
             </a>
         </div>
@@ -131,6 +131,15 @@
                             </a>
                         </li>
                         <li>
+                            <a href="/account/settings" class="inline-flex items-center w-full p-2 hover:bg-gray-50 rounded">
+                                <svg class="size-4 me-1.5" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewbox="0 0 24 24">
+                                    <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19a1 1 0 0 1-1.106-1.447l.323-.646A1 1 0 0 0 8.382 15.5H7.618a1 1 0 0 0-.835 1.407l.323.646A1 1 0 0 1 6 19H5a1 1 0 0 1-.894-.553l-.764-1.528a1 1 0 0 1 .2-1.15l.457-.457a1 1 0 0 0 0-1.414l-.457-.457a1 1 0 0 1-.2-1.15l.764-1.528A1 1 0 0 1 5 8h1a1 1 0 0 1 1.106 1.447l-.323.646A1 1 0 0 0 7.618 11.5h.764a1 1 0 0 0 .835-1.407l-.323-.646A1 1 0 0 1 10 8h4a1 1 0 0 1 1.106 1.447l-.323.646A1 1 0 0 0 15.618 11.5h.764a1 1 0 0 0 .835-1.407l-.323-.646A1 1 0 0 1 18 8h1a1 1 0 0 1 .894.553l.764 1.528a1 1 0 0 1-.2 1.15l-.457.457a1 1 0 0 0 0 1.414l.457.457a1 1 0 0 1 .2 1.15l-.764 1.528A1 1 0 0 1 19 19h-1a1 1 0 0 1-1.106-1.447l.323-.646A1 1 0 0 0 16.382 15.5h-.764a1 1 0 0 0-.835 1.407l.323.646A1 1 0 0 1 14 19h-4Z"></path>
+                                    <path stroke="currentColor" stroke-width="2" d="M12 15a3 3 0 1 0 0-6 3 3 0 0 0 0 6Z"></path>
+                                </svg>
+                                Account settings
+                            </a>
+                        </li>
+                        <li>
                             <a href="https://www.strava.com/athletes/100" target="_blank" class="inline-flex items-center w-full p-2 hover:bg-gray-50 rounded">
                                 <svg class="size-4 me-1.5" fill="currentColor" viewbox="0 0 24 24" xmlns="http://www.w3.org/2000/svg">
                                     <g stroke-width="0"></g>
@@ -156,9 +165,10 @@
                 </div>
                     </div>
     </div>
-</nav>        <!-- SIDEBAR -->
+</nav>
+        <!-- SIDEBAR -->
     <aside class="fixed top-0 left-0 w-64 sidebar-collapsed:w-20 h-screen pt-14 transition-transform -translate-x-full bg-white border-r border-gray-200 md:translate-x-0 z-1001" aria-label="Sidenav" id="drawer-navigation">
-                <div class="sidebar-collapsed:max-h-full max-h-[calc(100vh-114px)] overflow-y-auto py-5 px-3 h-full divide-y divide-gray-200">
+                <div class="sidebar-collapsed:max-h-full max-h-[calc(100vh-114px)] overflow-y-auto sidebar-collapsed:px-2 sidebar-collapsed:py-4 py-5 px-3 h-full divide-y divide-gray-200">
             <ul class="space-y-1 pb-2">
                 <li>
                     <a href="/dashboard" data-router-navigate="/dashboard" class="sidebar-menu-link">
@@ -166,7 +176,7 @@
                             <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 6.025A7.5 7.5 0 1 0 17.975 14H10V6.025Z"></path>
                             <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13.5 3c-.169 0-.334.014-.5.025V11h7.975c.011-.166.025-.331.025-.5A7.5 7.5 0 0 0 13.5 3Z"></path>
                         </svg>
-                        <span class="flex-1 whitespace-nowrap">&Ouml;versikt</span>
+                        <span class="flex-1 whitespace-nowrap">Översikt</span>
                     </a>
                 </li>
             </ul>
@@ -207,7 +217,24 @@
                         <svg class="sidebar-menu-link-icon" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewbox="0 0 24 24">
                             <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 10h16m-8-3V4M7 7V4m10 3V4M5 20h14a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1Zm3-7h.01v.01H8V13Zm4 0h.01v.01H12V13Zm4 0h.01v.01H16V13Zm-8 4h.01v.01H8V17Zm4 0h.01v.01H12V17Zm4 0h.01v.01H16V17Z"></path>
                         </svg>
-                        <span class="flex-1 whitespace-nowrap">Sammanst&auml;llning</span>
+                        <span class="flex-1 whitespace-nowrap">Training calendar</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/race-planner" data-router-navigate="/race-planner" class="sidebar-menu-link">
+                        <svg class="sidebar-menu-link-icon" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewbox="0 0 24 24">
+                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3v1.5M3 21v-6m0 0 2.77-.693a9 9 0 0 1 6.208.682l.108.054a9 9 0 0 0 6.086.71l3.114-.732a48.524 48.524 0 0 1-.005-10.499l-3.11.732a9 9 0 0 1-6.085-.711l-.108-.054a9 9 0 0 0-6.208-.682L3 4.5M3 15V4.5"></path>
+                        </svg>
+                        <span class="flex-1 whitespace-nowrap">Race planner</span>
+                    </a>
+                </li>
+                <li>
+                    <a href="/training-plans" data-router-navigate="/training-plans" class="sidebar-menu-link">
+                        <svg class="sidebar-menu-link-icon" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewbox="0 0 24 24">
+                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 7V3m8 4V3m-9 8h10m-12 9h14a2 2 0 0 0 2-2V7a2 2 0 0 0-2-2H5a2 2 0 0 0-2 2v11a2 2 0 0 0 2 2Z"></path>
+                            <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M7 14h4m2 0h4M7 18h10"></path>
+                        </svg>
+                        <span class="flex-1 whitespace-nowrap">Plan manager</span>
                     </a>
                 </li>
                 <li>
@@ -233,7 +260,7 @@
                                 <path d="M15 3V17" stroke="currentColor" stroke-width="2"></path>
                             </g>
                         </svg>
-                        <span class="flex-1 whitespace-nowrap">F&auml;rgkarta</span>
+                        <span class="flex-1 whitespace-nowrap">Färgkarta</span>
                     </a>
                 </li>
                                     <li>
@@ -241,7 +268,7 @@
                             <svg class="sidebar-menu-link-icon" xmlns="http://www.w3.org/2000/svg" viewbox="0 0 24 24">
                                 <path fill="currentColor" d="M21,4H18V3a1,1,0,0,0-1-1H7A1,1,0,0,0,6,3V4H3A1,1,0,0,0,2,5V8a4,4,0,0,0,4,4H7.54A6,6,0,0,0,11,13.91V16H10a3,3,0,0,0-3,3v2a1,1,0,0,0,1,1h8a1,1,0,0,0,1-1V19a3,3,0,0,0-3-3H13V13.91A6,6,0,0,0,16.46,12H18a4,4,0,0,0,4-4V5A1,1,0,0,0,21,4ZM6,10A2,2,0,0,1,4,8V6H6V8a6,6,0,0,0,.35,2Zm8,8a1,1,0,0,1,1,1v1H9V19a1,1,0,0,1,1-1ZM16,8A4,4,0,0,1,8,8V4h8Zm4,0a2,2,0,0,1-2,2h-.35A6,6,0,0,0,18,8V6h2Z"></path>
                             </svg>
-                            <span class="flex-1 whitespace-nowrap">B&auml;sta Insatser</span>
+                            <span class="flex-1 whitespace-nowrap">Bästa Insatser</span>
                         </a>
                     </li>
                                 <li>
@@ -287,13 +314,13 @@
                 <div class="flex items-center justify-center gap-x-1">
                     <span class="bg-gray-100 text-gray-600 font-medium px-2.5 py-0.5 rounded-sm" title="Uppdaterades 17-10-2023 16:15">v4.7.5</span>
                     <span class="hidden" data-latest-version data-current-version="v4.7.5">
-                    (latest: <a class="underline" href="https://github.com/robiningelbrecht/statistics-for-strava/releases/tag/%5BLATEST_VERSION%5D">[LATEST_VERSION]</a>)
+                    (latest: <a class="underline" href="https://github.com/robiningelbrecht/statistics-for-strava/releases/tag/[LATEST_VERSION]">[LATEST_VERSION]</a>)
                 </span>
                 </div>
             </div>
             <div class="flex gap-x-1 items-center justify-center">
                 <img class="h-3" src="/assets/images/strava/powered-by-strava.svg" alt="Powered by Strava">
-                <div class="sidebar-collapsed:hidden">&amp; &#9749;</div>
+                <div class="sidebar-collapsed:hidden">&amp; ☕</div>
             </div>
         </div>
     </aside>
@@ -331,7 +358,7 @@
             </main>
 </div>
 <script>
-    window.statisticsForStrava = {"countries":{"AF":"Afghanistan","AL":"Albanien","DZ":"Algeriet","VI":"Amerikanska Jungfru\u00f6arna","AS":"Amerikanska Samoa","AD":"Andorra","AO":"Angola","AI":"Anguilla","AQ":"Antarktis","AG":"Antigua och Barbuda","AR":"Argentina","AM":"Armenien","AW":"Aruba","AU":"Australien","AZ":"Azerbajdzjan","BS":"Bahamas","BH":"Bahrain","BD":"Bangladesh","BB":"Barbados","BY":"Belarus","BE":"Belgien","BZ":"Belize","BJ":"Benin","BM":"Bermuda","BT":"Bhutan","BO":"Bolivia","BA":"Bosnien och Hercegovina","BW":"Botswana","BV":"Bouvet\u00f6n","BR":"Brasilien","VG":"Brittiska Jungfru\u00f6arna","IO":"Brittiska territoriet i Indiska oceanen","BN":"Brunei","BG":"Bulgarien","BF":"Burkina Faso","BI":"Burundi","KY":"Cayman\u00f6arna","CF":"Centralafrikanska republiken","CL":"Chile","CO":"Colombia","CK":"Cook\u00f6arna","CR":"Costa Rica","CW":"Cura\u00e7ao","CY":"Cypern","DK":"Danmark","DJ":"Djibouti","DM":"Dominica","DO":"Dominikanska republiken","EC":"Ecuador","EG":"Egypten","GQ":"Ekvatorialguinea","SV":"El Salvador","CI":"Elfenbenskusten","ER":"Eritrea","EE":"Estland","SZ":"Eswatini","ET":"Etiopien","FK":"Falklands\u00f6arna","FJ":"Fiji","PH":"Filippinerna","FI":"Finland","FR":"Frankrike","GF":"Franska Guyana","PF":"Franska Polynesien","TF":"Franska sydterritorierna","FO":"F\u00e4r\u00f6arna","AE":"F\u00f6renade Arabemiraten","GA":"Gabon","GM":"Gambia","GE":"Georgien","GH":"Ghana","GI":"Gibraltar","GR":"Grekland","GD":"Grenada","GL":"Gr\u00f6nland","GP":"Guadeloupe","GU":"Guam","GT":"Guatemala","GG":"Guernsey","GN":"Guinea","GW":"Guinea-Bissau","GY":"Guyana","HT":"Haiti","HM":"Heard\u00f6n och McDonald\u00f6arna","HN":"Honduras","HK":"Hongkong SAR","IN":"Indien","ID":"Indonesien","IQ":"Irak","IR":"Iran","IE":"Irland","IS":"Island","IM":"Isle of Man","IL":"Israel","IT":"Italien","JM":"Jamaica","JP":"Japan","YE":"Jemen","JE":"Jersey","JO":"Jordanien","CX":"Jul\u00f6n","KH":"Kambodja","CM":"Kamerun","CA":"Kanada","CV":"Kap Verde","BQ":"Karibiska Nederl\u00e4nderna","KZ":"Kazakstan","KE":"Kenya","CN":"Kina","KG":"Kirgizistan","KI":"Kiribati","CC":"Kokos\u00f6arna","KM":"Komorerna","CG":"Kongo-Brazzaville","CD":"Kongo-Kinshasa","HR":"Kroatien","CU":"Kuba","KW":"Kuwait","LA":"Laos","LS":"Lesotho","LV":"Lettland","LB":"Libanon","LR":"Liberia","LY":"Libyen","LI":"Liechtenstein","LT":"Litauen","LU":"Luxemburg","MO":"Macao SAR","MG":"Madagaskar","MW":"Malawi","MY":"Malaysia","MV":"Maldiverna","ML":"Mali","MT":"Malta","MA":"Marocko","MH":"Marshall\u00f6arna","MQ":"Martinique","MR":"Mauretanien","MU":"Mauritius","YT":"Mayotte","MX":"Mexiko","FM":"Mikronesien","MZ":"Mo\u00e7ambique","MD":"Moldavien","MC":"Monaco","MN":"Mongoliet","ME":"Montenegro","MS":"Montserrat","MM":"Myanmar (Burma)","NA":"Namibia","NR":"Nauru","NL":"Nederl\u00e4nderna","NP":"Nepal","NI":"Nicaragua","NE":"Niger","NG":"Nigeria","NU":"Niue","KP":"Nordkorea","MK":"Nordmakedonien","MP":"Nordmarianerna","NF":"Norfolk\u00f6n","NO":"Norge","NC":"Nya Kaledonien","NZ":"Nya Zeeland","OM":"Oman","PK":"Pakistan","PW":"Palau","PS":"Palestinska territorierna","PA":"Panama","PG":"Papua Nya Guinea","PY":"Paraguay","PE":"Peru","PN":"Pitcairn\u00f6arna","PL":"Polen","PT":"Portugal","PR":"Puerto Rico","QA":"Qatar","RE":"R\u00e9union","RO":"Rum\u00e4nien","RW":"Rwanda","RU":"Ryssland","BL":"S:t Barth\u00e9lemy","SH":"S:t Helena","KN":"S:t Kitts och Nevis","LC":"S:t Lucia","PM":"S:t Pierre och Miquelon","VC":"S:t Vincent och Grenadinerna","MF":"Saint-Martin","SB":"Salomon\u00f6arna","WS":"Samoa","SM":"San Marino","ST":"S\u00e3o Tom\u00e9 och Pr\u00edncipe","SA":"Saudiarabien","CH":"Schweiz","SN":"Senegal","RS":"Serbien","SC":"Seychellerna","SL":"Sierra Leone","SG":"Singapore","SX":"Sint Maarten","SK":"Slovakien","SI":"Slovenien","SO":"Somalia","ES":"Spanien","LK":"Sri Lanka","GB":"Storbritannien","SD":"Sudan","SR":"Surinam","SJ":"Svalbard och Jan Mayen","SE":"Sverige","ZA":"Sydafrika","GS":"Sydgeorgien och Sydsandwich\u00f6arna","KR":"Sydkorea","SS":"Sydsudan","SY":"Syrien","TJ":"Tadzjikistan","TW":"Taiwan","TZ":"Tanzania","TD":"Tchad","TH":"Thailand","CZ":"Tjeckien","TG":"Togo","TK":"Tokelau\u00f6arna","TO":"Tonga","TT":"Trinidad och Tobago","TN":"Tunisien","TR":"Turkiet","TM":"Turkmenistan","TC":"Turks- och Caicos\u00f6arna","TV":"Tuvalu","DE":"Tyskland","UG":"Uganda","UA":"Ukraina","HU":"Ungern","UY":"Uruguay","US":"USA","UM":"USA:s yttre \u00f6ar","UZ":"Uzbekistan","VU":"Vanuatu","VA":"Vatikanstaten","VE":"Venezuela","VN":"Vietnam","EH":"V\u00e4stsahara","WF":"Wallis- och Futuna\u00f6arna","ZM":"Zambia","ZW":"Zimbabwe","AX":"\u00c5land","AT":"\u00d6sterrike","TL":"\u00d6sttimor"},"appUrl":{"basePath":""},"unitSystem":{"name":"metric","paceSymbol":"\/km","distanceSymbol":"km","elevationSymbol":"m"}};
+    window.statisticsForStrava = {"countries":{"AF":"Afghanistan","AL":"Albanien","DZ":"Algeriet","VI":"Amerikanska Jungfru\u00f6arna","AS":"Amerikanska Samoa","AD":"Andorra","AO":"Angola","AI":"Anguilla","AQ":"Antarktis","AG":"Antigua och Barbuda","AR":"Argentina","AM":"Armenien","AW":"Aruba","AU":"Australien","AZ":"Azerbajdzjan","BS":"Bahamas","BH":"Bahrain","BD":"Bangladesh","BB":"Barbados","BY":"Belarus","BE":"Belgien","BZ":"Belize","BJ":"Benin","BM":"Bermuda","BT":"Bhutan","BO":"Bolivia","BA":"Bosnien och Hercegovina","BW":"Botswana","BV":"Bouvet\u00f6n","BR":"Brasilien","VG":"Brittiska Jungfru\u00f6arna","IO":"Brittiska territoriet i Indiska oceanen","BN":"Brunei","BG":"Bulgarien","BF":"Burkina Faso","BI":"Burundi","KY":"Cayman\u00f6arna","CF":"Centralafrikanska republiken","CL":"Chile","CO":"Colombia","CK":"Cook\u00f6arna","CR":"Costa Rica","CW":"Cura\u00e7ao","CY":"Cypern","DK":"Danmark","DJ":"Djibouti","DM":"Dominica","DO":"Dominikanska republiken","EC":"Ecuador","EG":"Egypten","GQ":"Ekvatorialguinea","CI":"Elfenbenskusten","SV":"El Salvador","ER":"Eritrea","EE":"Estland","SZ":"Eswatini","ET":"Etiopien","FK":"Falklands\u00f6arna","FJ":"Fiji","PH":"Filippinerna","FI":"Finland","FR":"Frankrike","GF":"Franska Guyana","PF":"Franska Polynesien","TF":"Franska sydterritorierna","FO":"F\u00e4r\u00f6arna","AE":"F\u00f6renade Arabemiraten","GA":"Gabon","GM":"Gambia","GE":"Georgien","GH":"Ghana","GI":"Gibraltar","GR":"Grekland","GD":"Grenada","GL":"Gr\u00f6nland","GP":"Guadeloupe","GU":"Guam","GT":"Guatemala","GG":"Guernsey","GN":"Guinea","GW":"Guinea-Bissau","GY":"Guyana","HT":"Haiti","HM":"Heard\u00f6n och McDonald\u00f6arna","HN":"Honduras","HK":"Hongkong SAR","IN":"Indien","ID":"Indonesien","IQ":"Irak","IR":"Iran","IE":"Irland","IS":"Island","IM":"Isle of Man","IL":"Israel","IT":"Italien","JM":"Jamaica","JP":"Japan","YE":"Jemen","JE":"Jersey","JO":"Jordanien","CX":"Jul\u00f6n","KH":"Kambodja","CM":"Kamerun","CA":"Kanada","CV":"Kap Verde","BQ":"Karibiska Nederl\u00e4nderna","KZ":"Kazakstan","KE":"Kenya","CN":"Kina","KG":"Kirgizistan","KI":"Kiribati","CC":"Kokos\u00f6arna","KM":"Komorerna","CG":"Kongo-Brazzaville","CD":"Kongo-Kinshasa","HR":"Kroatien","CU":"Kuba","KW":"Kuwait","LA":"Laos","LS":"Lesotho","LV":"Lettland","LB":"Libanon","LR":"Liberia","LY":"Libyen","LI":"Liechtenstein","LT":"Litauen","LU":"Luxemburg","MO":"Macao SAR","MG":"Madagaskar","MW":"Malawi","MY":"Malaysia","MV":"Maldiverna","ML":"Mali","MT":"Malta","MA":"Marocko","MH":"Marshall\u00f6arna","MQ":"Martinique","MR":"Mauretanien","MU":"Mauritius","YT":"Mayotte","MX":"Mexiko","FM":"Mikronesien","MD":"Moldavien","MC":"Monaco","MN":"Mongoliet","ME":"Montenegro","MS":"Montserrat","MZ":"Mo\u00e7ambique","MM":"Myanmar (Burma)","NA":"Namibia","NR":"Nauru","NL":"Nederl\u00e4nderna","NP":"Nepal","NI":"Nicaragua","NE":"Niger","NG":"Nigeria","NU":"Niue","KP":"Nordkorea","MK":"Nordmakedonien","MP":"Nordmarianerna","NF":"Norfolk\u00f6n","NO":"Norge","NC":"Nya Kaledonien","NZ":"Nya Zeeland","OM":"Oman","PK":"Pakistan","PW":"Palau","PS":"Palestinska territorierna","PA":"Panama","PG":"Papua Nya Guinea","PY":"Paraguay","PE":"Peru","PN":"Pitcairn\u00f6arna","PL":"Polen","PT":"Portugal","PR":"Puerto Rico","QA":"Qatar","RO":"Rum\u00e4nien","RW":"Rwanda","RU":"Ryssland","RE":"R\u00e9union","BL":"S:t Barth\u00e9lemy","SH":"S:t Helena","KN":"S:t Kitts och Nevis","LC":"S:t Lucia","PM":"S:t Pierre och Miquelon","VC":"S:t Vincent och Grenadinerna","MF":"Saint-Martin","SB":"Salomon\u00f6arna","WS":"Samoa","SM":"San Marino","SA":"Saudiarabien","CH":"Schweiz","SN":"Senegal","RS":"Serbien","SC":"Seychellerna","SL":"Sierra Leone","SG":"Singapore","SX":"Sint Maarten","SK":"Slovakien","SI":"Slovenien","SO":"Somalia","ES":"Spanien","LK":"Sri Lanka","GB":"Storbritannien","SD":"Sudan","SR":"Surinam","SJ":"Svalbard och Jan Mayen","SE":"Sverige","ZA":"Sydafrika","GS":"Sydgeorgien och Sydsandwich\u00f6arna","KR":"Sydkorea","SS":"Sydsudan","SY":"Syrien","ST":"S\u00e3o Tom\u00e9 och Pr\u00edncipe","TJ":"Tadzjikistan","TW":"Taiwan","TZ":"Tanzania","TD":"Tchad","TH":"Thailand","CZ":"Tjeckien","TG":"Togo","TK":"Tokelau\u00f6arna","TO":"Tonga","TT":"Trinidad och Tobago","TN":"Tunisien","TR":"Turkiet","TM":"Turkmenistan","TC":"Turks- och Caicos\u00f6arna","TV":"Tuvalu","DE":"Tyskland","UG":"Uganda","UA":"Ukraina","HU":"Ungern","UY":"Uruguay","US":"USA","UM":"USA:s yttre \u00f6ar","UZ":"Uzbekistan","VU":"Vanuatu","VA":"Vatikanstaten","VE":"Venezuela","VN":"Vietnam","EH":"V\u00e4stsahara","WF":"Wallis- och Futuna\u00f6arna","ZM":"Zambia","ZW":"Zimbabwe","AX":"\u00c5land","AT":"\u00d6sterrike","TL":"\u00d6sttimor"},"appUrl":{"basePath":""},"unitSystem":{"name":"metric","paceSymbol":"\/km","distanceSymbol":"km","elevationSymbol":"m"}};
     window.statisticsForStrava.placeholderBrokenImage = "/assets/placeholder-broken.webp";
 </script>
 <script src="/libraries/flowbite.min.js?0025176c-5652-11ee-923d-02424dd627d5"></script>

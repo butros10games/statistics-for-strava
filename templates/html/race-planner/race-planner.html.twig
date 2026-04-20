@@ -1,0 +1,791 @@
+{% include 'html/navigation/breadcrumbs.html.twig' with {'breadcrumbs': [{
+    'url': 'race-planner',
+    'label': 'Race planner'|trans
+}]} %}
+
+{% autoescape false %}
+<div class="space-y-4">
+    {% if not hasUpcomingRaces %}
+        {# ═══════════ EMPTY STATE ═══════════ #}
+        <div class="flex flex-col items-center justify-center rounded-lg border border-gray-200 bg-white py-16 text-center shadow-xs">
+            <div class="mb-4 rounded-full bg-gray-100 p-4">
+                <svg class="size-8 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                    <path stroke-linecap="round" stroke-linejoin="round" d="M3 3v1.5M3 21v-6m0 0 2.77-.693a9 9 0 0 1 6.208.682l.108.054a9 9 0 0 0 6.086.71l3.114-.732a48.524 48.524 0 0 1-.005-10.499l-3.11.732a9 9 0 0 1-6.085-.711l-.108-.054a9 9 0 0 0-6.208-.682L3 4.5M3 15V4.5"/>
+                </svg>
+            </div>
+            <h3 class="text-base font-semibold text-gray-800 mb-1">{{ 'No upcoming races'|trans }}</h3>
+            <p class="text-sm text-gray-500 max-w-xs">{{ 'Add a race event from the training calendar to get started with race planning.'|trans }}</p>
+        </div>
+    {% else %}
+        {% set countdownDays = targetRace ? (raceEventCountdownDaysById[targetRace.getId() ~ ''] ?? null) : null %}
+
+        {# ═══════════ HERO — TARGET RACE HEADER ═══════════ #}
+        {% if targetRace %}
+            <div class="p-4 bg-white border border-gray-200 rounded-lg shadow-xs">
+                <div class="flex flex-col gap-4 sm:flex-row sm:items-center sm:justify-between">
+                    <div class="flex items-center gap-3.5 min-w-0">
+                        {{ svg('trophy', 'size-5 shrink-0 text-strava-orange') }}
+                        <div class="min-w-0">
+                            <div class="flex flex-wrap items-center gap-2">
+                                <h2 class="text-lg font-semibold text-gray-900 truncate">{{ isPlanPreview and linkedTrainingPlan ? (linkedTrainingPlan.getTitle() ?: (targetRace.getTitle() ?: targetRace.getProfile()|trans)) : (targetRace.getTitle() ?: targetRace.getProfile()|trans) }}</h2>
+                                {% if isPlanPreview and linkedTrainingPlan %}
+                                    {% set planBadgeClasses = linkedTrainingPlan.getType().value == 'race' ? 'bg-rose-100 text-rose-700 dark:bg-rose-800 dark:text-rose-200' : 'bg-violet-100 text-violet-700 dark:bg-violet-800 dark:text-violet-200' %}
+                                    <span class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold {{ planBadgeClasses }}">{{ linkedTrainingPlan.getType().value == 'race' ? 'Race plan'|trans : 'Training plan'|trans }}</span>
+                                    <span class="inline-flex items-center rounded-full bg-gray-100 px-2 py-0.5 text-[10px] font-bold text-gray-600">{{ 'Planner view'|trans }}</span>
+                                {% else %}
+                                    {% set priorityBadge = targetRace.getPriority().value == 'a'
+                                        ? 'bg-rose-100 text-rose-700 dark:bg-rose-800 dark:text-rose-200'
+                                        : (targetRace.getPriority().value == 'b'
+                                            ? 'bg-amber-100 text-amber-700 dark:bg-amber-800 dark:text-amber-200'
+                                            : 'bg-gray-100 text-gray-600') %}
+                                    <span class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-bold {{ priorityBadge }}">{{ targetRace.getPriority().value|upper }}-{{ 'Race'|trans }}</span>
+                                {% endif %}
+                            </div>
+                            <div class="mt-0.5 flex flex-wrap items-center gap-x-1.5 text-xs text-gray-500">
+                                {% if isPlanPreview and linkedTrainingPlan %}
+                                    <span>{{ linkedTrainingPlan.getStartDay().format('D, M j Y') }} → {{ linkedTrainingPlan.getEndDay().format('D, M j Y') }}</span>
+                                {% else %}
+                                    <span>{{ targetRace.getDay().format('D, M j Y') }}</span>
+                                {% endif %}
+                                {% if targetRace.getLocation() %}
+                                    <span class="text-gray-300">·</span>
+                                    <span>{{ targetRace.getLocation() }}</span>
+                                {% endif %}
+                                <span class="text-gray-300">·</span>
+                                <span>{{ (linkedTrainingPlan and linkedTrainingPlan.getTargetRaceProfile() ? linkedTrainingPlan.getTargetRaceProfile()|trans : targetRace.getProfile()|trans) }}</span>
+                                {% if not isPlanPreview and targetRace.getTargetFinishTimeInSeconds() %}
+                                    <span class="text-gray-300">·</span>
+                                    <span>{{ 'Target'|trans }} {{ targetRace.getTargetFinishTimeInSeconds()|formatSeconds }}</span>
+                                {% endif %}
+                            </div>
+                        </div>
+                    </div>
+                    {% if countdownDays is not null and countdownDays > 0 %}
+                        <div class="flex items-baseline gap-1.5 shrink-0 sm:text-right">
+                            <span class="text-2xl font-bold tabular-nums text-strava-orange">{{ countdownDays }}</span>
+                            <span class="text-xs font-medium text-gray-400">{{ 'days to go'|trans }}</span>
+                        </div>
+                    {% elseif countdownDays is not null and countdownDays == 0 %}
+                        <div class="shrink-0">
+                            <span class="inline-flex items-center rounded-full bg-rose-100 px-3 py-1 text-sm font-bold text-rose-700">{{ 'Race day'|trans }}</span>
+                        </div>
+                    {% endif %}
+                </div>
+
+                {# ── Inline plan actions ── #}
+                {% set canRegenerateUpcomingSessions = linkedTrainingPlan and plannerSupportsRaceActions and not linkedTrainingPlanNeedsSync %}
+                {% set trainingPlanExportUrl = linkedTrainingPlan ? relativeUrl('api/exports/training-plans/' ~ linkedTrainingPlan.getId() ~ '.json') : null %}
+                {% set trainingPlanAnalysisLabel = 'Copy AI review prompt'|trans %}
+                {% set linkedTrainingPlanTitle = linkedTrainingPlan ? (linkedTrainingPlan.getTitle() ?: (targetRace.getTitle() ?: targetRace.getProfile()|trans)) : null %}
+                <div class="mt-3 flex flex-wrap items-center gap-x-3 gap-y-2 border-t border-gray-100 pt-3">
+                    {% if isPlanPreview and linkedTrainingPlan %}
+                        {% if canRegenerateUpcomingSessions %}
+                            <form action="/race-planner/regenerate-upcoming-sessions" method="post" class="inline">
+                                <input type="hidden" name="raceEventId" value="{{ targetRace.getId() }}" />
+                                <input type="hidden" name="redirectTo" value="{{ plannerRoute }}" />
+                                <button type="submit" class="inline-flex items-center justify-center rounded-lg border border-sky-300 bg-sky-50 px-3 py-2 text-sm font-medium text-sky-700 hover:bg-sky-100 dark:border-sky-700 dark:bg-sky-900/40 dark:text-sky-300 dark:hover:bg-sky-800">
+                                    {{ 'Regenerate upcoming sessions'|trans }}
+                                </button>
+                            </form>
+                        {% endif %}
+                        <a href="#" data-model-content-url="{{ relativeUrl('training-plan') ~ '?trainingPlanId=' ~ linkedTrainingPlan.getId() ~ '&redirectTo=' ~ plannerRoute }}" class="inline-flex items-center justify-center rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                            {{ 'Edit plan'|trans }}
+                        </a>
+                        <span class="hidden sm:inline text-gray-200">|</span>
+                        <a href="{{ trainingPlanExportUrl }}" download="training-plan-{{ linkedTrainingPlan.getId() }}.json" class="text-xs font-medium text-gray-500 hover:text-gray-700">
+                            {{ 'Export JSON'|trans }}
+                        </a>
+                        <button
+                            type="button"
+                            data-training-plan-analysis-prompt
+                            data-training-plan-export-url="{{ trainingPlanExportUrl }}"
+                            data-training-plan-planner-url="{{ plannerRoute }}"
+                            data-training-plan-title="{{ linkedTrainingPlanTitle|e('html_attr') }}"
+                            data-training-plan-analysis-default-label="{{ trainingPlanAnalysisLabel|e('html_attr') }}"
+                            data-training-plan-analysis-success-label="{{ 'Prompt copied'|trans|e('html_attr') }}"
+                            data-training-plan-analysis-error-label="{{ 'Copy failed'|trans|e('html_attr') }}"
+                            class="text-xs font-medium text-gray-500 hover:text-gray-700"
+                            title="{{ trainingPlanAnalysisLabel }}"
+                            aria-label="{{ trainingPlanAnalysisLabel }}"
+                        >
+                            <span data-training-plan-analysis-label>{{ 'AI review'|trans }}</span>
+                        </button>
+                        <a href="{{ relativeUrl('training-plans') }}" data-router-navigate="{{ relativeUrl('training-plans') }}" class="text-xs font-medium text-gray-500 hover:text-gray-700">
+                            {{ 'Plan manager'|trans }}
+                        </a>
+                        {% if plannerSupportsRaceActions %}
+                            <a href="{{ relativeUrl('race-planner') }}" data-router-navigate="{{ relativeUrl('race-planner') }}" class="text-xs font-medium text-gray-500 hover:text-gray-700">
+                                {{ 'Global race planner'|trans }}
+                            </a>
+                        {% endif %}
+                    {% elseif plannerUsesExistingBlocks %}
+                        {% if linkedTrainingPlanNeedsSync %}
+                            <span class="text-xs font-medium text-amber-600">{{ 'Plan out of sync'|trans }}</span>
+                        {% endif %}
+                        {% if plannerSupportsRaceActions and (not linkedTrainingPlan or linkedTrainingPlanNeedsSync) %}
+                            <form action="/race-planner/setup-plan" method="post" class="inline">
+                                <input type="hidden" name="raceEventId" value="{{ targetRace.getId() }}" />
+                                <input type="hidden" name="redirectTo" value="{{ plannerRoute }}" />
+                                <button type="submit" class="inline-flex items-center justify-center rounded-lg bg-strava-orange px-3 py-2 text-sm font-medium text-white hover:bg-orange-600 focus:ring-4 focus:outline-hidden focus:ring-orange-300">
+                                    {{ linkedTrainingPlan ? 'Sync plan'|trans : 'Create real plan'|trans }}
+                                </button>
+                            </form>
+                        {% endif %}
+                        {% if linkedTrainingPlan %}
+                            {% if canRegenerateUpcomingSessions %}
+                                <form action="/race-planner/regenerate-upcoming-sessions" method="post" class="inline">
+                                    <input type="hidden" name="raceEventId" value="{{ targetRace.getId() }}" />
+                                    <input type="hidden" name="redirectTo" value="{{ plannerRoute }}" />
+                                    <button type="submit" class="inline-flex items-center justify-center rounded-lg border border-sky-300 bg-sky-50 px-3 py-2 text-sm font-medium text-sky-700 hover:bg-sky-100 dark:border-sky-700 dark:bg-sky-900/40 dark:text-sky-300 dark:hover:bg-sky-800">
+                                        {{ 'Regenerate upcoming sessions'|trans }}
+                                    </button>
+                                </form>
+                            {% endif %}
+                            <a href="#" data-model-content-url="{{ relativeUrl('training-plan') ~ '?trainingPlanId=' ~ linkedTrainingPlan.getId() ~ '&redirectTo=' ~ plannerRoute }}" class="inline-flex items-center justify-center rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                {{ 'Edit plan'|trans }}
+                            </a>
+                            <span class="hidden sm:inline text-gray-200">|</span>
+                            <a href="{{ trainingPlanExportUrl }}" download="training-plan-{{ linkedTrainingPlan.getId() }}.json" class="text-xs font-medium text-gray-500 hover:text-gray-700">
+                                {{ 'Export JSON'|trans }}
+                            </a>
+                            <button
+                                type="button"
+                                data-training-plan-analysis-prompt
+                                data-training-plan-export-url="{{ trainingPlanExportUrl }}"
+                                data-training-plan-planner-url="{{ plannerRoute }}"
+                                data-training-plan-title="{{ linkedTrainingPlanTitle|e('html_attr') }}"
+                                data-training-plan-analysis-default-label="{{ trainingPlanAnalysisLabel|e('html_attr') }}"
+                                data-training-plan-analysis-success-label="{{ 'Prompt copied'|trans|e('html_attr') }}"
+                                data-training-plan-analysis-error-label="{{ 'Copy failed'|trans|e('html_attr') }}"
+                                class="text-xs font-medium text-gray-500 hover:text-gray-700"
+                                title="{{ trainingPlanAnalysisLabel }}"
+                                aria-label="{{ trainingPlanAnalysisLabel }}"
+                            >
+                                <span data-training-plan-analysis-label>{{ 'AI review'|trans }}</span>
+                            </button>
+                        {% endif %}
+                        <a href="{{ relativeUrl('training-plans') }}" data-router-navigate="{{ relativeUrl('training-plans') }}" class="text-xs font-medium text-gray-500 hover:text-gray-700">
+                            {{ 'Plan manager'|trans }}
+                        </a>
+                    {% else %}
+                        <form action="/race-planner/start-date" method="post" class="flex flex-wrap items-center gap-2">
+                            <input type="hidden" name="redirectTo" value="{{ plannerRoute }}" />
+                            <input
+                                type="date"
+                                name="planStartDay"
+                                value="{{ planStartDayInputValue }}"
+                                max="{{ targetRace.getDay().format('Y-m-d') }}"
+                                class="block rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-amber-500 focus:ring-amber-500"
+                            />
+                            <button type="submit" class="inline-flex items-center justify-center rounded-lg bg-strava-orange px-3 py-2 text-sm font-medium text-white hover:bg-orange-600 focus:ring-4 focus:outline-hidden focus:ring-orange-300">
+                                {{ 'Update plan'|trans }}
+                            </button>
+                            {% if hasCustomPlanStartDay %}
+                                <button type="submit" name="resetPlanStartDay" value="1" class="inline-flex items-center justify-center rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                                    {{ 'Reset to today'|trans }}
+                                </button>
+                            {% endif %}
+                        </form>
+                        <a href="{{ relativeUrl('training-plans') }}" data-router-navigate="{{ relativeUrl('training-plans') }}" class="inline-flex items-center justify-center rounded-lg border border-gray-300 px-3 py-2 text-sm font-medium text-gray-700 hover:bg-gray-50">
+                            {{ 'Plan manager'|trans }}
+                        </a>
+                    {% endif %}
+                </div>
+            </div>
+        {% endif %}
+
+        {# ═══════════ 2-COL LAYOUT ═══════════ #}
+        <div class="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(0,1fr)_18rem]" data-mobile-sidebar-tabs>
+
+            {# ── Mobile tab bar (visible < lg) ── #}
+            <div class="col-span-full flex rounded-lg border border-gray-200 bg-gray-100 p-0.5 text-sm font-medium lg:hidden" role="tablist">
+                <button type="button" role="tab" data-mobile-tab-trigger="content" aria-selected="true" class="active flex-1 rounded-md px-3 py-2 text-center transition-colors [&.active]:bg-white [&.active]:text-gray-900 [&.active]:shadow-xs [&:not(.active)]:text-gray-500">
+                    {{ "Plan"|trans }}
+                </button>
+                <button type="button" role="tab" data-mobile-tab-trigger="sidebar" aria-selected="false" class="flex-1 rounded-md px-3 py-2 text-center transition-colors [&.active]:bg-white [&.active]:text-gray-900 [&.active]:shadow-xs [&:not(.active)]:text-gray-500">
+                    {{ "Details"|trans }}
+                </button>
+            </div>
+
+            {# ────── MAIN COLUMN ────── #}
+            <div class="space-y-4" data-mobile-tab-panel="content">
+
+                {# ── WARNINGS ── #}
+                {% if proposal and proposal.hasWarnings() %}
+                    <div class="space-y-2">
+                        {% for warning in proposal.getWarnings() %}
+                            {% set wSev = warning.getSeverity().value %}
+                            {% set wBorderClass = wSev == 'critical' ? 'border-l-red-300' : (wSev == 'warning' ? 'border-l-amber-300' : 'border-l-blue-300') %}
+                            {% set wIconColor = wSev == 'critical' ? 'text-red-500' : (wSev == 'warning' ? 'text-amber-500' : 'text-blue-500') %}
+                            <div class="flex items-start gap-2.5 rounded-lg border border-gray-200 border-l-2 {{ wBorderClass }} bg-white px-3.5 py-2.5">
+                                <svg class="mt-0.5 size-4 shrink-0 {{ wIconColor }}" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                    <path stroke-linecap="round" stroke-linejoin="round" d="M12 9v3.75m-9.303 3.376c-.866 1.5.217 3.374 1.948 3.374h14.71c1.73 0 2.813-1.874 1.948-3.374L13.949 3.378c-.866-1.5-3.032-1.5-3.898 0L2.697 16.126ZM12 15.75h.007v.008H12v-.008Z"/>
+                                </svg>
+                                <div>
+                                    <div class="text-xs font-semibold text-gray-800">{{ warning.getTitle()|trans }}</div>
+                                    <div class="mt-0.5 text-[11px] leading-snug text-gray-500">{{ warning.getBody()|trans }}</div>
+                                </div>
+                            </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                {# ── RECOMMENDATIONS ── #}
+                {% if recommendations is not empty %}
+                    <details class="group p-4 bg-white border border-gray-200 rounded-lg shadow-xs" open>
+                        <summary class="flex cursor-pointer list-none items-center justify-between gap-2 [&::-webkit-details-marker]:hidden">
+                            <div class="flex items-center gap-2">
+                                <svg class="size-3.5 text-gray-400 transition-transform group-open:rotate-90" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd"/></svg>
+                                <h3 class="text-sm font-semibold text-gray-700">{{ 'Recommendations'|trans }}</h3>
+                                <span class="text-xs font-medium text-sky-600 dark:text-sky-400">{{ recommendations|length }}</span>
+                            </div>
+                        </summary>
+                        <div class="mt-3 space-y-1.5">
+                            {% for recommendation in recommendations %}
+                                {% set rSev = recommendation.getSeverity().value %}
+                                {% set rBorderClass = rSev == 'critical' ? 'border-l-red-400' : (rSev == 'warning' ? 'border-l-amber-400' : 'border-l-sky-400') %}
+                                <div class="rounded-lg border border-gray-100 border-l-2 {{ rBorderClass }} bg-gray-50/60 px-3 py-2">
+                                    <div class="text-[11px] font-semibold text-gray-800">{{ recommendation.getTitle()|trans }}</div>
+                                    <div class="mt-0.5 text-[11px] leading-snug text-gray-500">{{ recommendation.getBody()|trans }}</div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </details>
+                {% endif %}
+
+                {% if runningPerformancePrediction %}
+                    <div class="rounded-lg border border-gray-200 bg-white p-4 shadow-xs">
+                        <div class="flex flex-col gap-3 sm:flex-row sm:items-start sm:justify-between">
+                            <div>
+                                <h3 class="text-sm font-semibold text-gray-800">Running performance</h3>
+                                <div class="mt-0.5 text-[11px] text-gray-500">Current baseline, current trajectory, and ideal plan-end running potential if you execute the remaining plan well.</div>
+                            </div>
+                            <span class="inline-flex items-center rounded-full bg-sky-50 px-2.5 py-1 text-[10px] font-semibold text-sky-700 dark:bg-sky-900/50 dark:text-sky-300">{{ runningPerformancePrediction.confidenceLabel }}</span>
+                        </div>
+                        <div class="mt-3 grid grid-cols-1 gap-3 md:grid-cols-2 xl:grid-cols-4">
+                            <div class="rounded-lg border border-gray-100 bg-gray-50/70 px-3 py-2.5">
+                                <div class="text-[10px] font-semibold uppercase tracking-wide text-gray-400">Current threshold</div>
+                                <div class="mt-1 text-lg font-semibold text-gray-900">{{ runningPerformancePrediction.currentThresholdPace }}</div>
+                            </div>
+                            <div class="rounded-lg border border-sky-100 bg-sky-50/70 px-3 py-2.5 dark:border-sky-800 dark:bg-sky-900/40">
+                                <div class="text-[10px] font-semibold uppercase tracking-wide text-sky-700 dark:text-sky-400">Current trajectory</div>
+                                <div class="mt-1 text-lg font-semibold text-sky-900 dark:text-sky-200">{{ runningPerformancePrediction.trajectoryThresholdPace ?: '—' }}</div>
+                                <div class="mt-1 text-[10px] leading-snug text-sky-800/80 dark:text-sky-300/80">
+                                    {{ runningPerformancePrediction.trajectoryStatusLabel ?: 'No completed run sessions yet — link planned sessions to completed activities to unlock a trajectory forecast.' }}
+                                </div>
+                            </div>
+                            <div class="rounded-lg border border-gray-100 bg-gray-50/70 px-3 py-2.5">
+                                <div class="text-[10px] font-semibold uppercase tracking-wide text-gray-400">Projected threshold</div>
+                                <div class="mt-1 text-lg font-semibold text-gray-900">{{ runningPerformancePrediction.projectedThresholdPace }}</div>
+                                <div class="mt-1 text-[10px] leading-snug text-gray-500">Ideal full-plan potential</div>
+                            </div>
+                            <div class="rounded-lg border border-emerald-100 bg-emerald-50/70 px-3 py-2.5 dark:border-emerald-800 dark:bg-emerald-900/40">
+                                <div class="text-[10px] font-semibold uppercase tracking-wide text-emerald-600 dark:text-emerald-400">Potential gain</div>
+                                <div class="mt-1 text-lg font-semibold text-emerald-700 dark:text-emerald-300">{{ runningPerformancePrediction.projectedGainLabel }}</div>
+                                {% if runningPerformancePrediction.trajectoryGainLabel %}
+                                    <div class="mt-1 text-[10px] leading-snug text-emerald-800/80 dark:text-emerald-300/80">Current trajectory: {{ runningPerformancePrediction.trajectoryGainLabel }}</div>
+                                {% endif %}
+                            </div>
+                        </div>
+                        {% if runningPerformancePrediction.benchmarkPredictions is not empty %}
+                            <div class="mt-3 overflow-hidden rounded-lg border border-gray-100">
+                                <table class="w-full text-left text-[11px] text-gray-500">
+                                    <thead class="bg-gray-50 text-[10px] uppercase tracking-wide text-gray-400">
+                                        <tr>
+                                            <th class="px-3 py-2 font-semibold">Benchmark</th>
+                                            <th class="px-3 py-2 font-semibold">Current</th>
+                                            <th class="px-3 py-2 font-semibold">Projected</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for benchmark in runningPerformancePrediction.benchmarkPredictions %}
+                                            <tr class="border-t border-gray-100">
+                                                <td class="px-3 py-2 font-medium text-gray-700">{{ benchmark.label }}</td>
+                                                <td class="px-3 py-2 text-gray-900">{{ benchmark.currentFinishTimeInSeconds|formatSeconds }}</td>
+                                                <td class="px-3 py-2 font-semibold text-emerald-700 dark:text-emerald-400">{{ benchmark.projectedFinishTimeInSeconds|formatSeconds }}</td>
+                                            </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        {% endif %}
+                    </div>
+                {% endif %}
+
+                {# ── PROPOSED PERIODIZATION ── #}
+                {% if proposal and proposal.getProposedBlocks() is not empty %}
+                    <div class="p-4 bg-white border border-gray-200 rounded-lg shadow-xs">
+                        <div class="flex flex-col gap-3 mb-4 sm:flex-row sm:items-center sm:justify-between">
+                            <div>
+                                <h3 class="text-sm font-semibold text-gray-800">{{ plannerUsesExistingBlocks ? 'Current plan structure'|trans : 'Proposed periodization'|trans }}</h3>
+                                <span class="text-xs text-gray-500">{{ proposal.getTotalWeeks() }}w · {{ proposal.getTotalProposedSessions() }} {{ 'sessions'|trans }}</span>
+                            </div>
+                            {% if plannerSupportsRaceActions and recoverySaveSummary.hasAnythingToSave() %}
+                                <form action="/race-planner/save-recovery" method="post" class="flex items-center gap-2">
+                                    <input type="hidden" name="raceEventId" value="{{ targetRace.getId() }}" />
+                                    <input type="hidden" name="redirectTo" value="{{ plannerRoute }}" />
+                                    <button type="submit" class="inline-flex items-center justify-center rounded-lg border border-emerald-300 bg-emerald-50 px-3 py-1.5 text-xs font-medium text-emerald-700 hover:bg-emerald-100 dark:border-emerald-700 dark:bg-emerald-900/40 dark:text-emerald-300 dark:hover:bg-emerald-800">
+                                        Save recovery to calendar
+                                    </button>
+                                    <span class="text-[10px] text-gray-400">{{ recoverySaveSummary.getMissingRecoveryBlockCount() }} block{{ recoverySaveSummary.getMissingRecoveryBlockCount() == 1 ? '' : 's' }} · {{ recoverySaveSummary.getMissingRecoverySessionCount() }} workout{{ recoverySaveSummary.getMissingRecoverySessionCount() == 1 ? '' : 's' }}</span>
+                                </form>
+                            {% endif %}
+                        </div>
+
+                        {# ─ Timeline bar ─ #}
+                        <div class="mb-3">
+                            <div class="flex rounded-lg overflow-hidden h-5">
+                                {% for block in proposal.getProposedBlocks() %}
+                                    {% set barColor = block.getPhase().value == 'base' ? '#34d399'
+                                        : (block.getPhase().value == 'build' ? '#38bdf8'
+                                        : (block.getPhase().value == 'peak' ? '#fbbf24'
+                                        : (block.getPhase().value == 'taper' ? '#a78bfa' : '#d1d5db'))) %}
+                                    {% set blockWidthPercent = (block.getDurationInWeeks() / proposal.getTotalWeeks() * 100)|round(1) %}
+                                    <div class="flex items-center justify-center text-[9px] font-bold text-white/90 overflow-hidden" style="width: {{ blockWidthPercent }}%; background-color: {{ barColor }}" title="{{ block.getTitle() }} ({{ block.getDurationInWeeks() }}w)">
+                                        {% if block.getDurationInWeeks() >= 2 %}{{ block.getPhase().value|upper }}{% endif %}
+                                    </div>
+                                {% endfor %}
+                            </div>
+                            <div class="flex mt-1">
+                                {% for block in proposal.getProposedBlocks() %}
+                                    {% set blockWidthPercent = (block.getDurationInWeeks() / proposal.getTotalWeeks() * 100)|round(1) %}
+                                    <div class="text-[9px] text-gray-400 text-center overflow-hidden" style="width: {{ blockWidthPercent }}%">{{ block.getDurationInWeeks() }}w</div>
+                                {% endfor %}
+                            </div>
+                        </div>
+
+                        {# ─ Block detail cards ─ #}
+                        <div class="space-y-2">
+                            {% for block in proposal.getProposedBlocks() %}
+                                {% set pv = block.getPhase().value %}
+                                {% set phBorderColor = pv == 'base' ? '#34d399' : (pv == 'build' ? '#38bdf8' : (pv == 'peak' ? '#fbbf24' : (pv == 'taper' ? '#a78bfa' : '#d1d5db'))) %}
+                                {% set phBadgeClasses = pv == 'base'
+                                    ? 'bg-emerald-100 text-emerald-700 ring-emerald-200 dark:bg-emerald-900/60 dark:text-emerald-300 dark:ring-emerald-700'
+                                    : (pv == 'build'
+                                        ? 'bg-sky-100 text-sky-700 ring-sky-200 dark:bg-sky-900/60 dark:text-sky-300 dark:ring-sky-700'
+                                        : (pv == 'peak'
+                                            ? 'bg-amber-100 text-amber-700 ring-amber-200 dark:bg-amber-900/60 dark:text-amber-300 dark:ring-amber-700'
+                                            : (pv == 'taper'
+                                                ? 'bg-violet-100 text-violet-700 ring-violet-200 dark:bg-violet-900/60 dark:text-violet-300 dark:ring-violet-700'
+                                                : 'bg-gray-100 text-gray-600 ring-gray-200 dark:ring-gray-600'))) %}
+                                {% set totalBlockSessions = 0 %}
+                                {% for week in block.getWeekSkeletons() %}
+                                    {% set totalBlockSessions = totalBlockSessions + week.getSessionCount() %}
+                                {% endfor %}
+                                <details class="group/block rounded-lg border border-gray-100 border-l-[3px]" style="border-left-color: {{ phBorderColor }}">
+                                    <summary class="flex cursor-pointer list-none items-center justify-between gap-2 pl-4 pr-3.5 py-2.5 [&::-webkit-details-marker]:hidden">
+                                        <div class="flex items-center gap-2.5 min-w-0">
+                                            <svg class="size-3 shrink-0 text-gray-300 transition-transform group-open/block:rotate-90" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd"/></svg>
+                                            <span class="inline-flex items-center rounded-md px-2 py-0.5 text-[10px] font-semibold ring-1 ring-inset {{ phBadgeClasses }}">{{ pv|capitalize }}</span>
+                                            {% if block.getFocus() %}
+                                                <span class="text-[11px] leading-snug text-gray-500 truncate">{{ block.getFocus() }}</span>
+                                            {% endif %}
+                                        </div>
+                                        <div class="flex items-center gap-2 shrink-0 text-[10px] text-gray-400">
+                                            <span>{{ totalBlockSessions }}s</span>
+                                            <span class="text-gray-300">·</span>
+                                            <span>{{ block.getDurationInWeeks() }}w</span>
+                                            <span class="text-gray-300">·</span>
+                                            <span>{{ block.getStartDay().format('M j') }}–{{ block.getEndDay().format('M j') }}</span>
+                                        </div>
+                                    </summary>
+                                    <div class="pl-4 pr-3.5 pb-3 pt-0.5">
+                                        {% if block.getWeekSkeletons() is not empty %}
+                                            <div class="space-y-1.5">
+                                                {% for week in block.getWeekSkeletons() %}
+                                                    {% set weekSessions = week.getSessions() %}
+                                                    {% set doubleRunDays = [] %}
+                                                    {% for candidateSession in weekSessions %}
+                                                        {% set candidateSessionDay = candidateSession.getDay().format('Y-m-d') %}
+                                                        {% if candidateSession.getActivityType() == constant('App\\Domain\\Activity\\ActivityType::RUN') and candidateSessionDay not in doubleRunDays %}
+                                                            {% set sameDayRunCount = 0 %}
+                                                            {% for sameDayCandidate in weekSessions %}
+                                                                {% if sameDayCandidate.getDay().format('Y-m-d') == candidateSessionDay and sameDayCandidate.getActivityType() == constant('App\\Domain\\Activity\\ActivityType::RUN') %}
+                                                                    {% set sameDayRunCount = sameDayRunCount + 1 %}
+                                                                {% endif %}
+                                                            {% endfor %}
+                                                            {% if sameDayRunCount > 1 %}
+                                                                {% set doubleRunDays = doubleRunDays|merge([candidateSessionDay]) %}
+                                                            {% endif %}
+                                                        {% endif %}
+                                                    {% endfor %}
+                                                    <details class="group/week rounded-lg border border-gray-100 bg-gray-50/40"{% if loop.first %} open{% endif %}>
+                                                        <summary class="flex cursor-pointer list-none items-start gap-2 px-2.5 py-1.5 [&::-webkit-details-marker]:hidden">
+                                                            <svg class="mt-0.5 size-3 shrink-0 text-gray-300 transition-transform group-open/week:rotate-90" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd"/></svg>
+                                                            <div class="min-w-0 flex-1">
+                                                                <div class="flex items-center gap-2">
+                                                                    <div class="flex shrink-0 items-center gap-1.5">
+                                                                        <span class="w-7 shrink-0 text-gray-400 font-mono tabular-nums">W{{ week.getWeekNumber() }}</span>
+                                                                        {% if week.isManuallyPlanned() %}
+                                                                            <span class="inline-flex items-center rounded-full border border-slate-200 bg-slate-100 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-slate-600">
+                                                                                Manual
+                                                                            </span>
+                                                                        {% endif %}
+                                                                        {% if week.isRecoveryWeek() %}
+                                                                            <span class="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-emerald-700 dark:border-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300">
+                                                                                Recovery
+                                                                            </span>
+                                                                        {% endif %}
+                                                                    </div>
+                                                                    <div class="flex items-center gap-0.5 flex-1 min-w-0">
+                                                                        {% for session in weekSessions %}
+                                                                            {% set sColor = session.getTargetIntensity().value == 'easy' ? '#6ee7b7'
+                                                                                : (session.getTargetIntensity().value == 'moderate' ? '#7dd3fc'
+                                                                                : (session.getTargetIntensity().value == 'hard' ? '#fcd34d' : '#fda4af')) %}
+                                                                            <div class="rounded-sm h-3 flex-1 max-w-5" style="background-color: {{ sColor }}" title="{{ session.getTitle() ?: session.getActivityType().value }} · {{ session.getTargetIntensity().value }}{% if session.isKeySession() %} · Key{% endif %}{% if session.isBrickSession() %} · Brick{% endif %}"></div>
+                                                                        {% endfor %}
+                                                                    </div>
+                                                                    {% set loadPct = week.getTargetLoadPercentage() %}
+                                                                    <div class="w-24 shrink-0 flex items-center gap-1">
+                                                                        <div class="flex-1 h-1.5 rounded-full bg-gray-100 overflow-hidden">
+                                                                            <div class="h-full rounded-full" style="width: {{ loadPct }}%; background-color: {{ phBorderColor }}"></div>
+                                                                        </div>
+                                                                        <span class="text-right text-gray-400 tabular-nums whitespace-nowrap">Load {{ loadPct }}%</span>
+                                                                    </div>
+                                                                </div>
+                                                                <div class="mt-1 flex flex-wrap items-center gap-1.5 pl-9 text-[10px] font-medium text-gray-500">
+                                                                    {% if week.hasRaceEffortSession() and week.getRaceSummaryLabel() %}
+                                                                        <span class="inline-flex items-center rounded-full border border-rose-200 bg-rose-50 px-2 py-0.5 text-rose-700 dark:border-rose-700 dark:bg-rose-900/50 dark:text-rose-300">
+                                                                            {{ week.getRaceSummaryLabel() }}
+                                                                        </span>
+                                                                    {% endif %}
+                                                                    {% if rules and rules.needsSwimSessions() %}
+                                                                        <span class="inline-flex items-center rounded-full border border-emerald-200 bg-emerald-50 px-2 py-0.5 text-emerald-700 dark:border-emerald-700 dark:bg-emerald-900/50 dark:text-emerald-300">
+                                                                            Swim {{ week.getFormattedTargetDurationForActivityType(constant('App\\Domain\\Activity\\ActivityType::WATER_SPORTS')) }}
+                                                                        </span>
+                                                                    {% endif %}
+                                                                    {% if rules and rules.needsBikeSessions() %}
+                                                                        <span class="inline-flex items-center rounded-full border border-sky-200 bg-sky-50 px-2 py-0.5 text-sky-700 dark:border-sky-700 dark:bg-sky-900/50 dark:text-sky-300">
+                                                                            Bike {{ week.getFormattedTargetDurationForActivityType(constant('App\\Domain\\Activity\\ActivityType::RIDE')) }}
+                                                                        </span>
+                                                                    {% endif %}
+                                                                    {% if rules and rules.needsRunSessions() %}
+                                                                        <span class="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-amber-700 dark:border-amber-700 dark:bg-amber-900/50 dark:text-amber-300">
+                                                                            Run {{ week.getFormattedTargetDurationForActivityType(constant('App\\Domain\\Activity\\ActivityType::RUN')) }}
+                                                                        </span>
+                                                                    {% endif %}
+                                                                    {% set projectedThresholdPace = runningPerformancePrediction and runningPerformancePrediction.projectedThresholdPacesByWeekStartDate[week.getStartDay().format('Y-m-d')] is defined ? runningPerformancePrediction.projectedThresholdPacesByWeekStartDate[week.getStartDay().format('Y-m-d')] : null %}
+                                                                    {% if projectedThresholdPace %}
+                                                                        <span class="inline-flex items-center rounded-full border border-violet-200 bg-violet-50 px-2 py-0.5 text-violet-700 dark:border-violet-700 dark:bg-violet-900/50 dark:text-violet-300">
+                                                                            Threshold {{ projectedThresholdPace }}
+                                                                        </span>
+                                                                    {% endif %}
+                                                                    {% if doubleRunDays is not empty %}
+                                                                        <span class="inline-flex items-center rounded-full border border-amber-200 bg-amber-50 px-2 py-0.5 text-amber-700 dark:border-amber-700 dark:bg-amber-900/50 dark:text-amber-300">
+                                                                            Double run {{ doubleRunDays|length }}x
+                                                                        </span>
+                                                                    {% endif %}
+                                                                </div>
+                                                            </div>
+                                                        </summary>
+
+                                                        {% if weekSessions is not empty %}
+                                                            <div class="px-2.5 pb-2 space-y-1">
+                                                                {% for session in weekSessions %}
+                                                                    {% set sessionTitle = session.getTitle() ?: (session.getActivityType()|trans) %}
+                                                                    {% set sessionDuration = session.getTargetDurationInSeconds() %}
+                                                                    {% set sessionIntensity = session.getTargetIntensity() %}
+                                                                    {% set sessionPreviewRows = session.getWorkoutPreviewRows() %}
+                                                                    {% set sameDayRunCount = 0 %}
+                                                                    {% for sameDayCandidate in weekSessions %}
+                                                                        {% if sameDayCandidate.getDay().format('Y-m-d') == session.getDay().format('Y-m-d') and sameDayCandidate.getActivityType() == constant('App\\Domain\\Activity\\ActivityType::RUN') %}
+                                                                            {% set sameDayRunCount = sameDayRunCount + 1 %}
+                                                                        {% endif %}
+                                                                    {% endfor %}
+                                                                    {% set isDoubleRunSession = sameDayRunCount > 1 and session.getActivityType() == constant('App\\Domain\\Activity\\ActivityType::RUN') %}
+                                                                    {% set isSecondaryRunSession = sessionTitle starts with 'Secondary ' %}
+                                                                    {% set sessionWeekThresholdPace = runningPerformancePrediction and runningPerformancePrediction.projectedThresholdPacesByWeekStartDate[week.getStartDay().format('Y-m-d')] is defined ? runningPerformancePrediction.projectedThresholdPacesByWeekStartDate[week.getStartDay().format('Y-m-d')] : null %}
+                                                                    {% set sessionIntensityClasses = sessionIntensity.value == 'easy'
+                                                                        ? 'bg-emerald-50 text-emerald-700 ring-emerald-200 dark:bg-emerald-900/50 dark:text-emerald-300 dark:ring-emerald-700'
+                                                                        : (sessionIntensity.value == 'moderate'
+                                                                            ? 'bg-sky-50 text-sky-700 ring-sky-200 dark:bg-sky-900/50 dark:text-sky-300 dark:ring-sky-700'
+                                                                            : (sessionIntensity.value == 'hard'
+                                                                                ? 'bg-amber-50 text-amber-700 ring-amber-200 dark:bg-amber-900/50 dark:text-amber-300 dark:ring-amber-700'
+                                                                                : 'bg-rose-50 text-rose-700 ring-rose-200 dark:bg-rose-900/50 dark:text-rose-300 dark:ring-rose-700')) %}
+                                                                    <details class="group/session rounded-lg border border-gray-100 bg-white">
+                                                                        <summary class="flex cursor-pointer list-none items-start justify-between gap-3 px-3 py-2 [&::-webkit-details-marker]:hidden">
+                                                                            <div class="min-w-0 flex items-start gap-2.5">
+                                                                                <div class="mt-0.5 w-8 shrink-0 text-[10px] font-semibold uppercase tracking-wide text-gray-400">{{ session.getDay().format('D') }}</div>
+                                                                                <div class="min-w-0">
+                                                                                    <div class="flex items-center gap-1.5 min-w-0">
+                                                                                        <span class="truncate text-sm font-semibold text-gray-900">{{ sessionTitle }}</span>
+                                                                                        {% if session.isKeySession() %}
+                                                                                            <span class="shrink-0 text-[11px] text-amber-500">★</span>
+                                                                                        {% endif %}
+                                                                                    </div>
+                                                                                    <div class="mt-0.5 flex flex-wrap items-center gap-x-1.5 gap-y-0.5 text-[11px] text-gray-500">
+                                                                                        <span>{{ session.getActivityType()|trans }}</span>
+                                                                                        {% if sessionDuration %}
+                                                                                            <span>·</span>
+                                                                                            <span>{{ sessionDuration|formatSeconds }}</span>
+                                                                                        {% endif %}
+                                                                                        {% if session.isBrickSession() %}
+                                                                                            <span>·</span>
+                                                                                            <span class="font-medium text-fuchsia-600">{{ 'Brick'|trans }}</span>
+                                                                                        {% endif %}
+                                                                                        {% if isDoubleRunSession %}
+                                                                                            <span>·</span>
+                                                                                            <span class="font-medium text-amber-600">{{ 'Double run day'|trans }}</span>
+                                                                                        {% endif %}
+                                                                                        {% if isSecondaryRunSession %}
+                                                                                            <span>·</span>
+                                                                                            <span class="font-medium text-amber-700">{{ '2nd run'|trans }}</span>
+                                                                                        {% endif %}
+                                                                                    </div>
+                                                                                </div>
+                                                                            </div>
+                                                                            <div class="flex shrink-0 items-center gap-2">
+                                                                                <span class="inline-flex items-center rounded-full px-2 py-0.5 text-[10px] font-semibold ring-1 ring-inset {{ sessionIntensityClasses }}">{{ sessionIntensity.getLabel()|trans }}</span>
+                                                                                <svg class="mt-0.5 size-3.5 text-gray-300 transition-transform group-open/session:rotate-90" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd"/></svg>
+                                                                            </div>
+                                                                        </summary>
+                                                                        <div class="border-t border-gray-100 px-3 py-2.5">
+                                                                            {% if runningPerformancePrediction and session.getActivityType() == constant('App\\Domain\\Activity\\ActivityType::RUN') and sessionWeekThresholdPace %}
+                                                                                <div class="mb-2 rounded-lg border border-violet-100 bg-violet-50/70 px-2.5 py-2 text-[11px] text-violet-900 dark:border-violet-700 dark:bg-violet-900/40 dark:text-violet-200">
+                                                                                    <div class="flex flex-wrap items-center justify-between gap-2">
+                                                                                        <div class="flex items-center gap-1.5">
+                                                                                            <span class="inline-flex items-center rounded-full border border-violet-200 bg-white px-1.5 py-0.5 text-[9px] font-semibold uppercase tracking-wide text-violet-700 dark:border-violet-600 dark:bg-violet-800 dark:text-violet-200">
+                                                                                                {% if week.isManuallyPlanned() %}
+                                                                                                    Week forecast
+                                                                                                {% else %}
+                                                                                                    Week threshold
+                                                                                                {% endif %}
+                                                                                            </span>
+                                                                                            <span class="font-semibold text-violet-900 dark:text-violet-100">{{ sessionWeekThresholdPace }}</span>
+                                                                                        </div>
+                                                                                        <span class="text-[10px] text-violet-700 dark:text-violet-300">Current baseline {{ runningPerformancePrediction.currentThresholdPace }}</span>
+                                                                                    </div>
+                                                                                    <div class="mt-1 leading-snug text-violet-800/90 dark:text-violet-300/90">
+                                                                                        {% if week.isManuallyPlanned() %}
+                                                                                            Forecast shown for context. Manual sessions keep their original targets.
+                                                                                        {% else %}
+                                                                                            Targets in this session scale from your projected fitness for this week.
+                                                                                        {% endif %}
+                                                                                    </div>
+                                                                                </div>
+                                                                            {% endif %}
+                                                                            {% if sessionPreviewRows is not empty %}
+                                                                                <div class="space-y-1 text-[11px] text-gray-500">
+                                                                                    {% for previewRow in sessionPreviewRows %}
+                                                                                        <div class="flex flex-wrap items-center gap-x-1.5 gap-y-0.5"{% if previewRow.depth > 0 %} style="padding-left: {{ previewRow.depth * 1.1 }}rem"{% endif %}>
+                                                                                            <span class="font-medium text-gray-600">{{ previewRow.headline }}</span>
+                                                                                            {% if previewRow.meta %}
+                                                                                                <span>·</span>
+                                                                                                <span>{{ previewRow.meta }}</span>
+                                                                                            {% endif %}
+                                                                                            {% if not week.isManuallyPlanned() and session.getActivityType() == constant('App\\Domain\\Activity\\ActivityType::RUN') and previewRow.meta and '/km' in previewRow.meta %}
+                                                                                                <span>·</span>
+                                                                                                <span class="rounded-full border border-violet-200 bg-violet-50 px-1.5 py-0.5 text-[10px] font-medium text-violet-700 dark:border-violet-600 dark:bg-violet-900/50 dark:text-violet-300">week-adjusted pace</span>
+                                                                                            {% endif %}
+                                                                                        </div>
+                                                                                    {% endfor %}
+                                                                                </div>
+                                                                            {% endif %}
+                                                                            {% if session.getNotes() %}
+                                                                                <div class="{% if sessionPreviewRows is not empty %}mt-2 {% endif %}text-[11px] leading-snug text-gray-500">{{ session.getNotes() }}</div>
+                                                                            {% endif %}
+                                                                        </div>
+                                                                    </details>
+                                                                {% endfor %}
+                                                            </div>
+                                                        {% endif %}
+                                                    </details>
+                                                {% endfor %}
+                                            </div>
+                                        {% endif %}
+                                    </div>
+                                </details>
+                            {% endfor %}
+                        </div>
+                    </div>
+                {% endif %}
+            </div>
+
+            {# ────── SIDEBAR ────── #}
+            <aside data-mobile-tab-panel="sidebar" class="hidden lg:flex lg:sticky lg:top-2 lg:max-h-[calc(100vh-1rem)] h-full min-h-0 flex-col gap-3 overflow-y-auto pt-1 pr-1 pb-4">
+
+                {# ── PROFILE GUIDELINES ── #}
+                {% if rules %}
+                    <details class="group rounded-lg border border-gray-200 bg-white shadow-xs" open>
+                        <summary class="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-2.5 [&::-webkit-details-marker]:hidden">
+                            <div class="flex items-center gap-2">
+                                <svg class="size-3.5 text-gray-400 transition-transform group-open:rotate-90" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd"/></svg>
+                                <h4 class="text-xs font-semibold text-gray-700">{{ 'Profile guidelines'|trans }}</h4>
+                            </div>
+                        </summary>
+                        <div class="border-t border-gray-100 px-4 py-2.5">
+                            <dl class="space-y-1.5 text-[11px]">
+                                <div class="flex justify-between">
+                                    <dt class="text-gray-500">{{ 'Ideal plan'|trans }}</dt>
+                                    <dd class="font-medium text-gray-800">{{ rules.getIdealPlanWeeks() }}w <span class="text-gray-400 font-normal">({{ rules.getMinimumPlanWeeks() }}–{{ rules.getMaximumPlanWeeks() }})</span></dd>
+                                </div>
+                                <div class="flex justify-between">
+                                    <dt class="text-gray-500">{{ 'Taper'|trans }}</dt>
+                                    <dd class="font-medium text-gray-800">{{ rules.getTaperWeeks() }}w</dd>
+                                </div>
+                                <div class="flex justify-between">
+                                    <dt class="text-gray-500">{{ 'Sessions/week'|trans }}</dt>
+                                    <dd class="font-medium text-gray-800">{{ rules.getSessionsPerWeekMinimum() }}–{{ rules.getSessionsPerWeekMaximum() }}</dd>
+                                </div>
+                                <div class="flex justify-between">
+                                    <dt class="text-gray-500">{{ 'Hard/week'|trans }}</dt>
+                                    <dd class="font-medium text-gray-800">{{ rules.getHardSessionsPerWeek() }}</dd>
+                                </div>
+                                {% set disciplineLabels = [] %}
+                                {% if rules.needsSwimSessions() %}{% set disciplineLabels = disciplineLabels|merge(['Swim'|trans]) %}{% endif %}
+                                {% if rules.needsBikeSessions() %}{% set disciplineLabels = disciplineLabels|merge(['Bike'|trans]) %}{% endif %}
+                                {% if rules.needsRunSessions() %}{% set disciplineLabels = disciplineLabels|merge(['Run'|trans]) %}{% endif %}
+                                {% if disciplineLabels is not empty %}
+                                    <div class="flex justify-between">
+                                        <dt class="text-gray-500">{{ 'Disciplines'|trans }}</dt>
+                                        <dd class="font-medium text-gray-800">{{ disciplineLabels|join(', ') }}</dd>
+                                    </div>
+                                {% endif %}
+                                {% if rules.needsBrickSessions() %}
+                                    <div class="flex justify-between">
+                                        <dt class="text-gray-500">{{ 'Brick sessions'|trans }}</dt>
+                                        <dd class="font-medium text-emerald-600 dark:text-emerald-400">{{ 'Yes'|trans }}</dd>
+                                    </div>
+                                {% endif %}
+                            </dl>
+                        </div>
+                    </details>
+                {% endif %}
+
+                {% if runningPerformancePrediction %}
+                    <details class="group rounded-lg border border-gray-200 bg-white shadow-xs" open>
+                        <summary class="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-2.5 [&::-webkit-details-marker]:hidden">
+                            <div class="flex items-center gap-2">
+                                <svg class="size-3.5 text-gray-400 transition-transform group-open:rotate-90" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd"/></svg>
+                                <h4 class="text-xs font-semibold text-gray-700">Running forecast</h4>
+                            </div>
+                            <span class="text-[10px] font-semibold text-sky-600 dark:text-sky-400">{{ runningPerformancePrediction.confidenceLabel }}</span>
+                        </summary>
+                        <div class="border-t border-gray-100 px-4 py-2.5">
+                            <dl class="space-y-1.5 text-[11px]">
+                                <div class="flex justify-between gap-3">
+                                    <dt class="text-gray-500">Current threshold</dt>
+                                    <dd class="font-medium text-gray-800">{{ runningPerformancePrediction.currentThresholdPace }}</dd>
+                                </div>
+                                {% if runningPerformancePrediction.trajectoryThresholdPace %}
+                                    <div class="flex justify-between gap-3">
+                                        <dt class="text-gray-500">Current trajectory</dt>
+                                        <dd class="font-medium text-sky-700 dark:text-sky-400">{{ runningPerformancePrediction.trajectoryThresholdPace }}</dd>
+                                    </div>
+                                {% endif %}
+                                <div class="flex justify-between gap-3">
+                                    <dt class="text-gray-500">Projected threshold</dt>
+                                    <dd class="font-medium text-gray-800">{{ runningPerformancePrediction.projectedThresholdPace }}</dd>
+                                </div>
+                                <div class="flex justify-between gap-3">
+                                    <dt class="text-gray-500">Potential gain</dt>
+                                    <dd class="font-medium text-emerald-700 dark:text-emerald-400">{{ runningPerformancePrediction.projectedGainLabel }}</dd>
+                                </div>
+                            </dl>
+                            {% if runningPerformancePrediction.basisRows is not empty %}
+                                <div class="mt-3 rounded-lg border border-violet-100 bg-violet-50/60 px-3 py-2.5 dark:border-violet-700 dark:bg-violet-900/40">
+                                    <div class="text-[10px] font-semibold uppercase tracking-wide text-violet-700 dark:text-violet-300">Prediction basis</div>
+                                    <dl class="mt-2 space-y-1.5 text-[11px]">
+                                        {% for basisRow in runningPerformancePrediction.basisRows %}
+                                            <div class="flex justify-between gap-3">
+                                                <dt class="text-violet-700/80 dark:text-violet-300/80">{{ basisRow.label }}</dt>
+                                                <dd class="font-medium text-violet-950 text-right dark:text-violet-200">{{ basisRow.value }}</dd>
+                                            </div>
+                                        {% endfor %}
+                                    </dl>
+                                    <p class="mt-2 text-[10px] leading-snug text-violet-800/80 dark:text-violet-300/80">{{ runningPerformancePrediction.basisNote }}</p>
+                                </div>
+                            {% endif %}
+                        </div>
+                    </details>
+                {% endif %}
+
+                {# ── RACE CALENDAR ── #}
+                {% set hidesPreviewRaceCalendar = isPlanPreview and linkedTrainingPlan and linkedTrainingPlan.getType().value == 'training' and not plannerSupportsRaceActions %}
+                {% if displayedUpcomingRaces is not empty and not hidesPreviewRaceCalendar %}
+                    <details class="group rounded-lg border border-gray-200 bg-white shadow-xs" open>
+                        <summary class="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-2.5 [&::-webkit-details-marker]:hidden">
+                            <div class="flex items-center gap-2">
+                                <svg class="size-3.5 text-gray-400 transition-transform group-open:rotate-90" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd"/></svg>
+                                <h4 class="text-xs font-semibold text-gray-700">{{ 'Race calendar'|trans }}</h4>
+                                <span class="text-[10px] font-semibold text-rose-600 dark:text-rose-400">{{ displayedUpcomingRaces|length }}</span>
+                            </div>
+                        </summary>
+                        <div class="border-t border-gray-100 px-4 py-2.5 space-y-1.5">
+                            {% for race in displayedUpcomingRaces %}
+                                {% set rp = race.getPriority().value %}
+                                {% set rpClasses = rp == 'a'
+                                    ? 'border-l-rose-500 text-rose-700 dark:text-rose-400'
+                                    : (rp == 'b'
+                                        ? 'border-l-amber-500 text-amber-700 dark:text-amber-400'
+                                        : 'border-l-sky-500 text-sky-700 dark:text-sky-400') %}
+                                {% set raceCountdown = raceEventCountdownDaysById[race.getId() ~ ''] ?? null %}
+                                {% set countdownLabel = raceCountdown == 0
+                                    ? 'Race day'|trans
+                                    : (raceCountdown == 1
+                                        ? 'Tomorrow'|trans
+                                        : (raceCountdown is not null and raceCountdown <= 7
+                                            ? 'Race week'|trans
+                                            : 'D-' ~ raceCountdown)) %}
+                                <div class="rounded-lg border border-gray-100 border-l-2 {{ rpClasses }} px-2.5 py-1.5">
+                                    <div class="flex items-center gap-1.5 text-[11px] font-medium">
+                                        {{ svg('trophy', 'size-3 shrink-0') }}
+                                        <span class="truncate">{{ race.getTitle() ?: race.getProfile()|trans }}</span>
+                                    </div>
+                                    <div class="flex flex-wrap items-center gap-x-1 text-[10px] text-gray-400 mt-0.5">
+                                        <span>{{ race.getDay().format('D d M') }}</span>
+                                        <span>·</span>
+                                        <span class="font-medium">{{ countdownLabel }}</span>
+                                        <span>·</span>
+                                        {% set rpTextClass = rp == 'a' ? 'text-rose-600 dark:text-rose-400' : (rp == 'b' ? 'text-amber-600 dark:text-amber-400' : 'text-sky-600 dark:text-sky-400') %}
+                                        <span class="{{ rpTextClass }} font-medium uppercase">{{ rp|upper }}</span>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </details>
+                {% endif %}
+
+                {# ── EXISTING TRAINING BLOCKS ── #}
+                {% if existingBlocks is not empty %}
+                    <details class="group rounded-lg border border-gray-200 bg-white shadow-xs">
+                        <summary class="flex cursor-pointer list-none items-center justify-between gap-2 px-4 py-2.5 [&::-webkit-details-marker]:hidden">
+                            <div class="flex items-center gap-2">
+                                <svg class="size-3.5 text-gray-400 transition-transform group-open:rotate-90" viewBox="0 0 20 20" fill="currentColor"><path fill-rule="evenodd" d="M7.21 14.77a.75.75 0 01.02-1.06L11.168 10 7.23 6.29a.75.75 0 111.04-1.08l4.5 4.25a.75.75 0 010 1.08l-4.5 4.25a.75.75 0 01-1.06-.02z" clip-rule="evenodd"/></svg>
+                                <h4 class="text-xs font-semibold text-gray-700">{{ 'Current blocks'|trans }}</h4>
+                                <span class="text-[10px] font-semibold text-gray-500">{{ existingBlocks|length }}</span>
+                            </div>
+                        </summary>
+                        <div class="border-t border-gray-100 px-4 py-2.5 space-y-1.5">
+                            {% for block in existingBlocks %}
+                                {% set ebp = block.getPhase().value %}
+                                {% set ebBorder = ebp == 'base' ? 'border-l-emerald-500' : (ebp == 'build' ? 'border-l-sky-500' : (ebp == 'peak' ? 'border-l-violet-500' : (ebp == 'taper' ? 'border-l-amber-500' : 'border-l-slate-500'))) %}
+                                {% set ebPhaseTextClass = ebp == 'base' ? 'text-emerald-600 dark:text-emerald-400' : (ebp == 'build' ? 'text-sky-600 dark:text-sky-400' : (ebp == 'peak' ? 'text-violet-600 dark:text-violet-400' : (ebp == 'taper' ? 'text-amber-600 dark:text-amber-400' : 'text-slate-500'))) %}
+                                <div class="rounded-lg border border-gray-100 border-l-2 {{ ebBorder }} px-2.5 py-1.5">
+                                    <div class="text-[11px] font-medium text-gray-700 truncate">{{ block.getTitle() ?: (block.getPhase()|trans) }}</div>
+                                    <div class="flex flex-wrap items-center gap-x-1 text-[10px] text-gray-400">
+                                        <span>{{ block.getStartDay().format('d M') }} → {{ block.getEndDay().format('d M') }}</span>
+                                        <span>·</span>
+                                        <span class="{{ ebPhaseTextClass }} font-medium">{{ block.getPhase()|trans }}</span>
+                                    </div>
+                                </div>
+                            {% endfor %}
+                        </div>
+                    </details>
+                {% endif %}
+
+                {# ── INTENSITY LEGEND ── #}
+                <div class="rounded-lg border border-gray-200 bg-white px-4 py-2.5 shadow-xs">
+                    <h4 class="text-xs font-semibold text-gray-700 mb-1.5">{{ 'Legend'|trans }}</h4>
+                    <div class="grid grid-cols-2 gap-x-3 gap-y-1 text-[10px]">
+                        <div class="flex items-center gap-1.5"><span class="size-2.5 rounded-sm shrink-0" style="background-color: #6ee7b7"></span> <span class="text-gray-500">{{ 'Easy'|trans }}</span></div>
+                        <div class="flex items-center gap-1.5"><span class="size-2.5 rounded-sm shrink-0" style="background-color: #7dd3fc"></span> <span class="text-gray-500">{{ 'Moderate'|trans }}</span></div>
+                        <div class="flex items-center gap-1.5"><span class="size-2.5 rounded-sm shrink-0" style="background-color: #fcd34d"></span> <span class="text-gray-500">{{ 'Hard'|trans }}</span></div>
+                        <div class="flex items-center gap-1.5"><span class="size-2.5 rounded-sm shrink-0" style="background-color: #fda4af"></span> <span class="text-gray-500">{{ 'Race effort'|trans }}</span></div>
+                    </div>
+                </div>
+            </aside>
+        </div>
+    {% endif %}
+</div>
+{% endautoescape %}

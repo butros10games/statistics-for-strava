@@ -17,6 +17,9 @@
             {% endif %}
         </div>
         <form action="/recovery-check-in" method="post" class="grid grid-cols-1 md:grid-cols-2 gap-3">
+            {% if redirectTo is defined and redirectTo is not empty %}
+                <input type="hidden" name="redirectTo" value="{{ redirectTo }}" />
+            {% endif %}
             <div>
                 <label class="block text-xs font-medium text-gray-700 mb-1" for="recovery-check-in-day-{{ uniqueId }}">{{ "Day"|trans }}</label>
                 <input id="recovery-check-in-day-{{ uniqueId }}" name="day" type="date" value="{{ recoveryCheckInDefaultDay }}" class="block w-full rounded-lg border border-gray-300 bg-white px-3 py-2 text-sm text-gray-900 focus:border-amber-500 focus:ring-amber-500" />

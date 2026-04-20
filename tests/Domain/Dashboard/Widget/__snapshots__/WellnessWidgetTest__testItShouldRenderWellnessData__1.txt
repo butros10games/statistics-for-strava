@@ -6,6 +6,74 @@
                 </p>
                     </div>
     </div>
+    <div class="rounded-lg border border-amber-100 bg-amber-50 p-4 mb-4">
+        <div class="flex flex-col md:flex-row md:items-start md:justify-between gap-4">
+            <div>
+                <div class="text-sm font-medium text-amber-900">Morning recovery check-in</div>
+                <div class="text-xs text-amber-800 mt-1">A quick self-report helps the app balance objective Garmin data with how recovered you actually feel.</div>
+                            </div>
+            <form action="/recovery-check-in" method="post" class="grid grid-cols-1 md:grid-cols-3 gap-3 flex-1">
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1" for="recovery-check-in-day---1">Day</label>
+                    <input id="recovery-check-in-day---1" name="day" type="date" value="2026-04-07" class="block w-full rounded-lg border-gray-300 text-sm" />
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1" for="recovery-check-in-fatigue---1">Fatigue</label>
+                    <select id="recovery-check-in-fatigue---1" name="fatigue" class="block w-full rounded-lg border-gray-300 text-sm">
+                                                    <option value="1">1 / 5</option>
+                                                    <option value="2">2 / 5</option>
+                                                    <option value="3" selected>3 / 5</option>
+                                                    <option value="4">4 / 5</option>
+                                                    <option value="5">5 / 5</option>
+                                            </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1" for="recovery-check-in-soreness---1">Soreness</label>
+                    <select id="recovery-check-in-soreness---1" name="soreness" class="block w-full rounded-lg border-gray-300 text-sm">
+                                                    <option value="1">1 / 5</option>
+                                                    <option value="2">2 / 5</option>
+                                                    <option value="3" selected>3 / 5</option>
+                                                    <option value="4">4 / 5</option>
+                                                    <option value="5">5 / 5</option>
+                                            </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1" for="recovery-check-in-stress---1">Stress</label>
+                    <select id="recovery-check-in-stress---1" name="stress" class="block w-full rounded-lg border-gray-300 text-sm">
+                                                    <option value="1">1 / 5</option>
+                                                    <option value="2">2 / 5</option>
+                                                    <option value="3" selected>3 / 5</option>
+                                                    <option value="4">4 / 5</option>
+                                                    <option value="5">5 / 5</option>
+                                            </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1" for="recovery-check-in-motivation---1">Motivation</label>
+                    <select id="recovery-check-in-motivation---1" name="motivation" class="block w-full rounded-lg border-gray-300 text-sm">
+                                                    <option value="1">1 / 5</option>
+                                                    <option value="2">2 / 5</option>
+                                                    <option value="3" selected>3 / 5</option>
+                                                    <option value="4">4 / 5</option>
+                                                    <option value="5">5 / 5</option>
+                                            </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-700 mb-1" for="recovery-check-in-sleep-quality---1">Sleep quality</label>
+                    <select id="recovery-check-in-sleep-quality---1" name="sleepQuality" class="block w-full rounded-lg border-gray-300 text-sm">
+                                                    <option value="1">1 / 5</option>
+                                                    <option value="2">2 / 5</option>
+                                                    <option value="3" selected>3 / 5</option>
+                                                    <option value="4">4 / 5</option>
+                                                    <option value="5">5 / 5</option>
+                                            </select>
+                </div>
+                <div class="md:col-span-3 flex items-end justify-between gap-3">
+                    <div class="text-xs text-gray-600">Use 1 = very low/poor and 5 = very high/good. Higher fatigue, soreness, and stress reduce readiness.</div>
+                    <button type="submit" class="inline-flex items-center rounded-lg bg-amber-600 px-3 py-2 text-sm font-medium text-white hover:bg-amber-700">Save check-in</button>
+                </div>
+            </form>
+        </div>
+    </div>
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
         <div class="rounded-lg border border-gray-100 bg-gray-50 p-4">
             <div class="text-sm text-gray-500">Steps</div>

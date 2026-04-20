@@ -6,11 +6,36 @@
     100: 'xl:col-span-6'
 } %}
 {% autoescape false %}
-    <div class="grid grid-cols-1 xl:grid-cols-6 gap-4 mb-4">
-        {% for renderedWidget in widgets %}
-            <div data-fullscreen-content class="{{ colSpanMap[renderedWidget.getWidth()] }} flex flex-col p-4 bg-white border border-gray-200 rounded-lg shadow-xs">
-                {{ renderedWidget.getRenderedHtml() }}
+    {% set currentSection = null %}
+    {% for renderedWidget in widgets %}
+        {% set widgetSection = renderedWidget.getSection() %}
+
+        {# ── Section header when group changes ── #}
+        {% if widgetSection is not null and widgetSection != currentSection %}
+            {% if currentSection is not null %}
+                </div>{# close previous section grid #}
+            {% endif %}
+            {% set currentSection = widgetSection %}
+            <div class="mb-2 {{ not loop.first ? 'mt-8' }}">
+                <h2 class="text-sm font-semibold uppercase tracking-wider text-gray-400">{{ widgetSection|trans }}</h2>
             </div>
-        {% endfor %}
-    </div>
+            <div class="grid grid-cols-1 xl:grid-cols-6 gap-4 mb-4">
+        {% elseif widgetSection is null and currentSection is not null %}
+            {% if currentSection is not null %}
+                </div>
+                {% set currentSection = null %}
+            {% endif %}
+            <div class="grid grid-cols-1 xl:grid-cols-6 gap-4 mb-4">
+        {% elseif loop.first %}
+            <div class="grid grid-cols-1 xl:grid-cols-6 gap-4 mb-4">
+        {% endif %}
+
+        <div data-fullscreen-content class="{{ colSpanMap[renderedWidget.getWidth()] }} flex flex-col p-5 bg-white border border-gray-200 rounded-xl shadow-xs hover:shadow-sm transition-shadow duration-150">
+            {{ renderedWidget.getRenderedHtml() }}
+        </div>
+
+        {% if loop.last %}
+            </div>
+        {% endif %}
+    {% endfor %}
 {% endautoescape %}

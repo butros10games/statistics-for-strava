@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Application\Build\BuildMonthlyStatsHtml\BuildMonthlyStatsHtml;
+use App\Application\Build\BuildRacePlannerHtml\BuildRacePlannerHtml;
 use App\Application\Build\BuildDashboardHtml\BuildDashboardHtml;
 use App\Domain\Activity\Activity;
 use App\Domain\Activity\DbalActivityRepository;
@@ -23,6 +24,9 @@ use App\Domain\TrainingPlanner\PlannedSessionLoadEstimator;
 use App\Domain\TrainingPlanner\PlannedSessionStepConditionType;
 use App\Domain\TrainingPlanner\PlannedSessionStepType;
 use App\Domain\TrainingPlanner\PlannedSessionStepTargetType;
+use App\Domain\TrainingPlanner\DbalTrainingSessionRepository;
+use App\Domain\TrainingPlanner\TrainingSession;
+use App\Domain\TrainingPlanner\TrainingSessionLibrarySynchronizer;
 use App\Infrastructure\CQRS\Command\Bus\CommandBus;
 use App\Infrastructure\Time\Clock\Clock;
 use App\Infrastructure\ValueObject\Time\SerializableDateTime;
@@ -37,10 +41,13 @@ use Twig\Environment;
 final readonly class PlannedSessionRequestHandler
 {
     private const int TEMPLATE_ACTIVITY_SUGGESTION_LIMIT = 12;
+    private const int TRAINING_SESSION_RECOMMENDATION_LIMIT = 6;
     private const int PLANNER_OUTLOOK_HORIZON = 14;
 
     public function __construct(
         private DbalPlannedSessionRepository $repository,
+        private DbalTrainingSessionRepository $trainingSessionRepository,
+        private TrainingSessionLibrarySynchronizer $trainingSessionLibrarySynchronizer,
         private DbalActivityRepository $activityRepository,
         private PlannedSessionActivityMatcher $plannedSessionActivityMatcher,
         private PlannedSessionLoadEstimator $plannedSessionLoadEstimator,
@@ -119,6 +126,7 @@ final readonly class PlannedSessionRequestHandler
         }
 
         $this->repository->upsert($plannedSession);
+        $this->trainingSessionLibrarySynchronizer->sync($plannedSession);
 
         $this->rebuildPlannerViews($now);
 
@@ -174,6 +182,7 @@ final readonly class PlannedSessionRequestHandler
 
         $this->commandBus->dispatch(new BuildDashboardHtml());
         $this->commandBus->dispatch(new BuildMonthlyStatsHtml($now));
+        $this->commandBus->dispatch(new BuildRacePlannerHtml($now));
     }
 
     private function createRedirectResponse(Request $request): RedirectResponse
@@ -236,6 +245,7 @@ final readonly class PlannedSessionRequestHandler
         [$matchedActivity, $plannedSessionMatchStatus] = $this->resolveMatchedActivity($plannedSession);
         $plannerOutlookForecast = $this->plannedSessionForecastBuilder->build($today, self::PLANNER_OUTLOOK_HORIZON);
         $templateActivities = $this->buildTemplateActivityOptions($plannedSession?->getTemplateActivityId());
+        $trainingSessionRecommendations = $this->buildTrainingSessionRecommendations();
         $plannedSessionLoadEstimate = null === $plannedSession
             ? null
             : $this->plannedSessionLoadEstimator->estimate($plannedSession);
@@ -255,6 +265,7 @@ final readonly class PlannedSessionRequestHandler
             'plannedSessionStepConditionTypes' => PlannedSessionStepConditionType::cases(),
             'plannedSessionStepTypeLabels' => $this->buildPlannedSessionStepTypeLabels(),
             'templateActivities' => $templateActivities,
+            'trainingSessionRecommendations' => $trainingSessionRecommendations,
             'selectedTemplateActivity' => $this->resolveTemplateActivity($plannedSession?->getTemplateActivityId()),
             'plannedSessionEstimatedLoad' => $plannedSessionEstimatedLoad,
             'plannedSessionEstimatedSourceLabel' => $plannedSessionLoadEstimate?->getEstimationSource()->getLabel(),
@@ -359,6 +370,23 @@ final readonly class PlannedSessionRequestHandler
         }
 
         return array_values($templateActivities);
+    }
+
+    /**
+     * @return array<string, list<array<string, mixed>>>
+     */
+    private function buildTrainingSessionRecommendations(): array
+    {
+        $recommendations = [];
+
+        foreach (ActivityType::cases() as $activityType) {
+            $recommendations[$activityType->value] = array_map(
+                $this->toTrainingSessionRecommendationRecord(...),
+                $this->trainingSessionRepository->findRecommended($activityType, self::TRAINING_SESSION_RECOMMENDATION_LIMIT),
+            );
+        }
+
+        return $recommendations;
     }
 
     /**
@@ -952,6 +980,70 @@ final readonly class PlannedSessionRequestHandler
     }
 
     /**
+     * @param list<array<string, mixed>> $workoutSteps
+     *
+     * @return list<array{itemId: string, parentBlockId: ?string, type: string, label: string, repetitions: string, targetType: string, conditionType: string, durationInMinutes: string, durationInSecondsPart: string, distanceInMeters: string, targetPace: string, targetPower: string, targetHeartRate: string, recoveryAfterInSeconds: string}>
+     */
+    private function mapWorkoutStepsForForm(array $workoutSteps): array
+    {
+        return array_map(function (array $workoutStep): array {
+            [$durationInMinutes, $durationInSecondsPart] = $this->splitDurationInMinutesAndSeconds($workoutStep['durationInSeconds'] ?? null);
+
+            return [
+                'itemId' => (string) ($workoutStep['itemId'] ?? ''),
+                'parentBlockId' => isset($workoutStep['parentBlockId']) && is_string($workoutStep['parentBlockId']) && '' !== $workoutStep['parentBlockId']
+                    ? $workoutStep['parentBlockId']
+                    : null,
+                'type' => (string) ($workoutStep['type'] ?? PlannedSessionStepType::STEADY->value),
+                'label' => (string) ($workoutStep['label'] ?? ''),
+                'repetitions' => (string) ($workoutStep['repetitions'] ?? '1'),
+                'targetType' => (string) ($workoutStep['targetType'] ?? PlannedSessionStepTargetType::TIME->value),
+                'conditionType' => (string) ($workoutStep['conditionType'] ?? ''),
+                'durationInMinutes' => null === $durationInMinutes ? '' : (string) $durationInMinutes,
+                'durationInSecondsPart' => null === $durationInSecondsPart ? '' : (string) $durationInSecondsPart,
+                'distanceInMeters' => null === ($workoutStep['distanceInMeters'] ?? null) ? '' : (string) $workoutStep['distanceInMeters'],
+                'targetPace' => (string) ($workoutStep['targetPace'] ?? ''),
+                'targetPower' => null === ($workoutStep['targetPower'] ?? null) ? '' : (string) $workoutStep['targetPower'],
+                'targetHeartRate' => null === ($workoutStep['targetHeartRate'] ?? null) ? '' : (string) $workoutStep['targetHeartRate'],
+                'recoveryAfterInSeconds' => null === ($workoutStep['recoveryAfterInSeconds'] ?? null) ? '' : (string) $workoutStep['recoveryAfterInSeconds'],
+            ];
+        }, $workoutSteps);
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function toTrainingSessionRecommendationRecord(TrainingSession $trainingSession): array
+    {
+        [$targetDurationInMinutes, $targetDurationInSecondsPart] = $this->splitDurationInMinutesAndSeconds($trainingSession->getTargetDurationInSeconds());
+        $workoutSteps = $this->mapWorkoutStepsForForm($trainingSession->getWorkoutSteps());
+
+        return [
+            'trainingSessionId' => (string) $trainingSession->getId(),
+            'activityType' => $trainingSession->getActivityType()->value,
+            'title' => $trainingSession->getTitle(),
+            'notes' => $trainingSession->getNotes(),
+            'targetLoad' => $trainingSession->getTargetLoad(),
+            'targetDurationInMinutes' => $targetDurationInMinutes,
+            'targetDurationInSecondsPart' => $targetDurationInSecondsPart,
+            'targetDurationLabel' => null === $trainingSession->getTargetDurationInSeconds()
+                ? null
+                : $this->formatDurationLabel($trainingSession->getTargetDurationInSeconds()),
+            'targetIntensity' => $trainingSession->getTargetIntensity()?->value,
+            'targetIntensityLabel' => $trainingSession->getTargetIntensity()?->getLabel(),
+            'templateActivityId' => $trainingSession->getTemplateActivityId()?->__toString(),
+            'estimationSource' => $trainingSession->getEstimationSource()->value,
+            'estimationSourceLabel' => $trainingSession->getEstimationSource()->getLabel(),
+            'manualTargetLoadOverride' => PlannedSessionEstimationSource::MANUAL_TARGET_LOAD === $trainingSession->getEstimationSource(),
+            'lastPlannedOn' => $trainingSession->getLastPlannedOn()?->format('Y-m-d'),
+            'lastPlannedOnLabel' => $trainingSession->getLastPlannedOn()?->format('D j M'),
+            'workoutStepCount' => count($workoutSteps),
+            'workoutSteps' => $workoutSteps,
+            'workoutPreview' => $this->buildWorkoutPreviewRows($trainingSession->getWorkoutSteps(), $trainingSession->getActivityType()),
+        ];
+    }
+
+    /**
      * @return array{
      *     plannedSessionId: string,
      *     day: string,
@@ -983,26 +1075,7 @@ final readonly class PlannedSessionRequestHandler
             'targetDurationInSecondsPart' => $targetDurationInSecondsPart,
             'targetIntensity' => $plannedSession->getTargetIntensity()?->value,
             'templateActivityId' => $plannedSession->getTemplateActivityId()?->__toString(),
-            'workoutSteps' => array_map(function (array $workoutStep): array {
-                [$durationInMinutes, $durationInSecondsPart] = $this->splitDurationInMinutesAndSeconds($workoutStep['durationInSeconds'] ?? null);
-
-                return [
-                    'itemId' => $workoutStep['itemId'],
-                    'parentBlockId' => $workoutStep['parentBlockId'],
-                    'type' => $workoutStep['type'],
-                    'label' => $workoutStep['label'] ?? '',
-                    'repetitions' => (string) $workoutStep['repetitions'],
-                    'targetType' => $workoutStep['targetType'] ?? PlannedSessionStepTargetType::TIME->value,
-                    'conditionType' => $workoutStep['conditionType'] ?? '',
-                    'durationInMinutes' => null === $durationInMinutes ? '' : (string) $durationInMinutes,
-                    'durationInSecondsPart' => null === $durationInSecondsPart ? '' : (string) $durationInSecondsPart,
-                    'distanceInMeters' => null === ($workoutStep['distanceInMeters'] ?? null) ? '' : (string) $workoutStep['distanceInMeters'],
-                    'targetPace' => $workoutStep['targetPace'] ?? '',
-                    'targetPower' => null === ($workoutStep['targetPower'] ?? null) ? '' : (string) $workoutStep['targetPower'],
-                    'targetHeartRate' => null === ($workoutStep['targetHeartRate'] ?? null) ? '' : (string) $workoutStep['targetHeartRate'],
-                    'recoveryAfterInSeconds' => null === $workoutStep['recoveryAfterInSeconds'] ? '' : (string) $workoutStep['recoveryAfterInSeconds'],
-                ];
-            }, $plannedSession->getWorkoutSteps()),
+            'workoutSteps' => $this->mapWorkoutStepsForForm($plannedSession->getWorkoutSteps()),
             'estimationSource' => $plannedSession->getEstimationSource()->getLabel(),
             'linkedActivityId' => $plannedSession->getLinkedActivityId()?->__toString(),
             'linkStatus' => $plannedSession->getLinkStatus()->getLabel(),
@@ -1016,26 +1089,7 @@ final readonly class PlannedSessionRequestHandler
     {
         if (null !== $plannedSession) {
             [$targetDurationInMinutes, $targetDurationInSecondsPart] = $this->splitDurationInMinutesAndSeconds($plannedSession->getTargetDurationInSeconds());
-            $workoutSteps = array_map(function (array $workoutStep): array {
-                [$durationInMinutes, $durationInSecondsPart] = $this->splitDurationInMinutesAndSeconds($workoutStep['durationInSeconds'] ?? null);
-
-                return [
-                    'itemId' => $workoutStep['itemId'],
-                    'parentBlockId' => $workoutStep['parentBlockId'],
-                    'type' => $workoutStep['type'],
-                    'label' => $workoutStep['label'] ?? '',
-                    'repetitions' => (string) $workoutStep['repetitions'],
-                    'targetType' => $workoutStep['targetType'] ?? PlannedSessionStepTargetType::TIME->value,
-                    'conditionType' => $workoutStep['conditionType'] ?? '',
-                    'durationInMinutes' => null === $durationInMinutes ? '' : (string) $durationInMinutes,
-                    'durationInSecondsPart' => null === $durationInSecondsPart ? '' : (string) $durationInSecondsPart,
-                    'distanceInMeters' => null === ($workoutStep['distanceInMeters'] ?? null) ? '' : (string) $workoutStep['distanceInMeters'],
-                    'targetPace' => $workoutStep['targetPace'] ?? '',
-                    'targetPower' => null === ($workoutStep['targetPower'] ?? null) ? '' : (string) $workoutStep['targetPower'],
-                    'targetHeartRate' => null === ($workoutStep['targetHeartRate'] ?? null) ? '' : (string) $workoutStep['targetHeartRate'],
-                    'recoveryAfterInSeconds' => null === $workoutStep['recoveryAfterInSeconds'] ? '' : (string) $workoutStep['recoveryAfterInSeconds'],
-                ];
-            }, $plannedSession->getWorkoutSteps());
+            $workoutSteps = $this->mapWorkoutStepsForForm($plannedSession->getWorkoutSteps());
 
             return [
                 'title' => $plannedSession->getTitle() ?? '',

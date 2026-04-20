@@ -38,9 +38,29 @@ export default class Router {
         return this.determineActiveMenuLink(newUrl);
     }
 
-    async renderContent(page, modalId) {
+    deferToNextFrame() {
+        return new Promise(resolve => {
+            window.requestAnimationFrame(() => resolve());
+        });
+    }
+
+    async renderContent(page, modalId, serverRoute = false) {
+        const isMobileNavTriggerVisible = this.mobileNavTriggerEl
+            && window.getComputedStyle(this.mobileNavTriggerEl).display !== 'none';
+        const isMobileNavOpen = this.menu?.getAttribute('aria-hidden') === 'false';
+
+        if (document.activeElement instanceof HTMLElement && this.menu?.contains(document.activeElement)) {
+            document.activeElement.blur();
+
+            if (isMobileNavTriggerVisible) {
+                this.mobileNavTriggerEl.focus();
+            }
+        }
+
         // Close mobile nav if open
-        if (!this.menu.hasAttribute('aria-hidden')) {
+        if (isMobileNavTriggerVisible && isMobileNavOpen) {
+            await this.deferToNextFrame();
+
             this.mobileNavTriggerEl.dispatchEvent(
                 new MouseEvent('click', {bubbles: true, cancelable: true, view: window})
             );
@@ -48,7 +68,11 @@ export default class Router {
 
         this.showLoader();
 
-        const response = await fetch(`${page}.html`, {cache: 'no-store'});
+        const url = serverRoute ? page : `${page}.html`;
+        const response = await fetch(url, {
+            cache: 'no-store',
+            headers: serverRoute ? {'X-Fragment-Request': '1'} : {},
+        });
         this.appContent.innerHTML = await response.text();
         window.scrollTo(0, 0);
 
@@ -84,13 +108,15 @@ export default class Router {
             link.addEventListener('click', async e => {
                 e.preventDefault();
                 const route = link.getAttribute('data-router-navigate');
+                const serverRoute = link.hasAttribute('data-router-server');
 
                 await eventBus.emitAsync(Events.NAVIGATION_CLICKED, {link});
 
                 this.navigateTo(
                     route,
                     null,
-                    link.hasAttribute('data-router-force-reload')
+                    link.hasAttribute('data-router-force-reload'),
+                    serverRoute
                 );
             });
         });
@@ -99,21 +125,21 @@ export default class Router {
     registerBrowserBackAndForth() {
         window.onpopstate = e => {
             if (!e.state) return;
-            this.renderContent(e.state.route, e.state.modal);
+            this.renderContent(e.state.route, e.state.modal, e.state.serverRoute || false);
         };
     }
 
-    navigateTo(route, modal, force = false) {
+    navigateTo(route, modal, force = false, serverRoute = false) {
         const currentRoute = this.app.getAttribute('data-router-current');
         if (currentRoute === route && !force) return; // Avoid reloading same page.
 
-        this.renderContent(route, modal);
-        this.pushRouteToHistoryState(route, modal);
+        this.renderContent(route, modal, serverRoute);
+        this.pushRouteToHistoryState(route, modal, serverRoute);
     }
 
-    pushRouteToHistoryState(route, modal) {
+    pushRouteToHistoryState(route, modal, serverRoute = false) {
         const fullRoute = modal ? `${route}#${modal}` : route;
-        window.history.pushState({route, modal}, '', fullRoute);
+        window.history.pushState({route, modal, serverRoute}, '', fullRoute);
     }
 
     pushCurrentRouteToHistoryState(modal) {
@@ -144,11 +170,13 @@ export default class Router {
 
         const route = this.currentRoute();
         const modal = location.hash.replace('#', '');
+        const serverRoute = Array.from(document.querySelectorAll('a[data-router-navigate][data-router-server]'))
+            .some(link => link.getAttribute('data-router-navigate') === route);
 
         this.registerNavItems(this.menuItems);
         this.registerBrowserBackAndForth();
-        this.renderContent(route, modal);
+        this.renderContent(route, modal, serverRoute);
 
-        window.history.replaceState({route, modal}, '', route + location.hash);
+        window.history.replaceState({route, modal, serverRoute}, '', route + location.hash);
     }
 }

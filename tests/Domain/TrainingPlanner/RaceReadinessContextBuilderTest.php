@@ -149,6 +149,50 @@ final class RaceReadinessContextBuilderTest extends TestCase
         self::assertNotNull($context->getForecastDaysUntilAcRatioHealthy());
     }
 
+    public function testBuildDoesNotCountEasyHighLoadSessionsAsHardWhenIntensityIsExplicit(): void
+    {
+        $referenceDate = SerializableDateTime::fromString('2026-04-16 08:00:00');
+        $plannedSessions = [
+            $this->createPlannedSession(
+                day: '2026-04-14 00:00:00',
+                activityType: ActivityType::RUN,
+                title: 'Fast intervals',
+                targetLoad: 107.5,
+                targetDurationInSeconds: 2640,
+                targetIntensity: PlannedSessionIntensity::HARD,
+            ),
+            $this->createPlannedSession(
+                day: '2026-04-15 00:00:00',
+                activityType: ActivityType::RUN,
+                title: 'High-load easy run',
+                targetLoad: 127.6,
+                targetDurationInSeconds: 3900,
+                targetIntensity: PlannedSessionIntensity::EASY,
+            ),
+            $this->createPlannedSession(
+                day: '2026-04-16 00:00:00',
+                activityType: ActivityType::RIDE,
+                title: 'High-load easy ride',
+                targetLoad: 115.3,
+                targetDurationInSeconds: 3600,
+                targetIntensity: PlannedSessionIntensity::EASY,
+            ),
+        ];
+
+        $context = $this->builder->build(
+            referenceDate: $referenceDate,
+            plannedSessions: $plannedSessions,
+            raceEvents: [],
+            trainingBlocks: [],
+            currentTrainingBlock: null,
+            raceEventsById: [],
+            plannedSessionEstimatesById: $this->buildPlannedSessionEstimatesById($plannedSessions),
+        );
+
+        self::assertSame(1, $context->getHardSessionCount());
+        self::assertSame(2, $context->getEasySessionCount());
+    }
+
     private function buildPlannedSessionEstimatesById(array $plannedSessions): array
     {
         $estimatesById = [];

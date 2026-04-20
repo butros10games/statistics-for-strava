@@ -23,85 +23,116 @@
     </div>
     <div class="modal-body">
         {% set uniqueId = uniqueNumberForId('plannedSession') %}
+        {% set leftPanelSharedVars = {
+            '_uniqueId': uniqueId,
+            'plannedSession': plannedSession,
+            'latestPlannedSession': latestPlannedSession,
+            'plannedSessionDefaultDay': plannedSessionDefaultDay,
+            'plannedSessionFormDefaults': plannedSessionFormDefaults,
+            'activityTypes': activityTypes,
+            'plannedSessionIntensities': plannedSessionIntensities,
+            'plannedSessionStepTypes': plannedSessionStepTypes,
+            'plannedSessionStepTargetTypes': plannedSessionStepTargetTypes,
+            'plannedSessionStepConditionTypes': plannedSessionStepConditionTypes,
+            'templateActivities': templateActivities,
+            'trainingSessionRecommendations': trainingSessionRecommendations,
+            'selectedTemplateActivity': selectedTemplateActivity,
+            'plannedSessionEstimatedLoad': plannedSessionEstimatedLoad,
+            'matchedActivity': matchedActivity|default(null),
+            'plannedSessionMatchStatus': plannedSessionMatchStatus|default(null),
+            'redirectTo': redirectTo|default('/dashboard')
+        } %}
         <div class="planned-session-layout grid grid-cols-1 lg:grid-cols-5 gap-4">
-            {# ─── LEFT COLUMN: Session config + planner outlook ─── #}
-            <div class="lg:col-span-2 flex flex-col gap-4">
-                {% include 'html/dashboard/planned-session-form.html.twig' with {
-                    '_renderPanel': 'left',
-                    '_uniqueId': uniqueId,
-                    'plannedSession': plannedSession,
-                    'latestPlannedSession': latestPlannedSession,
-                    'plannedSessionDefaultDay': plannedSessionDefaultDay,
-                    'plannedSessionFormDefaults': plannedSessionFormDefaults,
-                    'activityTypes': activityTypes,
-                    'plannedSessionIntensities': plannedSessionIntensities,
-                    'plannedSessionStepTypes': plannedSessionStepTypes,
-                    'plannedSessionStepTargetTypes': plannedSessionStepTargetTypes,
-                    'plannedSessionStepConditionTypes': plannedSessionStepConditionTypes,
-                    'templateActivities': templateActivities,
-                    'selectedTemplateActivity': selectedTemplateActivity,
-                    'plannedSessionEstimatedLoad': plannedSessionEstimatedLoad,
-                    'matchedActivity': matchedActivity|default(null),
-                    'plannedSessionMatchStatus': plannedSessionMatchStatus|default(null),
-                    'redirectTo': redirectTo|default('/dashboard')
-                } %}
+            {# ─── LEFT COLUMN: Tab navigation ─── #}
+            <div class="lg:col-span-2 flex flex-col gap-3">
+                {# Activity Link Status — always visible above tabs when present #}
+                {% include 'html/dashboard/planned-session-form.html.twig' with leftPanelSharedVars|merge({ '_renderPanel': 'left', '_tabPanel': 'linkStatus' }) %}
 
-                {# ─── Planner Outlook ─── #}
-                <div class="rounded-lg border border-gray-200 bg-white shadow-xs">
-                    <button type="button" data-planner-outlook-toggle class="flex w-full items-center justify-between px-4 py-3 text-left">
-                        <div class="min-w-0">
-                            <div class="text-xs font-semibold uppercase tracking-wide text-gray-500">{{ "Planner outlook"|trans }}</div>
+                {# ── Tab bar ── #}
+                <ul class="tabs tabs--pills" id="plannedSessionLeftTab{{ uniqueId }}" data-tabs="#plannedSessionLeftTabContent{{ uniqueId }}" role="tablist">
+                    <li role="presentation">
+                        <a href="#" data-tabs-target="#plannedSessionTabSession{{ uniqueId }}" role="tab" aria-controls="plannedSessionTabSession{{ uniqueId }}">
+                            {{ "Session"|trans }}
+                        </a>
+                    </li>
+                    <li role="presentation">
+                        <a href="#" data-tabs-target="#plannedSessionTabLibrary{{ uniqueId }}" role="tab" aria-controls="plannedSessionTabLibrary{{ uniqueId }}">
+                            {{ "Library"|trans }}
+                        </a>
+                    </li>
+                    <li role="presentation">
+                        <a href="#" data-tabs-target="#plannedSessionTabPlanner{{ uniqueId }}" role="tab" aria-controls="plannedSessionTabPlanner{{ uniqueId }}">
+                            {{ "Planner"|trans }}
+                        </a>
+                    </li>
+                </ul>
+
+                {# ── Tab panels ── #}
+                <div id="plannedSessionLeftTabContent{{ uniqueId }}">
+                    {# ── Session tab: details + targets ── #}
+                    <div id="plannedSessionTabSession{{ uniqueId }}" class="flex flex-col gap-3" role="tabpanel" aria-labelledby="plannedSessionTabSession{{ uniqueId }}">
+                        {% include 'html/dashboard/planned-session-form.html.twig' with leftPanelSharedVars|merge({ '_renderPanel': 'left', '_tabPanel': 'session' }) %}
+                    </div>
+
+                    {# ── Library tab: recommendations ── #}
+                    <div id="plannedSessionTabLibrary{{ uniqueId }}" class="flex flex-col gap-3" role="tabpanel" aria-labelledby="plannedSessionTabLibrary{{ uniqueId }}">
+                        {% include 'html/dashboard/planned-session-form.html.twig' with leftPanelSharedVars|merge({ '_renderPanel': 'left', '_tabPanel': 'library' }) %}
+                    </div>
+
+                    {# ── Planner tab: outlook ── #}
+                    <div id="plannedSessionTabPlanner{{ uniqueId }}" role="tabpanel" aria-labelledby="plannedSessionTabPlanner{{ uniqueId }}">
+                        <div class="rounded-lg border border-gray-200 bg-white shadow-xs">
+                            <div class="px-4 py-3 border-b border-gray-100">
+                                <div class="text-xs font-semibold uppercase tracking-wide text-gray-500">{{ "Planner outlook"|trans }}</div>
+                                {% if plannerOutlookForecast.hasEstimates() %}
+                                    <div class="mt-0.5 text-[11px] text-gray-400">
+                                        {{ plannerOutlookForecast.getEstimates()|length }} {{ "sessions"|trans }} · {{ plannerOutlookForecast.getTotalProjectedLoad()|formatNumber(1) }} {{ "load"|trans }} · {{ plannerOutlookProjectedDayCount }} {{ "days"|trans }}
+                                    </div>
+                                {% else %}
+                                    <div class="mt-0.5 text-[11px] text-gray-400">{{ "No sessions in the next {days} days yet."|trans({'{days}': plannerOutlookHorizon}) }}</div>
+                                {% endif %}
+                            </div>
                             {% if plannerOutlookForecast.hasEstimates() %}
-                                <div class="mt-0.5 text-xs text-gray-600">
-                                    {{ plannerOutlookForecast.getEstimates()|length }} {{ "sessions"|trans }} · {{ plannerOutlookForecast.getTotalProjectedLoad()|formatNumber(1) }} {{ "load"|trans }} · {{ plannerOutlookProjectedDayCount }} {{ "days"|trans }}
+                                <div class="grid grid-cols-3 gap-px bg-gray-200">
+                                    <div class="bg-white px-3 py-2.5 text-center">
+                                        <div class="text-lg font-bold text-gray-900">{{ plannerOutlookForecast.getEstimates()|length }}</div>
+                                        <div class="text-[10px] uppercase tracking-wide text-gray-500">{{ "Sessions"|trans }}</div>
+                                    </div>
+                                    <div class="bg-white px-3 py-2.5 text-center">
+                                        <div class="text-lg font-bold text-gray-900">{{ plannerOutlookForecast.getTotalProjectedLoad()|formatNumber(1) }}</div>
+                                        <div class="text-[10px] uppercase tracking-wide text-gray-500">{{ "Total load"|trans }}</div>
+                                    </div>
+                                    <div class="bg-white px-3 py-2.5 text-center">
+                                        <div class="text-lg font-bold text-gray-900">{{ plannerOutlookProjectedDayCount }}</div>
+                                        <div class="text-[10px] uppercase tracking-wide text-gray-500">{{ "Training days"|trans }}</div>
+                                    </div>
+                                </div>
+                                <div class="max-h-64 overflow-y-auto">
+                                    <table class="w-full text-xs text-left text-gray-500">
+                                        <thead class="bg-gray-50 text-[10px] text-gray-600 uppercase sticky top-0">
+                                            <tr>
+                                                <th scope="col" class="px-3 py-2">{{ "Day"|trans }}</th>
+                                                <th scope="col" class="px-3 py-2">{{ "Session"|trans }}</th>
+                                                <th scope="col" class="px-3 py-2">{{ "Source"|trans }}</th>
+                                                <th scope="col" class="px-3 py-2 text-right">{{ "Load"|trans }}</th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                        {% for estimate in plannerOutlookForecast.getEstimates() %}
+                                            <tr class="border-t border-gray-100">
+                                                <td class="px-3 py-1.5 font-medium text-gray-900 whitespace-nowrap">{{ estimate.getDay()|date('D j M') }}</td>
+                                                <td class="px-3 py-1.5 text-gray-700 truncate max-w-24">{{ estimate.getTitle() ?: (estimate.getActivityType()|trans) }}</td>
+                                                <td class="px-3 py-1.5 text-gray-500">{{ estimate.getEstimationSource().getLabel()|trans }}</td>
+                                                <td class="px-3 py-1.5 font-semibold text-gray-900 text-right">{{ estimate.getEstimatedLoad()|formatNumber(1) }}</td>
+                                            </tr>
+                                        {% endfor %}
+                                        </tbody>
+                                    </table>
                                 </div>
                             {% else %}
-                                <div class="mt-0.5 text-xs text-gray-600">{{ "No sessions in the next {days} days yet."|trans({'{days}': plannerOutlookHorizon}) }}</div>
+                                <div class="px-4 py-3 text-xs text-gray-500">{{ "No estimated planned sessions in the next {days} days yet."|trans({'{days}': plannerOutlookHorizon}) }}</div>
                             {% endif %}
                         </div>
-                        <svg data-planner-outlook-chevron class="h-4 w-4 shrink-0 text-gray-400 transition-transform duration-200" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2"><path stroke-linecap="round" stroke-linejoin="round" d="M19 9l-7 7-7-7"/></svg>
-                    </button>
-                    <div data-planner-outlook-content class="hidden border-t border-gray-200">
-                        {% if plannerOutlookForecast.hasEstimates() %}
-                            <div class="grid grid-cols-3 gap-px bg-gray-200">
-                                <div class="bg-white px-3 py-2.5 text-center">
-                                    <div class="text-lg font-bold text-gray-900">{{ plannerOutlookForecast.getEstimates()|length }}</div>
-                                    <div class="text-[10px] uppercase tracking-wide text-gray-500">{{ "Sessions"|trans }}</div>
-                                </div>
-                                <div class="bg-white px-3 py-2.5 text-center">
-                                    <div class="text-lg font-bold text-gray-900">{{ plannerOutlookForecast.getTotalProjectedLoad()|formatNumber(1) }}</div>
-                                    <div class="text-[10px] uppercase tracking-wide text-gray-500">{{ "Total load"|trans }}</div>
-                                </div>
-                                <div class="bg-white px-3 py-2.5 text-center">
-                                    <div class="text-lg font-bold text-gray-900">{{ plannerOutlookProjectedDayCount }}</div>
-                                    <div class="text-[10px] uppercase tracking-wide text-gray-500">{{ "Training days"|trans }}</div>
-                                </div>
-                            </div>
-                            <div class="max-h-48 overflow-y-auto">
-                                <table class="w-full text-xs text-left text-gray-500">
-                                    <thead class="bg-gray-50 text-[10px] text-gray-600 uppercase sticky top-0">
-                                        <tr>
-                                            <th scope="col" class="px-3 py-2">{{ "Day"|trans }}</th>
-                                            <th scope="col" class="px-3 py-2">{{ "Session"|trans }}</th>
-                                            <th scope="col" class="px-3 py-2">{{ "Source"|trans }}</th>
-                                            <th scope="col" class="px-3 py-2 text-right">{{ "Load"|trans }}</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody>
-                                    {% for estimate in plannerOutlookForecast.getEstimates() %}
-                                        <tr class="border-t border-gray-100">
-                                            <td class="px-3 py-1.5 font-medium text-gray-900 whitespace-nowrap">{{ estimate.getDay()|date('D j M') }}</td>
-                                            <td class="px-3 py-1.5 text-gray-700 truncate max-w-24">{{ estimate.getTitle() ?: (estimate.getActivityType()|trans) }}</td>
-                                            <td class="px-3 py-1.5 text-gray-500">{{ estimate.getEstimationSource().getLabel()|trans }}</td>
-                                            <td class="px-3 py-1.5 font-semibold text-gray-900 text-right">{{ estimate.getEstimatedLoad()|formatNumber(1) }}</td>
-                                        </tr>
-                                    {% endfor %}
-                                    </tbody>
-                                </table>
-                            </div>
-                        {% else %}
-                            <div class="px-4 py-3 text-xs text-gray-500">{{ "No estimated planned sessions in the next {days} days yet."|trans({'{days}': plannerOutlookHorizon}) }}</div>
-                        {% endif %}
                     </div>
                 </div>
             </div>

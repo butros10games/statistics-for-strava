@@ -6,6 +6,7 @@ namespace App\Domain\TrainingPlanner;
 
 use App\Domain\Activity\ActivityId;
 use App\Domain\Activity\ActivityType;
+use App\Domain\Auth\AppUserId;
 use App\Infrastructure\ValueObject\Time\SerializableDateTime;
 use Doctrine\ORM\Mapping as ORM;
 
@@ -18,6 +19,8 @@ final readonly class PlannedSession
     private function __construct(
         #[ORM\Id, ORM\Column(type: 'string', unique: true)]
         private PlannedSessionId $plannedSessionId,
+        #[ORM\Column(type: 'string', nullable: true)]
+        private ?AppUserId $ownerUserId,
         #[ORM\Column(type: 'datetime_immutable')]
         private SerializableDateTime $day,
         #[ORM\Column(type: 'string')]
@@ -64,10 +67,12 @@ final readonly class PlannedSession
         PlannedSessionLinkStatus $linkStatus,
         SerializableDateTime $createdAt,
         SerializableDateTime $updatedAt,
+        ?AppUserId $ownerUserId = null,
         array $workoutSteps = [],
     ): self {
         return new self(
             plannedSessionId: $plannedSessionId,
+            ownerUserId: $ownerUserId,
             day: $day->setTime(0, 0),
             activityType: $activityType,
             title: self::normalizeNullableString($title),
@@ -88,6 +93,11 @@ final readonly class PlannedSession
     public function getId(): PlannedSessionId
     {
         return $this->plannedSessionId;
+    }
+
+    public function getOwnerUserId(): ?AppUserId
+    {
+        return $this->ownerUserId;
     }
 
     public function getDay(): SerializableDateTime
@@ -195,6 +205,7 @@ final readonly class PlannedSession
             linkStatus: PlannedSessionLinkStatus::SUGGESTED,
             createdAt: $this->createdAt,
             updatedAt: $updatedAt,
+            ownerUserId: $this->ownerUserId,
         );
     }
 
@@ -216,6 +227,7 @@ final readonly class PlannedSession
             linkStatus: PlannedSessionLinkStatus::LINKED,
             createdAt: $this->createdAt,
             updatedAt: $updatedAt,
+            ownerUserId: $this->ownerUserId,
         );
     }
 
@@ -237,6 +249,7 @@ final readonly class PlannedSession
             linkStatus: PlannedSessionLinkStatus::UNLINKED,
             createdAt: $this->createdAt,
             updatedAt: $updatedAt,
+            ownerUserId: $this->ownerUserId,
         );
     }
 

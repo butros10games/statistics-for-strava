@@ -4,6 +4,7 @@ declare(strict_types=1);
 
 namespace App\Domain\TrainingPlanner;
 
+use App\Domain\Auth\AppUserId;
 use App\Infrastructure\ValueObject\Time\SerializableDateTime;
 use Doctrine\ORM\Mapping as ORM;
 
@@ -16,6 +17,8 @@ final readonly class TrainingBlock
     private function __construct(
         #[ORM\Id, ORM\Column(type: 'string', unique: true)]
         private TrainingBlockId $trainingBlockId,
+        #[ORM\Column(type: 'string', nullable: true)]
+        private ?AppUserId $ownerUserId,
         #[ORM\Column(type: 'datetime_immutable')]
         private SerializableDateTime $startDay,
         #[ORM\Column(type: 'datetime_immutable')]
@@ -48,6 +51,7 @@ final readonly class TrainingBlock
         ?string $notes,
         SerializableDateTime $createdAt,
         SerializableDateTime $updatedAt,
+        ?AppUserId $ownerUserId = null,
     ): self {
         $normalizedStartDay = $startDay->setTime(0, 0);
         $normalizedEndDay = $endDay->setTime(0, 0);
@@ -57,6 +61,7 @@ final readonly class TrainingBlock
 
         return new self(
             trainingBlockId: $trainingBlockId,
+            ownerUserId: $ownerUserId,
             startDay: $normalizedStartDay,
             endDay: $normalizedEndDay,
             targetRaceEventId: $targetRaceEventId,
@@ -72,6 +77,11 @@ final readonly class TrainingBlock
     public function getId(): TrainingBlockId
     {
         return $this->trainingBlockId;
+    }
+
+    public function getOwnerUserId(): ?AppUserId
+    {
+        return $this->ownerUserId;
     }
 
     public function getStartDay(): SerializableDateTime

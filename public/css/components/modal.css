@@ -161,8 +161,8 @@
         @apply absolute -left-4 top-1.5 w-2.5 h-2.5 rounded-full bg-gray-300 ring-2 ring-white shrink-0;
     }
 
-    /* Planner outlook chevron rotation */
-    [data-planner-outlook-toggle][aria-expanded="true"] [data-planner-outlook-chevron] {
-        transform: rotate(180deg);
+    /* Recommendation card expand chevron */
+    .planned-session-recommendation-card > summary > .min-w-0 svg {
+        transition: transform 150ms ease;
     }
 }

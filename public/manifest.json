@@ -1,8 +1,8 @@
 {
   "id": "https://strava.butrosgroot.com/",
-  "name": "Statistics for Strava | Butros Groot",
-  "short_name": "Statistics for Strava",
-  "description": "Statistics for Strava is a self-hosted web app designed to provide you with better stats.",
+  "name": "Tempo | Butros Groot",
+  "short_name": "Tempo",
+  "description": "Tempo is a self-hosted web app for training insights, planning, and stats.",
   "categories": [
     "strava",
     "statistics",
