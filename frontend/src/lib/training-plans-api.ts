@@ -1,4 +1,5 @@
 import {buildAppPath} from './bootstrap';
+import {fetchJson} from './http';
 
 export interface TrainingPlansPreviewRace {
     id: string;
@@ -55,23 +56,23 @@ export interface TrainingPlansPreviewResponse {
 }
 
 export async function fetchTrainingPlansPreview(basePath: string, signal?: AbortSignal): Promise<TrainingPlansPreviewResponse> {
-    const response = await fetch(buildAppPath(basePath, 'react-preview/api/training-plans'), {
-        credentials: 'same-origin',
-        headers: {
-            Accept: 'application/json',
-        },
-        signal,
-    });
+    try {
+        return await fetchJson<TrainingPlansPreviewResponse>(buildAppPath(basePath, 'react-preview/api/training-plans'), {
+            credentials: 'same-origin',
+            headers: {
+                Accept: 'application/json',
+            },
+            signal,
+        });
+    } catch (error) {
+        if (error instanceof Error && error.message.startsWith('Request failed with')) {
+            throw new Error(`Training plans preview ${error.message.toLowerCase()}`);
+        }
 
-    const contentType = response.headers.get('content-type') || '';
+        if (error instanceof Error && error.message === 'Request did not return JSON.') {
+            throw new Error('Training plans preview did not return JSON.');
+        }
 
-    if (!response.ok) {
-        throw new Error(`Training plans preview request failed with ${response.status}`);
+        throw error;
     }
-
-    if (!contentType.includes('application/json')) {
-        throw new Error('Training plans preview did not return JSON.');
-    }
-
-    return (await response.json()) as TrainingPlansPreviewResponse;
 }

@@ -1,4 +1,4 @@
-import {useEffect, useMemo, useState} from 'react';
+import {useCallback, useMemo} from 'react';
 import {Link} from 'react-router-dom';
 import {StatCard} from '../components/stat-card';
 import {buildAppPath, type ReactPreviewBootstrap} from '../lib/bootstrap';
@@ -8,6 +8,7 @@ import {
     type TrainingPlansPreviewRace,
     type TrainingPlansPreviewResponse,
 } from '../lib/training-plans-api';
+import {useAsyncResource} from '../lib/use-async-resource';
 
 interface TrainingPlansPageProps {
     bootstrap: ReactPreviewBootstrap;
@@ -100,32 +101,12 @@ function TrainingPlansLoadingState() {
 }
 
 export function TrainingPlansPage({bootstrap}: TrainingPlansPageProps) {
-    const [data, setData] = useState<TrainingPlansPreviewResponse | null>(null);
-    const [loading, setLoading] = useState(true);
-    const [error, setError] = useState<string | null>(null);
+    const loadTrainingPlans = useCallback(
+        (signal: AbortSignal): Promise<TrainingPlansPreviewResponse> => fetchTrainingPlansPreview(bootstrap.basePath, signal),
+        [bootstrap.basePath],
+    );
 
-    useEffect(() => {
-        const abortController = new AbortController();
-
-        setLoading(true);
-        setError(null);
-
-        fetchTrainingPlansPreview(bootstrap.basePath, abortController.signal)
-            .then((response) => {
-                setData(response);
-                setLoading(false);
-            })
-            .catch((fetchError: Error) => {
-                if (abortController.signal.aborted) {
-                    return;
-                }
-
-                setError(fetchError.message);
-                setLoading(false);
-            });
-
-        return () => abortController.abort();
-    }, [bootstrap.basePath]);
+    const {data, loading, error, reload} = useAsyncResource(loadTrainingPlans);
 
     const activePlan = useMemo(
         () => data?.plans.find((plan) => plan.id === data.activePlanId) ?? null,
@@ -189,6 +170,14 @@ export function TrainingPlansPage({bootstrap}: TrainingPlansPageProps) {
                             Open the live route
                             <span aria-hidden="true">↗</span>
                         </a>
+                        <button
+                            type="button"
+                            onClick={reload}
+                            className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-gray-600"
+                        >
+                            Retry preview fetch
+                            <span aria-hidden="true">↻</span>
+                        </button>
                     </div>
                 </section>
             ) : null}
