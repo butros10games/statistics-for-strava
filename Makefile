@@ -94,6 +94,14 @@ app-build-assets:
 	@make dcr cmd="node_modules/.bin/tailwindcss -i public/css/tailwind.css -o public/css/dist/tailwind.min.css --minify"
 	@make dcr cmd="node_modules/.bin/tailwindcss -i public/css/tailwind.css -o public/css/tailwind.output.css"
 	@make dcr cmd="node_modules/.bin/webpack --config webpack.config.js"
+	@make dcr cmd="npm run react:build"
+
+app-build-react-assets:
+	@make app-install-node-deps
+	@make dcr cmd="npm run react:build"
+
+app-run-react-dev:
+	npm run react:dev
 
 app-build-all:
 	@make build-containers

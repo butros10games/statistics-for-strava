@@ -1,0 +1,47 @@
+<!doctype html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Statistics for Strava React Preview</title>
+    <script>
+        document.documentElement.setAttribute('data-theme', localStorage.getItem('theme') || 'light');
+        if (localStorage.getItem('sideNavCollapsed') === 'true') {
+            document.documentElement.setAttribute('data-sidebar-collapsed', '');
+        }
+    </script>
+  <script type="module" crossorigin src="./app.js"></script>
+  <link rel="stylesheet" crossorigin href="./app.css">
+</head>
+<body>
+<div id="react-root"></div>
+<script>
+    window.statisticsForStrava = window.statisticsForStrava ?? {
+        appUrl: {basePath: ''},
+        unitSystem: {
+            name: 'metric',
+            paceSymbol: '/km',
+            distanceSymbol: 'km',
+            elevationSymbol: 'm'
+        }
+    };
+    window.statisticsForStravaReact = window.statisticsForStravaReact ?? {
+        appName: 'Statistics for Strava',
+        subtitle: 'React Preview',
+        athlete: {
+            name: 'Demo Athlete',
+            initial: 'D'
+        },
+        profilePictureUrl: null,
+        counts: {
+            activities: 1248,
+            challenges: 28,
+            photos: 320,
+            hasGear: true,
+            hasBestEfforts: true
+        },
+        basePath: ''
+    };
+</script>
+</body>
+</html>

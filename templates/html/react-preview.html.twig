@@ -1,0 +1,26 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <title>{{ "Statistics for Strava"|trans }} · React preview</title>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width">
+    <meta name="theme-color" content="#F26822">
+    <meta name="mobile-web-app-capable" content="yes">
+    <link rel="icon" type="image/x-icon" href="{{ relativeUrl('assets/images/logo.svg') }}">
+    <script>
+        document.documentElement.setAttribute('data-theme', localStorage.getItem('theme') || 'light');
+        if (localStorage.getItem('sideNavCollapsed') === 'true') {
+            document.documentElement.setAttribute('data-sidebar-collapsed', '');
+        }
+    </script>
+    <link href="{{ relativeUrl(asset('react/dist/app.css')) }}" rel="stylesheet"/>
+</head>
+<body>
+<div id="react-root"></div>
+<script>
+    window.statisticsForStrava = {{ javascriptWindowConstants|raw }};
+    window.statisticsForStravaReact = {{ reactPreviewBootstrap|raw }};
+</script>
+<script src="{{ relativeUrl(asset('react/dist/app.js')) }}" type="module"></script>
+</body>
+</html>

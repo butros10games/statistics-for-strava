@@ -1,13 +1,31 @@
 {
+  "dependencies": {
+    "react": "^19.2.0",
+    "react-dom": "^19.2.0",
+    "react-router-dom": "^7.9.4"
+  },
   "devDependencies": {
+    "@tailwindcss/vite": "^4.2.2",
+    "@types/node": "^24.6.0",
+    "@types/react": "^19.2.2",
+    "@types/react-dom": "^19.2.2",
+    "@vitejs/plugin-react": "^5.0.4",
     "@tailwindcss/cli": "^4.2.2",
     "docsify-cli": "^4.4.4",
     "flowbite": "^3.1.2",
     "marked": "^17.0.1",
     "tailwind-scrollbar": "^4.0.2",
     "tailwindcss": "^4.2.0",
+    "typescript": "^5.9.3",
+    "vite": "^7.1.10",
     "webpack": "^5.102.1",
     "webpack-cli": "^6.0.1"
+  },
+  "scripts": {
+    "react:build": "tsc -p frontend/tsconfig.json --noEmit && vite build --config vite.config.ts",
+    "react:dev": "vite --config vite.config.ts",
+    "react:preview": "vite preview --config vite.config.ts",
+    "react:typecheck": "tsc -p frontend/tsconfig.json --noEmit"
   },
   "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
 }

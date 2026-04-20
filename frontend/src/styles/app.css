@@ -1,0 +1,93 @@
+@import "tailwindcss";
+@import "../../../node_modules/flowbite/src/themes/default.css";
+
+@source "../**/*.{ts,tsx}";
+
+@theme {
+    --font-display: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Palatino, Georgia, serif;
+    --color-strava-orange: #F26722;
+    --color-grey-yo: #cccccc;
+}
+
+@custom-variant dark (&:where([data-theme=dark], [data-theme=dark] *));
+@custom-variant sidebar-collapsed (&:where([data-sidebar-collapsed], [data-sidebar-collapsed] *));
+
+@layer base {
+    *,
+    ::after,
+    ::before,
+    ::backdrop,
+    ::file-selector-button {
+        border-color: var(--color-gray-200, currentColor);
+    }
+
+    html {
+        scroll-behavior: smooth;
+    }
+
+    body {
+        min-height: 100vh;
+        background: linear-gradient(180deg, rgba(249, 250, 251, 1) 0%, rgba(255, 247, 237, 0.72) 100%);
+        color: var(--color-gray-900);
+        font-family: ui-sans-serif, system-ui, sans-serif;
+    }
+
+    [data-theme='dark'] body {
+        background: linear-gradient(180deg, rgb(2, 6, 23) 0%, rgba(17, 24, 39, 0.98) 100%);
+        color: white;
+    }
+
+    h1,
+    h2,
+    h3,
+    h4 {
+        font-family: var(--font-display);
+    }
+}
+
+@layer utilities {
+    .dot-grid-bg {
+        background-image:
+            radial-gradient(circle at 1px 1px, rgba(148, 163, 184, 0.18) 1px, transparent 0),
+            linear-gradient(180deg, transparent 0%, rgba(255, 255, 255, 0.58) 100%);
+        background-size: 24px 24px, 100% 100%;
+    }
+
+    [data-theme='dark'] .dot-grid-bg {
+        background-image:
+            radial-gradient(circle at 1px 1px, rgba(71, 85, 105, 0.28) 1px, transparent 0),
+            linear-gradient(180deg, transparent 0%, rgba(2, 6, 23, 0.3) 100%);
+    }
+
+    .glass-panel {
+        @apply border border-white/60 bg-white/80 shadow-[0_30px_90px_-60px_rgba(15,23,42,0.35)] backdrop-blur-xl;
+    }
+
+    [data-theme='dark'] .glass-panel {
+        @apply border-gray-800 bg-gray-950/72 shadow-none;
+    }
+
+    .section-kicker {
+        @apply inline-flex items-center gap-2 rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.26em] text-orange-700;
+    }
+
+    [data-theme='dark'] .section-kicker {
+        @apply border-orange-900/45 bg-orange-950/40 text-orange-300;
+    }
+
+    .sidebar-link {
+        @apply flex items-center gap-3 rounded-[22px] px-3 py-2.5 text-sm font-medium text-gray-600 transition duration-200;
+    }
+
+    .sidebar-link-active {
+        @apply bg-gray-900 text-white shadow-sm;
+    }
+
+    [data-theme='dark'] .sidebar-link-active {
+        @apply bg-white text-gray-950;
+    }
+
+    .metric-card {
+        @apply rounded-[28px] border p-5 shadow-[0_20px_70px_-55px_rgba(15,23,42,0.5)];
+    }
+}
