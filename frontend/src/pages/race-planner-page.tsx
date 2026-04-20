@@ -1,4 +1,4 @@
-import {useCallback, useEffect, useMemo, useState} from 'react';
+import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {Link, useParams} from 'react-router-dom';
 import {StatCard} from '../components/stat-card';
 import {TrainingPlanCreateModal} from '../components/training-plan-create-modal';
@@ -16,6 +16,7 @@ import {
     type RacePlannerPreviewWarning,
     updateRacePlannerStartDate,
 } from '../lib/race-planner-api';
+import {buildTrainingPlanAnalysisPrompt, copyTextToClipboard} from '../lib/training-plan-analysis-prompt';
 import {useAsyncResource} from '../lib/use-async-resource';
 
 interface RacePlannerPageProps {
@@ -23,6 +24,7 @@ interface RacePlannerPageProps {
 }
 
 type PendingAction = 'recovery' | 'regenerate' | 'setup' | 'start-date' | null;
+type PlannerTab = 'content' | 'sidebar';
 
 function formatDate(day: string): string {
     return new Intl.DateTimeFormat('en', {
@@ -247,12 +249,73 @@ function PlannerLegend() {
     );
 }
 
+function TrainingPlanAnalysisPromptButton({
+    exportUrl,
+    planTitle,
+    plannerUrl,
+}: {
+    exportUrl: string;
+    planTitle: string;
+    plannerUrl: string;
+}) {
+    const [state, setState] = useState<'default' | 'success' | 'error'>('default');
+    const [label, setLabel] = useState('Copy AI review prompt');
+    const resetTimeoutRef = useRef<number | null>(null);
+
+    useEffect(() => () => {
+        if (resetTimeoutRef.current) {
+            window.clearTimeout(resetTimeoutRef.current);
+        }
+    }, []);
+
+    async function handleCopyPrompt() {
+        const copied = await copyTextToClipboard(buildTrainingPlanAnalysisPrompt({
+            planTitle,
+            exportUrl,
+            plannerUrl,
+        }));
+
+        if (resetTimeoutRef.current) {
+            window.clearTimeout(resetTimeoutRef.current);
+        }
+
+        setState(copied ? 'success' : 'error');
+        setLabel(copied ? 'Prompt copied' : 'Copy failed');
+
+        resetTimeoutRef.current = window.setTimeout(() => {
+            setState('default');
+            setLabel('Copy AI review prompt');
+        }, 2200);
+    }
+
+    const toneClasses = state === 'success'
+        ? 'border-emerald-300 bg-emerald-50 text-emerald-700 dark:border-emerald-900/50 dark:bg-emerald-950/40 dark:text-emerald-100'
+        : state === 'error'
+            ? 'border-rose-300 bg-rose-50 text-rose-700 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-100'
+            : 'border-gray-200 bg-white text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100';
+
+    return (
+        <button
+            type="button"
+            onClick={() => void handleCopyPrompt()}
+            className={`inline-flex items-center gap-2 rounded-2xl border px-4 py-3 text-sm font-semibold transition hover:border-gray-300 hover:text-gray-900 dark:hover:border-gray-600 ${toneClasses}`}
+            title={label}
+            aria-label={label}
+        >
+            <span>{label}</span>
+            <span aria-hidden="true">⎘</span>
+        </button>
+    );
+}
+
 export function RacePlannerPage({bootstrap}: RacePlannerPageProps) {
     const {trainingPlanId} = useParams<{trainingPlanId?: string}>();
     const [editTrainingPlanId, setEditTrainingPlanId] = useState<string | null>(null);
     const [pendingAction, setPendingAction] = useState<PendingAction>(null);
     const [actionError, setActionError] = useState<string | null>(null);
     const [planStartDay, setPlanStartDay] = useState('');
+    const [activePlannerTab, setActivePlannerTab] = useState<PlannerTab>('content');
+    const [isWidePlannerLayout, setIsWidePlannerLayout] = useState(() => window.matchMedia('(min-width: 1280px)').matches);
 
     const loadPlanner = useCallback(
         (signal: AbortSignal): Promise<RacePlannerPreviewResponse> => fetchRacePlannerPreview(bootstrap.basePath, trainingPlanId, signal),
@@ -264,6 +327,18 @@ export function RacePlannerPage({bootstrap}: RacePlannerPageProps) {
     useEffect(() => {
         setPlanStartDay(data?.planStartDayInputValue ?? '');
     }, [data?.planStartDayInputValue]);
+
+    useEffect(() => {
+        const mediaQuery = window.matchMedia('(min-width: 1280px)');
+        const handleChange = (event: MediaQueryListEvent) => {
+            setIsWidePlannerLayout(event.matches);
+        };
+
+        setIsWidePlannerLayout(mediaQuery.matches);
+        mediaQuery.addEventListener('change', handleChange);
+
+        return () => mediaQuery.removeEventListener('change', handleChange);
+    }, []);
 
     const summary = useMemo(() => {
         if (!data?.proposal) {
@@ -283,6 +358,12 @@ export function RacePlannerPage({bootstrap}: RacePlannerPageProps) {
         : data?.targetRace
             ? formatDate(data.targetRace.day)
             : null;
+    const trainingPlanExportUrl = data?.linkedTrainingPlan?.exportPath
+        ? buildAppPath(bootstrap.basePath, data.linkedTrainingPlan.exportPath)
+        : null;
+    const plannerPromptUrl = typeof window === 'undefined'
+        ? buildAppPath(bootstrap.basePath, trainingPlanId ? `react-preview/race-planner/plan/${trainingPlanId}` : 'react-preview/race-planner')
+        : window.location.href;
 
     async function handleAction(action: PendingAction, callback: () => Promise<void>) {
         setPendingAction(action);
@@ -443,7 +524,33 @@ export function RacePlannerPage({bootstrap}: RacePlannerPageProps) {
                                 Open plan manager
                                 <span aria-hidden="true">→</span>
                             </Link>
+                            {data.mode === 'plan-preview' && data.plannerSupportsRaceActions ? (
+                                <Link
+                                    to="/race-planner"
+                                    className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-gray-600"
+                                >
+                                    Global race planner
+                                    <span aria-hidden="true">→</span>
+                                </Link>
+                            ) : null}
                         </div>
+                        {trainingPlanExportUrl ? (
+                            <div className="mt-4 flex flex-wrap items-center gap-3">
+                                <a
+                                    href={trainingPlanExportUrl}
+                                    download={`training-plan-${data.linkedTrainingPlan?.id ?? 'preview'}.json`}
+                                    className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-gray-600"
+                                >
+                                    Export JSON
+                                    <span aria-hidden="true">↓</span>
+                                </a>
+                                <TrainingPlanAnalysisPromptButton
+                                    exportUrl={trainingPlanExportUrl}
+                                    planTitle={targetTitle}
+                                    plannerUrl={plannerPromptUrl}
+                                />
+                            </div>
+                        ) : null}
                         {data.actions.canChangeStartDay ? (
                             <form
                                 className="mt-6 flex flex-wrap items-center gap-3 rounded-[24px] border border-gray-200 bg-white/85 p-4 dark:border-gray-800 dark:bg-gray-900/60"
@@ -551,7 +658,28 @@ export function RacePlannerPage({bootstrap}: RacePlannerPageProps) {
             </section>
 
             <div className="grid gap-6 xl:grid-cols-[1.1fr_0.9fr]">
-                <div className="space-y-6">
+                <div className="col-span-full flex rounded-2xl border border-gray-200 bg-gray-100 p-1 text-sm font-medium xl:hidden" role="tablist" aria-label="Planner sections">
+                    <button
+                        type="button"
+                        role="tab"
+                        aria-selected={activePlannerTab === 'content'}
+                        onClick={() => setActivePlannerTab('content')}
+                        className={`flex-1 rounded-[14px] px-3 py-2 text-center transition ${activePlannerTab === 'content' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'}`}
+                    >
+                        Plan
+                    </button>
+                    <button
+                        type="button"
+                        role="tab"
+                        aria-selected={activePlannerTab === 'sidebar'}
+                        onClick={() => setActivePlannerTab('sidebar')}
+                        className={`flex-1 rounded-[14px] px-3 py-2 text-center transition ${activePlannerTab === 'sidebar' ? 'bg-white text-gray-900 shadow-sm' : 'text-gray-500'}`}
+                    >
+                        Details
+                    </button>
+                </div>
+
+                <div className={`${isWidePlannerLayout || activePlannerTab === 'content' ? 'block' : 'hidden'} space-y-6 xl:block`}>
                     {data.warnings.length > 0 ? (
                         <section className="glass-panel rounded-[32px] p-6">
                             <div className="section-kicker">Warnings</div>
@@ -813,7 +941,7 @@ export function RacePlannerPage({bootstrap}: RacePlannerPageProps) {
                     ) : null}
                 </div>
 
-                <div className="space-y-6">
+                <div className={`${isWidePlannerLayout || activePlannerTab === 'sidebar' ? 'block' : 'hidden'} space-y-6 xl:block`}>
                     {data.rules ? (
                         <section className="glass-panel rounded-[32px] p-6">
                             <div className="section-kicker">Profile guidelines</div>
