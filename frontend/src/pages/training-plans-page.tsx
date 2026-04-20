@@ -1,6 +1,7 @@
-import {useCallback, useMemo} from 'react';
+import {useCallback, useMemo, useState} from 'react';
 import {Link} from 'react-router-dom';
 import {StatCard} from '../components/stat-card';
+import {TrainingPlanCreateModal} from '../components/training-plan-create-modal';
 import {buildAppPath, type ReactPreviewBootstrap} from '../lib/bootstrap';
 import {
     fetchTrainingPlansPreview,
@@ -37,6 +38,7 @@ function formatLabel(value: string | null): string | null {
     }
 
     return value
+        .replace(/([a-z])([A-Z])/g, '$1 $2')
         .replace(/[-_]/g, ' ')
         .replace(/\b\w/g, (character) => character.toUpperCase());
 }
@@ -101,6 +103,7 @@ function TrainingPlansLoadingState() {
 }
 
 export function TrainingPlansPage({bootstrap}: TrainingPlansPageProps) {
+    const [modalConfig, setModalConfig] = useState<null | {afterTrainingPlanId?: string; targetRaceEventId?: string}>(null);
     const loadTrainingPlans = useCallback(
         (signal: AbortSignal): Promise<TrainingPlansPreviewResponse> => fetchTrainingPlansPreview(bootstrap.basePath, signal),
         [bootstrap.basePath],
@@ -112,6 +115,7 @@ export function TrainingPlansPage({bootstrap}: TrainingPlansPageProps) {
         () => data?.plans.find((plan) => plan.id === data.activePlanId) ?? null,
         [data],
     );
+    const latestPlanId = data?.plans.at(-1)?.id;
 
     return (
         <div className="space-y-8 pb-8">
@@ -128,6 +132,14 @@ export function TrainingPlansPage({bootstrap}: TrainingPlansPageProps) {
                             Symfony or the legacy route all at once.
                         </p>
                         <div className="mt-6 flex flex-wrap gap-3">
+                            <button
+                                type="button"
+                                onClick={() => setModalConfig(latestPlanId ? {afterTrainingPlanId: latestPlanId} : {})}
+                                className="inline-flex items-center gap-2 rounded-2xl bg-strava-orange px-5 py-3 text-sm font-semibold text-white transition hover:bg-orange-600"
+                            >
+                                {latestPlanId ? 'Create next plan in React' : 'Create first plan in React'}
+                                <span aria-hidden="true">+</span>
+                            </button>
                             <a
                                 href={buildAppPath(bootstrap.basePath, 'training-plans')}
                                 className="inline-flex items-center gap-2 rounded-2xl bg-gray-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-gray-800 dark:bg-white dark:text-gray-950 dark:hover:bg-gray-200"
@@ -147,7 +159,7 @@ export function TrainingPlansPage({bootstrap}: TrainingPlansPageProps) {
                     <div className="grid gap-4 sm:grid-cols-2">
                         <StatCard label="Current athlete" value={bootstrap.athlete.name} hint="Shell bootstrap is still shared with Symfony." tone="orange" />
                         <StatCard label="API shape" value={loading ? 'Loading…' : error ? 'Error' : 'Live'} hint="This route now consumes a real authenticated JSON endpoint." tone="emerald" />
-                        <StatCard label="Modal migration" value="Priority" hint="Next, create/edit flows should switch from HTML fragments to JSON forms." tone="blue" />
+                        <StatCard label="Modal migration" value="Live create" hint="The first create-plan flow now runs in React with preview JSON defaults and live persistence." tone="blue" />
                         <StatCard label="Target state" value={loading ? '—' : `${data?.stats.totalPlans ?? 0} plans`} hint="Planner cards and stats are now driven by backend data." />
                     </div>
                 </div>
@@ -225,6 +237,14 @@ export function TrainingPlansPage({bootstrap}: TrainingPlansPageProps) {
                                                 <div className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] ${buildRacePriorityTone(race)}`}>{race.priority.toUpperCase()}</div>
                                             </div>
                                             <div className="mt-2 text-amber-800/80 dark:text-amber-100/80">{formatShortDate(race.day)} · {formatLabel(race.profile)}</div>
+                                            <button
+                                                type="button"
+                                                onClick={() => setModalConfig({targetRaceEventId: race.id})}
+                                                className="mt-4 inline-flex items-center gap-2 rounded-2xl border border-amber-300 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-amber-800 transition hover:border-amber-400 hover:bg-amber-100/80 dark:border-amber-700 dark:bg-amber-950/20 dark:text-amber-100"
+                                            >
+                                                Create anchored plan
+                                                <span aria-hidden="true">→</span>
+                                            </button>
                                         </div>
                                     ))
                                 )}
@@ -316,6 +336,15 @@ export function TrainingPlansPage({bootstrap}: TrainingPlansPageProps) {
                     </section>
                 </>
             ) : null}
+
+            <TrainingPlanCreateModal
+                basePath={bootstrap.basePath}
+                isOpen={null !== modalConfig}
+                afterTrainingPlanId={modalConfig?.afterTrainingPlanId}
+                targetRaceEventId={modalConfig?.targetRaceEventId}
+                onClose={() => setModalConfig(null)}
+                onSaved={reload}
+            />
         </div>
     );
 }

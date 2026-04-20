@@ -14,6 +14,7 @@ use App\Infrastructure\User\CurrentAppUser;
 use App\Infrastructure\ValueObject\Time\DateRange;
 use App\Infrastructure\ValueObject\Time\SerializableDateTime;
 use Symfony\Component\HttpFoundation\JsonResponse;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpKernel\Attribute\AsController;
 use Symfony\Component\Routing\Attribute\Route;
 
@@ -25,6 +26,7 @@ final readonly class ReactPreviewTrainingPlansApiRequestHandler
         private TrainingPlanRepository $trainingPlanRepository,
         private RaceEventRepository $raceEventRepository,
         private Clock $clock,
+        private TrainingPlanRequestHandler $trainingPlanRequestHandler,
     ) {
     }
 
@@ -33,6 +35,33 @@ final readonly class ReactPreviewTrainingPlansApiRequestHandler
     {
         $this->currentAppUser->require();
 
+        return new JsonResponse($this->buildPayload());
+    }
+
+    #[Route(path: '/react-preview/api/training-plans', methods: ['POST'], priority: 6)]
+    public function create(Request $request): JsonResponse
+    {
+        $this->currentAppUser->require();
+
+        $payload = $request->toArray();
+        $submitRequest = new Request(
+            request: [
+                ...$payload,
+                'redirectTo' => '/react-preview/training-plans',
+            ],
+            server: ['REQUEST_METHOD' => 'POST'],
+        );
+
+        $this->trainingPlanRequestHandler->handle($submitRequest);
+
+        return new JsonResponse($this->buildPayload());
+    }
+
+    /**
+     * @return array<string, mixed>
+     */
+    private function buildPayload(): array
+    {
         $now = $this->clock->getCurrentDateTimeImmutable()->setTime(0, 0);
         $plans = $this->trainingPlanRepository->findAll();
         $raceEvents = $this->loadRaceEvents();
@@ -49,7 +78,7 @@ final readonly class ReactPreviewTrainingPlansApiRequestHandler
             : $latestPlan->getEndDay()->modify('+1 day')->setTime(0, 0);
         $activePlanRecord = $this->findActiveOrNextPlanRecord($planRecords);
 
-        return new JsonResponse([
+        return [
             'requestedAt' => $now->format(DATE_ATOM),
             'activePlanId' => $activePlanRecord['id'] ?? null,
             'stats' => [
@@ -67,7 +96,7 @@ final readonly class ReactPreviewTrainingPlansApiRequestHandler
                 fn (RaceEvent $raceEvent): array => $this->serializeRaceEvent($raceEvent),
                 $unassignedUpcomingRaces,
             ),
-        ]);
+        ];
     }
 
     /**
