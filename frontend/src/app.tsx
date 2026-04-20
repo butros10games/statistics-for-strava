@@ -6,6 +6,7 @@ import {BestEffortsPage} from './pages/best-efforts-page';
 import {buildPreviewBasename, getReactBootstrap} from './lib/bootstrap';
 import {EddingtonPage} from './pages/eddington-page';
 import {GearPage} from './pages/gear-page';
+import {HeatmapPage} from './pages/heatmap-page';
 import {OverviewPage} from './pages/overview-page';
 import {PhotosPage} from './pages/photos-page';
 import {RacePlannerPage} from './pages/race-planner-page';
@@ -56,6 +57,7 @@ export default function App() {
                     <Route path="/best-efforts" element={<BestEffortsPage bootstrap={bootstrap} />} />
                     <Route path="/eddington" element={<EddingtonPage bootstrap={bootstrap} />} />
                     <Route path="/gear" element={<GearPage bootstrap={bootstrap} />} />
+                    <Route path="/heatmap" element={<HeatmapPage bootstrap={bootstrap} />} />
                     <Route path="/photos" element={<PhotosPage bootstrap={bootstrap} />} />
                     <Route path="/race-planner" element={<RacePlannerPage bootstrap={bootstrap} />} />
                     <Route path="/race-planner/plan/:trainingPlanId" element={<RacePlannerPage bootstrap={bootstrap} />} />
