@@ -1,7 +1,6 @@
-import {useCallback, useMemo, useState} from 'react';
-import {Link} from 'react-router-dom';
+import {useCallback, useMemo} from 'react';
+import {Link, useNavigate} from 'react-router-dom';
 import {StatCard} from '../components/stat-card';
-import {TrainingPlanCreateModal} from '../components/training-plan-create-modal';
 import {buildAppPath, type ReactPreviewBootstrap} from '../lib/bootstrap';
 import {
     fetchTrainingPlansPreview,
@@ -103,7 +102,7 @@ function TrainingPlansLoadingState() {
 }
 
 export function TrainingPlansPage({bootstrap}: TrainingPlansPageProps) {
-    const [modalConfig, setModalConfig] = useState<null | {trainingPlanId?: string; afterTrainingPlanId?: string; targetRaceEventId?: string}>(null);
+    const navigate = useNavigate();
     const loadTrainingPlans = useCallback(
         (signal: AbortSignal): Promise<TrainingPlansPreviewResponse> => fetchTrainingPlansPreview(bootstrap.basePath, signal),
         [bootstrap.basePath],
@@ -134,7 +133,7 @@ export function TrainingPlansPage({bootstrap}: TrainingPlansPageProps) {
                         <div className="mt-6 flex flex-wrap gap-3">
                             <button
                                 type="button"
-                                onClick={() => setModalConfig(latestPlanId ? {afterTrainingPlanId: latestPlanId} : {})}
+                                onClick={() => navigate(latestPlanId ? `/training-plan-editor?afterTrainingPlanId=${latestPlanId}` : '/training-plan-editor')}
                                 className="inline-flex items-center gap-2 rounded-2xl bg-strava-orange px-5 py-3 text-sm font-semibold text-white transition hover:bg-orange-600"
                             >
                                 {latestPlanId ? 'Create next plan in React' : 'Create first plan in React'}
@@ -159,6 +158,13 @@ export function TrainingPlansPage({bootstrap}: TrainingPlansPageProps) {
                                 className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-gray-600"
                             >
                                 Manage race events
+                                <span aria-hidden="true">→</span>
+                            </Link>
+                            <Link
+                                to="/training-plan-editor"
+                                className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-gray-600"
+                            >
+                                Open plan editor route
                                 <span aria-hidden="true">→</span>
                             </Link>
                         </div>
@@ -246,7 +252,7 @@ export function TrainingPlansPage({bootstrap}: TrainingPlansPageProps) {
                                             <div className="mt-2 text-amber-800/80 dark:text-amber-100/80">{formatShortDate(race.day)} · {formatLabel(race.profile)}</div>
                                             <button
                                                 type="button"
-                                                onClick={() => setModalConfig({targetRaceEventId: race.id})}
+                                                onClick={() => navigate(`/training-plan-editor?targetRaceEventId=${race.id}`)}
                                                 className="mt-4 inline-flex items-center gap-2 rounded-2xl border border-amber-300 bg-white px-4 py-2 text-xs font-semibold uppercase tracking-[0.24em] text-amber-800 transition hover:border-amber-400 hover:bg-amber-100/80 dark:border-amber-700 dark:bg-amber-950/20 dark:text-amber-100"
                                             >
                                                 Create anchored plan
@@ -331,7 +337,7 @@ export function TrainingPlansPage({bootstrap}: TrainingPlansPageProps) {
                                     <div className="mt-6 flex flex-wrap gap-3">
                                         <button
                                             type="button"
-                                            onClick={() => setModalConfig({trainingPlanId: plan.id})}
+                                            onClick={() => navigate(`/training-plan-editor?trainingPlanId=${plan.id}`)}
                                             className="inline-flex items-center gap-2 rounded-2xl bg-strava-orange px-4 py-3 text-sm font-semibold text-white transition hover:bg-orange-600"
                                         >
                                             Edit in React
@@ -358,16 +364,6 @@ export function TrainingPlansPage({bootstrap}: TrainingPlansPageProps) {
                     </section>
                 </>
             ) : null}
-
-            <TrainingPlanCreateModal
-                basePath={bootstrap.basePath}
-                isOpen={null !== modalConfig}
-                trainingPlanId={modalConfig?.trainingPlanId}
-                afterTrainingPlanId={modalConfig?.afterTrainingPlanId}
-                targetRaceEventId={modalConfig?.targetRaceEventId}
-                onClose={() => setModalConfig(null)}
-                onSaved={reload}
-            />
         </div>
     );
 }

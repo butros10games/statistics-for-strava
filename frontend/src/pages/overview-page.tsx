@@ -40,6 +40,13 @@ export function OverviewPage({bootstrap}: OverviewPageProps) {
                                 Explore the training plans spike
                                 <span aria-hidden="true">→</span>
                             </Link>
+                            <Link
+                                to="/training-plan-editor"
+                                className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-gray-600"
+                            >
+                                Open the plan editor route
+                                <span aria-hidden="true">→</span>
+                            </Link>
                             <a
                                 href={buildAppPath(bootstrap.basePath, 'training-plans')}
                                 className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-gray-600"

@@ -1,7 +1,6 @@
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
-import {Link, useParams} from 'react-router-dom';
+import {Link, useNavigate, useParams} from 'react-router-dom';
 import {StatCard} from '../components/stat-card';
-import {TrainingPlanCreateModal} from '../components/training-plan-create-modal';
 import {buildAppPath, type ReactPreviewBootstrap} from '../lib/bootstrap';
 import {
     fetchRacePlannerPreview,
@@ -310,7 +309,7 @@ function TrainingPlanAnalysisPromptButton({
 
 export function RacePlannerPage({bootstrap}: RacePlannerPageProps) {
     const {trainingPlanId} = useParams<{trainingPlanId?: string}>();
-    const [editTrainingPlanId, setEditTrainingPlanId] = useState<string | null>(null);
+    const navigate = useNavigate();
     const [pendingAction, setPendingAction] = useState<PendingAction>(null);
     const [actionError, setActionError] = useState<string | null>(null);
     const [planStartDay, setPlanStartDay] = useState('');
@@ -470,7 +469,7 @@ export function RacePlannerPage({bootstrap}: RacePlannerPageProps) {
                             {data.actions.canEditLinkedTrainingPlan && data.linkedTrainingPlan ? (
                                 <button
                                     type="button"
-                                    onClick={() => setEditTrainingPlanId(data.linkedTrainingPlan?.id ?? null)}
+                                    onClick={() => navigate(`/training-plan-editor?trainingPlanId=${data.linkedTrainingPlan?.id ?? ''}`)}
                                     className="inline-flex items-center gap-2 rounded-2xl bg-strava-orange px-5 py-3 text-sm font-semibold text-white transition hover:bg-orange-600"
                                 >
                                     Edit plan in React
@@ -1011,17 +1010,6 @@ export function RacePlannerPage({bootstrap}: RacePlannerPageProps) {
                     <PlannerLegend />
                 </div>
             </div>
-
-            <TrainingPlanCreateModal
-                basePath={bootstrap.basePath}
-                isOpen={null !== editTrainingPlanId}
-                trainingPlanId={editTrainingPlanId ?? undefined}
-                onClose={() => setEditTrainingPlanId(null)}
-                onSaved={() => {
-                    setEditTrainingPlanId(null);
-                    reload();
-                }}
-            />
         </div>
     );
 }

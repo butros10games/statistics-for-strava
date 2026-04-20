@@ -20,6 +20,7 @@ import {RecoveryCheckInPage} from './pages/recovery-check-in-page';
 import {RewindPage} from './pages/rewind-page';
 import {RoadmapPage} from './pages/roadmap-page';
 import {SegmentsPage} from './pages/segments-page';
+import {TrainingPlanEditorPage} from './pages/training-plan-editor-page';
 import {TrainingBlocksPage} from './pages/training-blocks-page';
 import {TrainingPlansPage} from './pages/training-plans-page';
 
@@ -81,6 +82,7 @@ export default function App() {
                     <Route path="/rewind" element={<RewindPage bootstrap={bootstrap} />} />
                     <Route path="/rewind/:rewindOption" element={<RewindPage bootstrap={bootstrap} />} />
                     <Route path="/segments" element={<SegmentsPage bootstrap={bootstrap} />} />
+                    <Route path="/training-plan-editor" element={<TrainingPlanEditorPage bootstrap={bootstrap} />} />
                     <Route path="/training-blocks" element={<TrainingBlocksPage bootstrap={bootstrap} />} />
                     <Route path="/training-plans" element={<TrainingPlansPage bootstrap={bootstrap} />} />
                     <Route path="/roadmap" element={<RoadmapPage />} />

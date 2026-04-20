@@ -25,6 +25,7 @@ const previewLinks = [
     {to: '/monthly-stats', label: 'Monthly stats', description: 'Calendar cockpit', icon: '▦'},
     {to: '/photos', label: 'Photos', description: 'Gallery wall', icon: '▣'},
     {to: '/race-events', label: 'Race events', description: 'Planner target editor', icon: '◬'},
+    {to: '/training-plan-editor', label: 'Plan editor', description: 'Route-sized plan form', icon: '✎'},
     {to: '/training-blocks', label: 'Training blocks', description: 'Season structure editor', icon: '◫'},
     {to: '/rewind', label: 'Rewind', description: 'Yearly recap deck', icon: '◒'},
     {to: '/recovery-check-in', label: 'Recovery check-in', description: 'Wellness form slice', icon: '✳'},
