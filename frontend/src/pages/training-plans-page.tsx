@@ -330,6 +330,13 @@ export function TrainingPlansPage({bootstrap}: TrainingPlansPageProps) {
                                             Edit in React
                                             <span aria-hidden="true">✎</span>
                                         </button>
+                                        <Link
+                                            to={`/${plan.racePlannerPath}`}
+                                            className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-gray-600"
+                                        >
+                                            Open React planner
+                                            <span aria-hidden="true">→</span>
+                                        </Link>
                                         <a
                                             href={buildAppPath(bootstrap.basePath, plan.racePlannerPath)}
                                             className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-gray-600"

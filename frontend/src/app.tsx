@@ -3,6 +3,7 @@ import {BrowserRouter, Navigate, Route, Routes} from 'react-router-dom';
 import {AppShell} from './components/app-shell';
 import {buildPreviewBasename, getReactBootstrap} from './lib/bootstrap';
 import {OverviewPage} from './pages/overview-page';
+import {RacePlannerPage} from './pages/race-planner-page';
 import {RoadmapPage} from './pages/roadmap-page';
 import {TrainingPlansPage} from './pages/training-plans-page';
 
@@ -45,6 +46,8 @@ export default function App() {
             >
                 <Routes>
                     <Route path="/" element={<OverviewPage bootstrap={bootstrap} />} />
+                    <Route path="/race-planner" element={<RacePlannerPage bootstrap={bootstrap} />} />
+                    <Route path="/race-planner/plan/:trainingPlanId" element={<RacePlannerPage bootstrap={bootstrap} />} />
                     <Route path="/training-plans" element={<TrainingPlansPage bootstrap={bootstrap} />} />
                     <Route path="/roadmap" element={<RoadmapPage />} />
                     <Route path="*" element={<Navigate to="/" replace />} />
