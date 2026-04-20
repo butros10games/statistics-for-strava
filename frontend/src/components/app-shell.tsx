@@ -17,6 +17,7 @@ const previewLinks = [
     {to: '/badges', label: 'Badges', description: 'Embeddable SVG kit', icon: '▤'},
     {to: '/best-efforts', label: 'Best efforts', description: 'Records matrix', icon: '◍'},
     {to: '/challenges', label: 'Challenges', description: 'Badge archive', icon: '◐'},
+    {to: '/dashboard', label: 'Dashboard', description: 'Widget bridge slice', icon: '▥'},
     {to: '/eddington', label: 'Eddington', description: 'Chart-heavy preview', icon: '◎'},
     {to: '/gear', label: 'Gear', description: 'Equipment analytics', icon: '⬡'},
     {to: '/heatmap', label: 'Heatmap', description: 'Route map explorer', icon: '◔'},

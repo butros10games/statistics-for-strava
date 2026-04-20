@@ -6,6 +6,7 @@ import {BadgesPage} from './pages/badges-page';
 import {BestEffortsPage} from './pages/best-efforts-page';
 import {ChallengesPage} from './pages/challenges-page';
 import {buildPreviewBasename, getReactBootstrap} from './lib/bootstrap';
+import {DashboardPage} from './pages/dashboard-page';
 import {EddingtonPage} from './pages/eddington-page';
 import {GearPage} from './pages/gear-page';
 import {HeatmapPage} from './pages/heatmap-page';
@@ -62,6 +63,7 @@ export default function App() {
                     <Route path="/badges" element={<BadgesPage bootstrap={bootstrap} />} />
                     <Route path="/best-efforts" element={<BestEffortsPage bootstrap={bootstrap} />} />
                     <Route path="/challenges" element={<ChallengesPage bootstrap={bootstrap} />} />
+                    <Route path="/dashboard" element={<DashboardPage bootstrap={bootstrap} />} />
                     <Route path="/eddington" element={<EddingtonPage bootstrap={bootstrap} />} />
                     <Route path="/gear" element={<GearPage bootstrap={bootstrap} />} />
                     <Route path="/heatmap" element={<HeatmapPage bootstrap={bootstrap} />} />
