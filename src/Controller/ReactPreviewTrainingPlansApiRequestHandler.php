@@ -57,6 +57,24 @@ final readonly class ReactPreviewTrainingPlansApiRequestHandler
         return new JsonResponse($this->buildPayload());
     }
 
+    #[Route(path: '/react-preview/api/training-plans/{trainingPlanId}', methods: ['DELETE'], priority: 6)]
+    public function delete(string $trainingPlanId): JsonResponse
+    {
+        $this->currentAppUser->require();
+
+        $deleteRequest = new Request(
+            request: [
+                'trainingPlanId' => $trainingPlanId,
+                'redirectTo' => '/react-preview/training-plans',
+            ],
+            server: ['REQUEST_METHOD' => 'POST'],
+        );
+
+        $this->trainingPlanRequestHandler->delete($deleteRequest);
+
+        return new JsonResponse($this->buildPayload());
+    }
+
     /**
      * @return array<string, mixed>
      */

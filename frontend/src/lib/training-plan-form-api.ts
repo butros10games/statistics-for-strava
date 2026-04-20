@@ -123,3 +123,13 @@ export async function createTrainingPlanPreview(basePath: string, payload: Train
         body: JSON.stringify(payload),
     });
 }
+
+export async function deleteTrainingPlanPreview(basePath: string, trainingPlanId: string): Promise<TrainingPlansPreviewResponse> {
+    return fetchJson<TrainingPlansPreviewResponse>(buildAppPath(basePath, `react-preview/api/training-plans/${trainingPlanId}`), {
+        method: 'DELETE',
+        credentials: 'same-origin',
+        headers: {
+            Accept: 'application/json',
+        },
+    });
+}

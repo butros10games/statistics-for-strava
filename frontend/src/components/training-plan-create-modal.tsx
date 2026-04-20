@@ -2,6 +2,7 @@ import {type FormEvent, useEffect, useMemo, useState} from 'react';
 import {buildAppPath} from '../lib/bootstrap';
 import {
     createTrainingPlanPreview,
+    deleteTrainingPlanPreview,
     fetchTrainingPlanFormPreview,
     type TrainingPlanFormBootstrapResponse,
     type TrainingPlanFormSubmitPayload,
@@ -200,6 +201,7 @@ export function TrainingPlanCreateModal({
     const [loading, setLoading] = useState(false);
     const [loadError, setLoadError] = useState<string | null>(null);
     const [submitting, setSubmitting] = useState(false);
+    const [deleting, setDeleting] = useState(false);
     const [submitError, setSubmitError] = useState<string | null>(null);
 
     useEffect(() => {
@@ -248,7 +250,7 @@ export function TrainingPlanCreateModal({
         }
 
         const handleEscape = (event: KeyboardEvent) => {
-            if (event.key === 'Escape' && !submitting) {
+            if (event.key === 'Escape' && !submitting && !deleting) {
                 onClose();
             }
         };
@@ -256,7 +258,7 @@ export function TrainingPlanCreateModal({
         window.addEventListener('keydown', handleEscape);
 
         return () => window.removeEventListener('keydown', handleEscape);
-    }, [isOpen, onClose, submitting]);
+    }, [deleting, isOpen, onClose, submitting]);
 
     const raceProfileOptions = useMemo(() => {
         if (!bootstrap || !formState) {
@@ -344,11 +346,37 @@ export function TrainingPlanCreateModal({
         }
     };
 
+    const handleDelete = async () => {
+        const currentTrainingPlanId = bootstrap?.context.trainingPlan?.id;
+        if (!currentTrainingPlanId) {
+            return;
+        }
+
+        const confirmed = window.confirm('Delete this training plan from the preview timeline?');
+        if (!confirmed) {
+            return;
+        }
+
+        setDeleting(true);
+        setSubmitError(null);
+
+        try {
+            await deleteTrainingPlanPreview(basePath, currentTrainingPlanId);
+            onSaved();
+            onClose();
+        } catch (error) {
+            setSubmitError(error instanceof Error ? error.message : 'Could not delete the plan.');
+        } finally {
+            setDeleting(false);
+        }
+    };
+
     const isEditMode = bootstrap?.mode === 'edit';
+    const isBusy = submitting || deleting;
 
     return (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 md:p-8">
-            <button type="button" className="absolute inset-0 bg-gray-950/55 backdrop-blur-sm" aria-label="Close modal overlay" onClick={submitting ? undefined : onClose} />
+            <button type="button" className="absolute inset-0 bg-gray-950/55 backdrop-blur-sm" aria-label="Close modal overlay" onClick={isBusy ? undefined : onClose} />
             <section className="relative z-10 max-h-[92vh] w-full max-w-5xl overflow-hidden rounded-[36px] border border-white/70 bg-white/92 shadow-[0_45px_120px_-45px_rgba(15,23,42,0.65)] backdrop-blur-xl dark:border-gray-800 dark:bg-gray-950/94 dark:shadow-none">
                 <div className="border-b border-gray-200/80 px-6 py-5 dark:border-gray-800 md:px-8">
                     <div className="flex items-start justify-between gap-4">
@@ -363,7 +391,7 @@ export function TrainingPlanCreateModal({
                         </div>
                         <button
                             type="button"
-                            onClick={submitting ? undefined : onClose}
+                            onClick={isBusy ? undefined : onClose}
                             className="inline-flex h-11 w-11 items-center justify-center rounded-2xl border border-gray-200 bg-white text-gray-600 transition hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:border-gray-600"
                             aria-label="Close training plan modal"
                         >
@@ -695,14 +723,24 @@ export function TrainingPlanCreateModal({
                                     <button
                                         type="button"
                                         onClick={onClose}
-                                        disabled={submitting}
+                                        disabled={isBusy}
                                         className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-gray-600"
                                     >
                                         Cancel
                                     </button>
+                                    {isEditMode && bootstrap.context.trainingPlan ? (
+                                        <button
+                                            type="button"
+                                            onClick={handleDelete}
+                                            disabled={isBusy}
+                                            className="inline-flex items-center gap-2 rounded-2xl border border-rose-200 bg-rose-50 px-5 py-3 text-sm font-semibold text-rose-800 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-rose-800/60 dark:bg-rose-950/30 dark:text-rose-100"
+                                        >
+                                            {deleting ? 'Deleting plan…' : 'Delete from preview'}
+                                        </button>
+                                    ) : null}
                                     <button
                                         type="submit"
-                                        disabled={submitting}
+                                        disabled={isBusy}
                                         className="inline-flex items-center gap-2 rounded-2xl bg-strava-orange px-5 py-3 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60"
                                     >
                                         {submitting ? 'Saving plan…' : isEditMode ? 'Save changes in preview' : 'Create plan in preview'}

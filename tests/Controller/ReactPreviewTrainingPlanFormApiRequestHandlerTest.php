@@ -308,6 +308,60 @@ final class ReactPreviewTrainingPlanFormApiRequestHandlerTest extends ContainerT
         self::assertSame(1, $payload['stats']['totalPlans']);
     }
 
+    public function testDeleteDelegatesToTrainingPlanHandlerAndReturnsUpdatedPreviewPayload(): void
+    {
+        $existingPlan = TrainingPlan::create(
+            trainingPlanId: TrainingPlanId::random(),
+            type: TrainingPlanType::TRAINING,
+            startDay: SerializableDateTime::fromString('2026-05-13 00:00:00'),
+            endDay: SerializableDateTime::fromString('2026-06-23 00:00:00'),
+            targetRaceEventId: null,
+            title: 'Delete me',
+            notes: null,
+            createdAt: SerializableDateTime::fromString('2026-01-01 08:00:00'),
+            updatedAt: SerializableDateTime::fromString('2026-01-01 08:00:00'),
+            discipline: TrainingPlanDiscipline::RUNNING,
+        );
+        $this->repository->upsert($existingPlan);
+
+        $commandBus = $this->createMock(CommandBus::class);
+        $commandBus
+            ->expects(self::exactly(2))
+            ->method('dispatch')
+            ->with(self::logicalOr(
+                self::isInstanceOf(BuildTrainingPlansHtml::class),
+                self::isInstanceOf(BuildRacePlannerHtml::class),
+            ));
+
+        $plansRequestHandler = new ReactPreviewTrainingPlansApiRequestHandler(
+            currentAppUser: $this->buildCurrentAppUser(),
+            trainingPlanRepository: $this->repository,
+            raceEventRepository: $this->raceEventRepository,
+            clock: $this->getContainer()->get(\App\Infrastructure\Time\Clock\Clock::class),
+            trainingPlanRequestHandler: new TrainingPlanRequestHandler(
+                repository: $this->repository,
+                raceEventRepository: $this->raceEventRepository,
+                plannedSessionRepository: $this->plannedSessionRepository,
+                racePlannerUpcomingSessionRegenerator: $this->getContainer()->get(\App\Domain\TrainingPlanner\RacePlannerUpcomingSessionRegenerator::class),
+                commandBus: $commandBus,
+                clock: $this->getContainer()->get(\App\Infrastructure\Time\Clock\Clock::class),
+                twig: $this->getContainer()->get(Environment::class),
+                performanceAnchorHistory: $this->getContainer()->get(\App\Domain\Performance\PerformanceAnchor\PerformanceAnchorHistory::class),
+                connection: $this->getConnection(),
+            ),
+        );
+
+        $response = $plansRequestHandler->delete((string) $existingPlan->getId());
+
+        self::assertSame(Response::HTTP_OK, $response->getStatusCode());
+
+        $payload = json_decode((string) $response->getContent(), true, 512, JSON_THROW_ON_ERROR);
+
+        self::assertNull($this->repository->findById($existingPlan->getId()));
+        self::assertSame([], $payload['plans']);
+        self::assertSame(0, $payload['stats']['totalPlans']);
+    }
+
     #[\Override]
     protected function setUp(): void
     {
