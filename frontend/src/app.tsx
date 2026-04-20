@@ -8,6 +8,7 @@ import {GearPage} from './pages/gear-page';
 import {OverviewPage} from './pages/overview-page';
 import {RacePlannerPage} from './pages/race-planner-page';
 import {RoadmapPage} from './pages/roadmap-page';
+import {SegmentsPage} from './pages/segments-page';
 import {TrainingPlansPage} from './pages/training-plans-page';
 
 function readDarkModePreference(): boolean {
@@ -54,6 +55,7 @@ export default function App() {
                     <Route path="/gear" element={<GearPage bootstrap={bootstrap} />} />
                     <Route path="/race-planner" element={<RacePlannerPage bootstrap={bootstrap} />} />
                     <Route path="/race-planner/plan/:trainingPlanId" element={<RacePlannerPage bootstrap={bootstrap} />} />
+                    <Route path="/segments" element={<SegmentsPage bootstrap={bootstrap} />} />
                     <Route path="/training-plans" element={<TrainingPlansPage bootstrap={bootstrap} />} />
                     <Route path="/roadmap" element={<RoadmapPage />} />
                     <Route path="*" element={<Navigate to="/" replace />} />
