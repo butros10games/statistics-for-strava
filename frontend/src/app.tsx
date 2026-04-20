@@ -10,6 +10,7 @@ import {EddingtonPage} from './pages/eddington-page';
 import {GearPage} from './pages/gear-page';
 import {HeatmapPage} from './pages/heatmap-page';
 import {MilestonesPage} from './pages/milestones-page';
+import {MonthlyStatsPage} from './pages/monthly-stats-page';
 import {OverviewPage} from './pages/overview-page';
 import {PhotosPage} from './pages/photos-page';
 import {RacePlannerPage} from './pages/race-planner-page';
@@ -65,6 +66,8 @@ export default function App() {
                     <Route path="/gear" element={<GearPage bootstrap={bootstrap} />} />
                     <Route path="/heatmap" element={<HeatmapPage bootstrap={bootstrap} />} />
                     <Route path="/milestones" element={<MilestonesPage bootstrap={bootstrap} />} />
+                    <Route path="/monthly-stats" element={<MonthlyStatsPage bootstrap={bootstrap} />} />
+                    <Route path="/monthly-stats/:monthId" element={<MonthlyStatsPage bootstrap={bootstrap} />} />
                     <Route path="/photos" element={<PhotosPage bootstrap={bootstrap} />} />
                     <Route path="/race-planner" element={<RacePlannerPage bootstrap={bootstrap} />} />
                     <Route path="/race-planner/plan/:trainingPlanId" element={<RacePlannerPage bootstrap={bootstrap} />} />
