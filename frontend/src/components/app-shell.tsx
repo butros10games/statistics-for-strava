@@ -15,6 +15,7 @@ const previewLinks = [
     {to: '/', label: 'Workbench', description: 'Foundation slice', icon: '◫'},
     {to: '/activities', label: 'Activities', description: 'Read-heavy preview', icon: '◌'},
     {to: '/eddington', label: 'Eddington', description: 'Chart-heavy preview', icon: '◎'},
+    {to: '/gear', label: 'Gear', description: 'Equipment analytics', icon: '⬡'},
     {to: '/race-planner', label: 'Race planner', description: 'Live route spike', icon: '◭'},
     {to: '/training-plans', label: 'Training plans', description: 'Route spike', icon: '⟠'},
     {to: '/roadmap', label: 'Roadmap', description: 'Migration track', icon: '⋯'},
@@ -42,6 +43,7 @@ export function AppShell({
         {href: buildAppPath(bootstrap.basePath, 'dashboard'), label: 'Legacy dashboard'},
         {href: buildAppPath(bootstrap.basePath, 'activities'), label: 'Legacy activities'},
         {href: buildAppPath(bootstrap.basePath, 'eddington'), label: 'Legacy Eddington'},
+        {href: buildAppPath(bootstrap.basePath, 'gear'), label: 'Legacy gear'},
         {href: buildAppPath(bootstrap.basePath, 'training-plans'), label: 'Legacy training plans'},
         {href: buildAppPath(bootstrap.basePath, 'race-planner'), label: 'Legacy race planner'},
     ];
