@@ -74,6 +74,13 @@ export function DashboardPage({bootstrap}: DashboardPageProps) {
                                 <span aria-hidden="true">↻</span>
                             </button>
                             <Link
+                                to="/recovery-check-in"
+                                className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-gray-600"
+                            >
+                                Open recovery check-in route
+                                <span aria-hidden="true">→</span>
+                            </Link>
+                            <Link
                                 to="/roadmap"
                                 className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-gray-600"
                             >

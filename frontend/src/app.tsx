@@ -15,6 +15,7 @@ import {MonthlyStatsPage} from './pages/monthly-stats-page';
 import {OverviewPage} from './pages/overview-page';
 import {PhotosPage} from './pages/photos-page';
 import {RacePlannerPage} from './pages/race-planner-page';
+import {RecoveryCheckInPage} from './pages/recovery-check-in-page';
 import {RewindPage} from './pages/rewind-page';
 import {RoadmapPage} from './pages/roadmap-page';
 import {SegmentsPage} from './pages/segments-page';
@@ -73,6 +74,7 @@ export default function App() {
                     <Route path="/photos" element={<PhotosPage bootstrap={bootstrap} />} />
                     <Route path="/race-planner" element={<RacePlannerPage bootstrap={bootstrap} />} />
                     <Route path="/race-planner/plan/:trainingPlanId" element={<RacePlannerPage bootstrap={bootstrap} />} />
+                    <Route path="/recovery-check-in" element={<RecoveryCheckInPage bootstrap={bootstrap} />} />
                     <Route path="/rewind" element={<RewindPage bootstrap={bootstrap} />} />
                     <Route path="/rewind/:rewindOption" element={<RewindPage bootstrap={bootstrap} />} />
                     <Route path="/segments" element={<SegmentsPage bootstrap={bootstrap} />} />
