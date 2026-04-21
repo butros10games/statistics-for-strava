@@ -13,6 +13,7 @@ interface AppShellProps {
 
 const previewLinks = [
     {to: '/', label: 'Workbench', description: 'Foundation slice', icon: '◫'},
+    {to: '/account-settings', label: 'Account', description: 'Identity + sync hub', icon: '◉'},
     {to: '/activities', label: 'Activities', description: 'Read-heavy preview', icon: '◌'},
     {to: '/badges', label: 'Badges', description: 'Embeddable SVG kit', icon: '▤'},
     {to: '/best-efforts', label: 'Best efforts', description: 'Records matrix', icon: '◍'},
@@ -54,6 +55,7 @@ export function AppShell({
     children,
 }: AppShellProps) {
     const legacyLinks = [
+        {href: buildAppPath(bootstrap.basePath, 'account/settings'), label: 'Legacy account settings'},
         {href: buildAppPath(bootstrap.basePath, 'dashboard'), label: 'Legacy dashboard'},
         {href: buildAppPath(bootstrap.basePath, 'activities'), label: 'Legacy activities'},
         {href: buildAppPath(bootstrap.basePath, 'badge.html'), label: 'Legacy badges'},

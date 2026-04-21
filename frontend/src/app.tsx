@@ -1,5 +1,6 @@
 import {useEffect, useMemo, useState} from 'react';
 import {BrowserRouter, Navigate, Route, Routes} from 'react-router-dom';
+import {AccountSettingsPage} from './pages/account-settings-page';
 import {ActivitiesPage} from './pages/activities-page';
 import {AppShell} from './components/app-shell';
 import {BadgesPage} from './pages/badges-page';
@@ -64,6 +65,7 @@ export default function App() {
             >
                 <Routes>
                     <Route path="/" element={<OverviewPage bootstrap={bootstrap} />} />
+                    <Route path="/account-settings" element={<AccountSettingsPage bootstrap={bootstrap} />} />
                     <Route path="/activities" element={<ActivitiesPage bootstrap={bootstrap} />} />
                     <Route path="/badges" element={<BadgesPage bootstrap={bootstrap} />} />
                     <Route path="/best-efforts" element={<BestEffortsPage bootstrap={bootstrap} />} />
