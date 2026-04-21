@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Controller\Auth;
 
+use App\Application\AppUrl;
 use App\Domain\Auth\AppUserRepository;
+use App\Infrastructure\Serialization\Json;
 use App\Infrastructure\Time\Clock\Clock;
 use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
@@ -16,6 +18,7 @@ use Twig\Environment;
 final readonly class ForgotPasswordRequestHandler
 {
     public function __construct(
+        private AppUrl $appUrl,
         private AppUserRepository $appUserRepository,
         private Clock $clock,
         private Environment $twig,
@@ -26,7 +29,7 @@ final readonly class ForgotPasswordRequestHandler
     public function handle(Request $request): Response
     {
         if ($request->isMethod('GET')) {
-            return new Response($this->twig->render('auth/forgot-password.html.twig'));
+            return $this->renderPortal();
         }
 
         $email = trim($request->request->getString('email'));
@@ -43,9 +46,24 @@ final readonly class ForgotPasswordRequestHandler
             $resetLink = sprintf('/reset-password/%s', $token);
         }
 
-        return new Response($this->twig->render('auth/forgot-password.html.twig', [
-            'submitted' => true,
-            'resetLink' => $resetLink,
+        return $this->renderPortal(submitted: true, resetLink: null !== $resetLink ? ltrim($resetLink, '/') : null);
+    }
+
+    private function renderPortal(bool $submitted = false, ?string $resetLink = null): Response
+    {
+        return new Response($this->twig->render('auth/react-portal.html.twig', [
+            'pageTitle' => 'Statistics for Strava · Reset password',
+            'reactPortalBootstrap' => Json::encode([
+                'kind' => 'forgot-password',
+                'appName' => 'Statistics for Strava',
+                'basePath' => $this->appUrl->getBasePath() ?? '',
+                'submitted' => $submitted,
+                'resetLink' => $resetLink,
+                'actions' => [
+                    'submitPath' => 'reset-password',
+                    'loginPath' => 'login',
+                ],
+            ]),
         ]));
     }
 }

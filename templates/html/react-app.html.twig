@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <title>{{ "Statistics for Strava"|trans }} · React preview</title>
+    <title>{{ pageTitle }}</title>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width">
     <meta name="theme-color" content="#F26822">
@@ -20,7 +20,7 @@
 <div id="react-root"></div>
 <script>
     window.statisticsForStrava = {{ javascriptWindowConstants|raw }};
-    window.statisticsForStravaReact = {{ reactPreviewBootstrap|raw }};
+    window.statisticsForStravaReact = {{ reactAppBootstrap|raw }};
 </script>
 <script src="{{ relativeUrl(asset('libraries/leaflet/leaflet.js')) }}"></script>
 <script src="{{ relativeUrl(asset('libraries/echarts/echarts.min.js')) }}"></script>

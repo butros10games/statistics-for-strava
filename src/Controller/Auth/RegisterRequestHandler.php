@@ -4,10 +4,12 @@ declare(strict_types=1);
 
 namespace App\Controller\Auth;
 
+use App\Application\AppUrl;
 use App\Domain\Auth\AppUser;
 use App\Domain\Auth\AppUserId;
 use App\Domain\Auth\AppUserRepository;
 use App\Domain\Auth\FirstRegisteredUserDataAssigner;
+use App\Infrastructure\Serialization\Json;
 use App\Infrastructure\Time\Clock\Clock;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -21,6 +23,7 @@ use Twig\Environment;
 final readonly class RegisterRequestHandler
 {
     public function __construct(
+        private AppUrl $appUrl,
         private AppUserRepository $appUserRepository,
         private FirstRegisteredUserDataAssigner $firstRegisteredUserDataAssigner,
         private UserPasswordHasherInterface $passwordHasher,
@@ -33,7 +36,7 @@ final readonly class RegisterRequestHandler
     public function handle(Request $request): Response
     {
         if ($request->isMethod('GET')) {
-            return new Response($this->twig->render('auth/register.html.twig'));
+            return $this->renderPortal();
         }
 
         $email = trim($request->request->getString('email'));
@@ -41,24 +44,15 @@ final readonly class RegisterRequestHandler
         $passwordConfirmation = $request->request->getString('passwordConfirmation');
 
         if ('' === $email || '' === $password) {
-            return new Response($this->twig->render('auth/register.html.twig', [
-                'error' => 'Email and password are required.',
-                'email' => $email,
-            ]), Response::HTTP_UNPROCESSABLE_ENTITY);
+            return $this->renderPortal('Email and password are required.', $email, Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
         if ($password !== $passwordConfirmation) {
-            return new Response($this->twig->render('auth/register.html.twig', [
-                'error' => 'Passwords do not match.',
-                'email' => $email,
-            ]), Response::HTTP_UNPROCESSABLE_ENTITY);
+            return $this->renderPortal('Passwords do not match.', $email, Response::HTTP_UNPROCESSABLE_ENTITY);
         }
 
         if ($this->appUserRepository->emailExists($email)) {
-            return new Response($this->twig->render('auth/register.html.twig', [
-                'error' => 'An account with that email already exists.',
-                'email' => $email,
-            ]), Response::HTTP_CONFLICT);
+            return $this->renderPortal('An account with that email already exists.', $email, Response::HTTP_CONFLICT);
         }
 
         $now = $this->clock->getCurrentDateTimeImmutable();
@@ -76,5 +70,23 @@ final readonly class RegisterRequestHandler
         $this->firstRegisteredUserDataAssigner->assign($appUser);
 
         return new RedirectResponse('/login?registered=1', Response::HTTP_FOUND);
+    }
+
+    private function renderPortal(?string $error = null, string $email = '', int $status = Response::HTTP_OK): Response
+    {
+        return new Response($this->twig->render('auth/react-portal.html.twig', [
+            'pageTitle' => 'Statistics for Strava · Create account',
+            'reactPortalBootstrap' => Json::encode([
+                'kind' => 'register',
+                'appName' => 'Statistics for Strava',
+                'basePath' => $this->appUrl->getBasePath() ?? '',
+                'error' => $error,
+                'email' => $email,
+                'actions' => [
+                    'submitPath' => 'register',
+                    'loginPath' => 'login',
+                ],
+            ]),
+        ]), $status);
     }
 }

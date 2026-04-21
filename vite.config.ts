@@ -16,11 +16,16 @@ export default defineConfig({
         port: 4174,
     },
     build: {
+        cssCodeSplit: false,
         emptyOutDir: true,
         outDir: path.resolve(__dirname, 'public/react/dist'),
         rollupOptions: {
+            input: {
+                app: path.resolve(__dirname, 'frontend/src/main.tsx'),
+                auth: path.resolve(__dirname, 'frontend/src/auth-main.tsx'),
+            },
             output: {
-                entryFileNames: 'app.js',
+                entryFileNames: (chunkInfo) => chunkInfo.name === 'auth' ? 'auth.js' : 'app.js',
                 chunkFileNames: 'chunks/[name]-[hash].js',
                 assetFileNames: (assetInfo) => assetInfo.name?.endsWith('.css')
                     ? 'app.css'

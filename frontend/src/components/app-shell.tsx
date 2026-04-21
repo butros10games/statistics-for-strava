@@ -11,14 +11,18 @@ interface AppShellProps {
     children: ReactNode;
 }
 
-const previewLinks = [
+const previewOnlyLinks = [
     {to: '/', label: 'Workbench', description: 'Foundation slice', icon: '◫'},
-    {to: '/account-settings', label: 'Account', description: 'Identity + sync hub', icon: '◉'},
+    {to: '/roadmap', label: 'Roadmap', description: 'Migration track', icon: '⋯'},
+];
+
+const primaryLinks = [
+    {to: '/dashboard', label: 'Dashboard', description: 'Widget bridge slice', icon: '▥'},
+    {to: '/account/settings', label: 'Account', description: 'Identity + sync hub', icon: '◉'},
     {to: '/activities', label: 'Activities', description: 'Read-heavy preview', icon: '◌'},
     {to: '/badges', label: 'Badges', description: 'Embeddable SVG kit', icon: '▤'},
     {to: '/best-efforts', label: 'Best efforts', description: 'Records matrix', icon: '◍'},
     {to: '/challenges', label: 'Challenges', description: 'Badge archive', icon: '◐'},
-    {to: '/dashboard', label: 'Dashboard', description: 'Widget bridge slice', icon: '▥'},
     {to: '/eddington', label: 'Eddington', description: 'Chart-heavy preview', icon: '◎'},
     {to: '/gear', label: 'Gear', description: 'Equipment analytics', icon: '⬡'},
     {to: '/heatmap', label: 'Heatmap', description: 'Route map explorer', icon: '◔'},
@@ -33,7 +37,6 @@ const previewLinks = [
     {to: '/segments', label: 'Segments', description: 'Filtered climb browser', icon: '◈'},
     {to: '/race-planner', label: 'Race planner', description: 'Live route spike', icon: '◭'},
     {to: '/training-plans', label: 'Training plans', description: 'Route spike', icon: '⟠'},
-    {to: '/roadmap', label: 'Roadmap', description: 'Migration track', icon: '⋯'},
 ];
 
 function previewLinkClass({isActive}: NavLinkRenderProps) {
@@ -54,6 +57,8 @@ export function AppShell({
     onToggleDarkMode,
     children,
 }: AppShellProps) {
+    const isPreview = bootstrap.experience === 'preview';
+    const navigationLinks = isPreview ? [...previewOnlyLinks, ...primaryLinks] : primaryLinks;
     const legacyLinks = [
         {href: buildAppPath(bootstrap.basePath, 'account/settings'), label: 'Legacy account settings'},
         {href: buildAppPath(bootstrap.basePath, 'dashboard'), label: 'Legacy dashboard'},
@@ -74,6 +79,10 @@ export function AppShell({
         {href: buildAppPath(bootstrap.basePath, 'training-block?redirectTo=/monthly-stats'), label: 'Legacy training-block modal'},
         {href: buildAppPath(bootstrap.basePath, 'training-plans'), label: 'Legacy training plans'},
         {href: buildAppPath(bootstrap.basePath, 'race-planner'), label: 'Legacy race planner'},
+    ];
+    const liveLinks = [
+        {href: buildAppPath(bootstrap.basePath, 'react-preview'), label: 'Preview lab'},
+        {href: buildAppPath(bootstrap.basePath, 'ai/chat'), label: 'AI chat'},
     ];
 
     return (
@@ -100,9 +109,9 @@ export function AppShell({
                             />
                             <div className="min-w-0">
                                 <div className="flex flex-wrap items-center gap-2">
-                                    <span className="truncate text-sm font-semibold uppercase tracking-[0.28em] text-gray-500 dark:text-gray-400">Tempo migration</span>
+                                    <span className="truncate text-sm font-semibold uppercase tracking-[0.28em] text-gray-500 dark:text-gray-400">{isPreview ? 'Tempo migration' : 'Statistics for Strava'}</span>
                                     <span className="rounded-full border border-orange-200 bg-orange-50 px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.24em] text-orange-700 dark:border-orange-900/50 dark:bg-orange-950/50 dark:text-orange-200">
-                                        React preview
+                                        {isPreview ? 'React preview' : 'React app'}
                                     </span>
                                 </div>
                                 <div className="truncate text-lg font-semibold text-gray-900 dark:text-white">
@@ -133,7 +142,7 @@ export function AppShell({
                             )}
                             <div className="hidden text-sm sm:block">
                                 <div className="font-medium text-gray-900 dark:text-white">{bootstrap.athlete.name}</div>
-                                <div className="text-gray-500 dark:text-gray-400">Parallel app shell</div>
+                                <div className="text-gray-500 dark:text-gray-400">{isPreview ? 'Parallel app shell' : 'Primary app shell'}</div>
                             </div>
                         </div>
                     </div>
@@ -142,9 +151,9 @@ export function AppShell({
             <aside className="fixed left-0 top-0 z-30 h-screen w-72 border-r border-white/60 bg-white/90 px-4 pb-6 pt-24 backdrop-blur-xl transition-[width] duration-300 dark:border-gray-800 dark:bg-gray-950/88 sidebar-collapsed:w-24">
                 <div className="flex h-full flex-col gap-6 overflow-hidden">
                     <div className="glass-panel rounded-[28px] p-4 sidebar-collapsed:px-2">
-                        <div className="section-kicker sidebar-collapsed:hidden">Preview routes</div>
+                        <div className="section-kicker sidebar-collapsed:hidden">{isPreview ? 'Preview routes' : 'App routes'}</div>
                         <nav className="mt-4 flex flex-col gap-2">
-                            {previewLinks.map((link) => (
+                            {navigationLinks.map((link) => (
                                 <NavLink key={link.to} to={link.to} end={link.to === '/'} className={previewLinkClass}>
                                     {({isActive}) => (
                                         <>
@@ -165,9 +174,9 @@ export function AppShell({
                     </div>
 
                     <div className="glass-panel rounded-[28px] p-4 sidebar-collapsed:px-2">
-                        <div className="section-kicker sidebar-collapsed:hidden">Legacy app</div>
+                        <div className="section-kicker sidebar-collapsed:hidden">{isPreview ? 'Legacy app' : 'Extra routes'}</div>
                         <div className="mt-4 flex flex-col gap-2">
-                            {legacyLinks.map((link) => (
+                            {(isPreview ? legacyLinks : liveLinks).map((link) => (
                                 <a
                                     key={link.href}
                                     href={link.href}

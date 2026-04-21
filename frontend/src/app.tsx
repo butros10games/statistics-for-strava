@@ -6,7 +6,7 @@ import {AppShell} from './components/app-shell';
 import {BadgesPage} from './pages/badges-page';
 import {BestEffortsPage} from './pages/best-efforts-page';
 import {ChallengesPage} from './pages/challenges-page';
-import {buildPreviewBasename, getReactBootstrap} from './lib/bootstrap';
+import {buildRouterBasename, getReactBootstrap} from './lib/bootstrap';
 import {DashboardPage} from './pages/dashboard-page';
 import {EddingtonPage} from './pages/eddington-page';
 import {GearPage} from './pages/gear-page';
@@ -36,7 +36,7 @@ function readSidebarPreference(): boolean {
 
 export default function App() {
     const bootstrap = getReactBootstrap();
-    const basename = useMemo(() => buildPreviewBasename(bootstrap.basePath), [bootstrap.basePath]);
+    const basename = useMemo(() => buildRouterBasename(bootstrap.routerBasePath), [bootstrap.routerBasePath]);
     const [darkMode, setDarkMode] = useState<boolean>(readDarkModePreference);
     const [sidebarCollapsed, setSidebarCollapsed] = useState<boolean>(readSidebarPreference);
 
@@ -64,9 +64,11 @@ export default function App() {
                 onToggleDarkMode={() => setDarkMode((current) => !current)}
             >
                 <Routes>
-                    <Route path="/" element={<OverviewPage bootstrap={bootstrap} />} />
+                    <Route path="/" element={bootstrap.experience === 'preview' ? <OverviewPage bootstrap={bootstrap} /> : <Navigate to="/dashboard" replace />} />
                     <Route path="/account-settings" element={<AccountSettingsPage bootstrap={bootstrap} />} />
+                    <Route path="/account/settings" element={<AccountSettingsPage bootstrap={bootstrap} />} />
                     <Route path="/activities" element={<ActivitiesPage bootstrap={bootstrap} />} />
+                    <Route path="/badge.html" element={<BadgesPage bootstrap={bootstrap} />} />
                     <Route path="/badges" element={<BadgesPage bootstrap={bootstrap} />} />
                     <Route path="/best-efforts" element={<BestEffortsPage bootstrap={bootstrap} />} />
                     <Route path="/challenges" element={<ChallengesPage bootstrap={bootstrap} />} />
@@ -90,7 +92,7 @@ export default function App() {
                     <Route path="/training-blocks" element={<TrainingBlocksPage bootstrap={bootstrap} />} />
                     <Route path="/training-plans" element={<TrainingPlansPage bootstrap={bootstrap} />} />
                     <Route path="/roadmap" element={<RoadmapPage />} />
-                    <Route path="*" element={<Navigate to="/" replace />} />
+                    <Route path="*" element={<Navigate to={bootstrap.experience === 'preview' ? '/' : '/dashboard'} replace />} />
                 </Routes>
             </AppShell>
         </BrowserRouter>

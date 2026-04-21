@@ -1,7 +1,7 @@
 import {useCallback, useEffect, useMemo, useRef, useState} from 'react';
 import {Link, useNavigate, useParams} from 'react-router-dom';
 import {StatCard} from '../components/stat-card';
-import {buildAppPath, type ReactPreviewBootstrap} from '../lib/bootstrap';
+import {buildAppPath, buildRouterPath, type ReactPreviewBootstrap} from '../lib/bootstrap';
 import {
     fetchRacePlannerPreview,
     regenerateRacePlannerUpcomingSessions,
@@ -361,7 +361,7 @@ export function RacePlannerPage({bootstrap}: RacePlannerPageProps) {
         ? buildAppPath(bootstrap.basePath, data.linkedTrainingPlan.exportPath)
         : null;
     const plannerPromptUrl = typeof window === 'undefined'
-        ? buildAppPath(bootstrap.basePath, trainingPlanId ? `react-preview/race-planner/plan/${trainingPlanId}` : 'react-preview/race-planner')
+        ? buildRouterPath(bootstrap.routerBasePath, trainingPlanId ? `race-planner/plan/${trainingPlanId}` : 'race-planner')
         : window.location.href;
 
     async function handleAction(action: PendingAction, callback: () => Promise<void>) {

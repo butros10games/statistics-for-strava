@@ -1,6 +1,8 @@
 export interface ReactPreviewBootstrap {
     appName: string;
     subtitle: string | null;
+    experience: 'preview' | 'live';
+    routerBasePath: string;
     athlete: {
         name: string;
         initial: string;
@@ -54,6 +56,19 @@ export function buildAppPath(basePath: string, path = ''): string {
     return `${prefix}/${trimmedPath}`;
 }
 
-export function buildPreviewBasename(basePath: string): string {
-    return buildAppPath(basePath, 'react-preview');
+export function buildRouterBasename(routerBasePath: string): string | undefined {
+    const trimmed = routerBasePath.trim();
+
+    return '' === trimmed ? undefined : normaliseBasePath(trimmed);
+}
+
+export function buildRouterPath(routerBasePath: string, path = ''): string {
+    const prefix = normaliseBasePath(routerBasePath);
+    const trimmedPath = path.replace(/^\/+/, '');
+
+    if (!trimmedPath) {
+        return prefix || '/';
+    }
+
+    return `${prefix}/${trimmedPath}`;
 }

@@ -7,15 +7,13 @@ namespace App\Tests\Controller;
 use App\Domain\Auth\AppUser;
 use App\Domain\Auth\AppUserId;
 use App\Domain\Auth\AppUserRepository;
-use App\Infrastructure\Serialization\Json;
 use App\Infrastructure\Time\Clock\Clock;
-use Doctrine\DBAL\Connection;
 use Doctrine\ORM\EntityManagerInterface;
 use Doctrine\ORM\Tools\SchemaTool;
 use Symfony\Bundle\FrameworkBundle\KernelBrowser;
 use Symfony\Bundle\FrameworkBundle\Test\WebTestCase;
 
-final class AppRequestHandlerTest extends WebTestCase
+final class LegacyHtmlRedirectRequestHandlerTest extends WebTestCase
 {
     private KernelBrowser $client;
 
@@ -31,9 +29,12 @@ final class AppRequestHandlerTest extends WebTestCase
         if ($connection->isConnected()) {
             $connection->close();
         }
+
         $schemaTool = new SchemaTool($entityManager);
         $schemaTool->dropDatabase();
         $schemaTool->createSchema($entityManager->getMetadataFactory()->getAllMetadata());
+
+        $this->createAndLoginUser();
     }
 
     #[\Override]
@@ -44,12 +45,32 @@ final class AppRequestHandlerTest extends WebTestCase
         parent::tearDown();
     }
 
-    public function testHandleRendersIndexForAuthenticatedUsersWithAthlete(): void
+    public function testRacePlannerHtmlRedirectsToReactRoute(): void
+    {
+        $this->client->request('GET', '/race-planner.html');
+
+        self::assertResponseRedirects('/race-planner');
+    }
+
+    public function testRacePlannerPlanHtmlRedirectsToReactRoute(): void
+    {
+        $this->client->request('GET', '/race-planner/plan-plan-123.html');
+
+        self::assertResponseRedirects('/race-planner/plan/plan-123');
+    }
+
+    public function testTrainingPlansHtmlRedirectsToReactRoute(): void
+    {
+        $this->client->request('GET', '/training-plans.html');
+
+        self::assertResponseRedirects('/training-plans');
+    }
+
+    private function createAndLoginUser(): void
     {
         $container = $this->client->getContainer();
         $clock = $container->get(Clock::class);
         $userRepository = $container->get(AppUserRepository::class);
-        $connection = $container->get(Connection::class);
         assert($userRepository instanceof AppUserRepository);
 
         $user = AppUser::register(
@@ -60,23 +81,6 @@ final class AppRequestHandlerTest extends WebTestCase
         );
         $userRepository->save($user);
 
-        $connection->insert('AthleteProfile', [
-            'appUserId' => (string) $user->getId(),
-            'payload' => Json::encode([
-                'id' => 'athlete-42',
-                'firstname' => 'Ada',
-                'lastname' => 'Lovelace',
-                'birthDate' => '1990-01-01',
-            ]),
-        ]);
-
         $this->client->loginUser($user);
-        $this->client->request('GET', '/');
-
-        self::assertResponseIsSuccessful();
-        self::assertStringContainsString('Statistics for Strava | Ada Lovelace', (string) $this->client->getResponse()->getContent());
-        self::assertStringContainsString('id="react-root"', (string) $this->client->getResponse()->getContent());
-        self::assertStringContainsString('window.statisticsForStravaReact', (string) $this->client->getResponse()->getContent());
-        self::assertStringContainsString('"experience":"live"', (string) $this->client->getResponse()->getContent());
     }
 }

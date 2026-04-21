@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
-use App\Application\AppUrl;
 use App\Application\Build\BuildIndexHtml\IndexHtml;
+use App\Application\React\BuildReactAppBootstrap;
 use App\Infrastructure\Serialization\Json;
 use App\Infrastructure\Time\Clock\Clock;
 use Symfony\Component\HttpFoundation\Response;
@@ -18,7 +18,7 @@ final readonly class ReactPreviewRequestHandler
 {
     public function __construct(
         private IndexHtml $indexHtml,
-        private AppUrl $appUrl,
+        private BuildReactAppBootstrap $buildReactAppBootstrap,
         private Clock $clock,
         private Environment $twig,
     ) {
@@ -28,27 +28,11 @@ final readonly class ReactPreviewRequestHandler
     public function handle(): Response
     {
         $context = $this->indexHtml->getContext($this->clock->getCurrentDateTimeImmutable());
-        $athlete = $context['athlete'];
 
-        return new Response($this->twig->render('html/react-preview.html.twig', [
+        return new Response($this->twig->render('html/react-app.html.twig', [
             ...$context,
-            'reactPreviewBootstrap' => Json::encode([
-                'appName' => 'Statistics for Strava',
-                'subtitle' => null !== $context['subTitle'] ? (string) $context['subTitle'] : null,
-                'athlete' => [
-                    'name' => $athlete->getName(),
-                    'initial' => strtoupper($athlete->getFirstLetterOfFirstName()),
-                ],
-                'profilePictureUrl' => null !== $context['profilePictureUrl'] ? (string) $context['profilePictureUrl'] : null,
-                'counts' => [
-                    'activities' => $context['totalActivityCount'],
-                    'challenges' => $context['completedChallenges'],
-                    'photos' => $context['totalPhotoCount'],
-                    'hasGear' => $context['hasGear'],
-                    'hasBestEfforts' => $context['hasBestEfforts'],
-                ],
-                'basePath' => $this->appUrl->getBasePath() ?? '',
-            ]),
+            'pageTitle' => 'Statistics for Strava · React preview',
+            'reactAppBootstrap' => Json::encode($this->buildReactAppBootstrap->build($context, 'preview')),
         ]), Response::HTTP_OK);
     }
 }

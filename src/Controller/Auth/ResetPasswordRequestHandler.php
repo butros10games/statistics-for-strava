@@ -4,7 +4,9 @@ declare(strict_types=1);
 
 namespace App\Controller\Auth;
 
+use App\Application\AppUrl;
 use App\Domain\Auth\AppUserRepository;
+use App\Infrastructure\Serialization\Json;
 use App\Infrastructure\Time\Clock\Clock;
 use Symfony\Component\HttpFoundation\RedirectResponse;
 use Symfony\Component\HttpFoundation\Request;
@@ -18,6 +20,7 @@ use Twig\Environment;
 final readonly class ResetPasswordRequestHandler
 {
     public function __construct(
+        private AppUrl $appUrl,
         private AppUserRepository $appUserRepository,
         private UserPasswordHasherInterface $passwordHasher,
         private Clock $clock,
@@ -31,25 +34,26 @@ final readonly class ResetPasswordRequestHandler
         $user = $this->appUserRepository->findByPasswordResetToken($token);
 
         if (null === $user) {
-            return new Response($this->twig->render('auth/reset-password.html.twig', [
-                'error' => 'That reset link is not valid anymore.',
-            ]), Response::HTTP_NOT_FOUND);
+            return $this->renderPortal(
+                token: null,
+                error: 'That reset link is not valid anymore.',
+                status: Response::HTTP_NOT_FOUND,
+            );
         }
 
         if ($request->isMethod('GET')) {
-            return new Response($this->twig->render('auth/reset-password.html.twig', [
-                'token' => $token,
-            ]));
+            return $this->renderPortal(token: $token);
         }
 
         $password = $request->request->getString('password');
         $passwordConfirmation = $request->request->getString('passwordConfirmation');
 
         if ('' === $password || $password !== $passwordConfirmation) {
-            return new Response($this->twig->render('auth/reset-password.html.twig', [
-                'token' => $token,
-                'error' => 'Enter the same new password twice.',
-            ]), Response::HTTP_UNPROCESSABLE_ENTITY);
+            return $this->renderPortal(
+                token: $token,
+                error: 'Enter the same new password twice.',
+                status: Response::HTTP_UNPROCESSABLE_ENTITY,
+            );
         }
 
         $this->appUserRepository->save($user->withPasswordHash(
@@ -58,5 +62,23 @@ final readonly class ResetPasswordRequestHandler
         ));
 
         return new RedirectResponse('/login?passwordReset=1', Response::HTTP_FOUND);
+    }
+
+    private function renderPortal(?string $token, ?string $error = null, int $status = Response::HTTP_OK): Response
+    {
+        return new Response($this->twig->render('auth/react-portal.html.twig', [
+            'pageTitle' => 'Statistics for Strava · Choose a new password',
+            'reactPortalBootstrap' => Json::encode([
+                'kind' => 'reset-password',
+                'appName' => 'Statistics for Strava',
+                'basePath' => $this->appUrl->getBasePath() ?? '',
+                'error' => $error,
+                'token' => $token,
+                'actions' => [
+                    'submitPath' => null !== $token ? sprintf('reset-password/%s', $token) : null,
+                    'loginPath' => 'login',
+                ],
+            ]),
+        ]), $status);
     }
 }
