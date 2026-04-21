@@ -13,6 +13,7 @@ import {HeatmapPage} from './pages/heatmap-page';
 import {MilestonesPage} from './pages/milestones-page';
 import {MonthlyStatsPage} from './pages/monthly-stats-page';
 import {OverviewPage} from './pages/overview-page';
+import {PlannedSessionEditorPage} from './pages/planned-session-editor-page';
 import {PhotosPage} from './pages/photos-page';
 import {RaceEventsPage} from './pages/race-events-page';
 import {RacePlannerPage} from './pages/race-planner-page';
@@ -74,6 +75,7 @@ export default function App() {
                     <Route path="/milestones" element={<MilestonesPage bootstrap={bootstrap} />} />
                     <Route path="/monthly-stats" element={<MonthlyStatsPage bootstrap={bootstrap} />} />
                     <Route path="/monthly-stats/:monthId" element={<MonthlyStatsPage bootstrap={bootstrap} />} />
+                    <Route path="/planned-session-editor" element={<PlannedSessionEditorPage bootstrap={bootstrap} />} />
                     <Route path="/photos" element={<PhotosPage bootstrap={bootstrap} />} />
                     <Route path="/race-events" element={<RaceEventsPage bootstrap={bootstrap} />} />
                     <Route path="/race-planner" element={<RacePlannerPage bootstrap={bootstrap} />} />

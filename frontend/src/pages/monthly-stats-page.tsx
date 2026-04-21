@@ -11,6 +11,7 @@ import {
     type MonthlyStatsPreviewResponse,
     type MonthlyStatsPreviewTrainingBlock,
 } from '../lib/monthly-stats-preview-api';
+import {buildPlannedSessionEditorPath as buildPlannedSessionEditorPreviewPath} from '../lib/planned-session-preview-api';
 import {useAsyncResource} from '../lib/use-async-resource';
 
 interface MonthlyStatsPageProps {
@@ -142,7 +143,7 @@ function ActivityRow({activity, distanceSymbol, elevationSymbol}: {activity: Mon
     );
 }
 
-function PlannedSessionRow({session}: {session: MonthlyStatsPreviewPlannedSession}) {
+function PlannedSessionRow({session, day}: {session: MonthlyStatsPreviewPlannedSession; day: string}) {
     const accentClass = session.isKeySession
         ? 'border-orange-200 bg-orange-50/90 text-orange-900 dark:border-orange-900/50 dark:bg-orange-950/30 dark:text-orange-100'
         : session.isBrickSession
@@ -150,7 +151,7 @@ function PlannedSessionRow({session}: {session: MonthlyStatsPreviewPlannedSessio
             : 'border-gray-200 bg-white/85 text-gray-800 dark:border-gray-800 dark:bg-gray-900/40 dark:text-gray-100';
 
     return (
-        <div className={`rounded-2xl border px-3 py-2 ${accentClass}`}>
+        <Link to={buildPlannedSessionEditorPreviewPath({plannedSessionId: session.id, day})} className={`block rounded-2xl border px-3 py-2 transition hover:translate-y-[-1px] ${accentClass}`}>
             <div className="flex items-center justify-between gap-2">
                 <div className="font-medium">{session.title}</div>
                 {session.targetIntensityLabel ? (
@@ -164,7 +165,7 @@ function PlannedSessionRow({session}: {session: MonthlyStatsPreviewPlannedSessio
                 {session.durationInSeconds ? ` · ${formatDuration(session.durationInSeconds)}` : ''}
                 {typeof session.estimatedLoad === 'number' ? ` · Load ${formatNumber(session.estimatedLoad, 1)}` : ''}
             </div>
-        </div>
+        </Link>
     );
 }
 
@@ -219,6 +220,12 @@ function CalendarDayCard({
                     </div>
                 </div>
                 <div className="flex flex-wrap justify-end gap-1">
+                    <Link
+                        to={buildPlannedSessionEditorPreviewPath({day: day.date})}
+                        className="rounded-full border border-gray-200 bg-white px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-700 transition hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-gray-600"
+                    >
+                        Plan
+                    </Link>
                     {day.trainingBlockPhase ? (
                         <span className={`rounded-full border px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] ${buildPhaseTone(day.trainingBlockPhase)}`}>
                             {day.trainingBlockPhase}
@@ -237,7 +244,7 @@ function CalendarDayCard({
                     <RaceEventRow key={raceEvent.id} raceEvent={raceEvent} />
                 ))}
                 {day.plannedSessions.map((session) => (
-                    <PlannedSessionRow key={session.id} session={session} />
+                    <PlannedSessionRow key={session.id} session={session} day={day.date} />
                 ))}
                 {day.activities.map((activity) => (
                     <ActivityRow key={activity.id} activity={activity} distanceSymbol={distanceSymbol} elevationSymbol={elevationSymbol} />
@@ -274,7 +281,7 @@ export function MonthlyStatsPage({bootstrap}: MonthlyStatsPageProps) {
                             The calendar cockpit is now a route-sized React preview, with real month totals, live planner context, and the week-coach sidecar intact.
                         </h1>
                         <p className="mt-5 max-w-3xl text-base leading-8 text-gray-600 dark:text-gray-300 md:text-lg">
-                            This slice takes one of the app’s richest overview surfaces and turns it into a shareable preview route. It stays read-only, but still carries the feel of the real monthly command center: navigation, training context, race anchors, and a day-by-day story.
+                            This slice takes one of the app’s richest overview surfaces and turns it into a shareable preview route. It now doubles as a launchpad for live planned-session editing, so the calendar keeps its overview strength while gaining a practical day-by-day write path.
                         </p>
                         <div className="mt-6 flex flex-wrap gap-3">
                             <a
@@ -297,6 +304,13 @@ export function MonthlyStatsPage({bootstrap}: MonthlyStatsPageProps) {
                             >
                                 Manage training blocks
                                 <span aria-hidden="true">→</span>
+                            </Link>
+                            <Link
+                                to={buildPlannedSessionEditorPreviewPath({day: `${selectedMonthId ?? new Date().toISOString().slice(0, 7)}-01`})}
+                                className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-gray-600"
+                            >
+                                Plan a session in React
+                                <span aria-hidden="true">＋</span>
                             </Link>
                             <button
                                 type="button"
@@ -576,8 +590,8 @@ export function MonthlyStatsPage({bootstrap}: MonthlyStatsPageProps) {
                         <div className="mt-5 space-y-3 text-sm leading-7 text-gray-600 dark:text-gray-300">
                             {[
                                 'Monthly stats is a meaningful milestone because it turns a navigation hub, not just a detail slice, into a React preview route.',
-                                'The read-only version already captures the most important value: month navigation, live planner context, upcoming races, training blocks, and a richly populated calendar grid.',
-                                'That leaves future write-capable planner interactions as a follow-up layer rather than a prerequisite for migration progress.',
+                                'The route now also opens the planned-session editor directly from each day card and existing planned session, which makes the calendar genuinely useful for live planning.',
+                                'That means month navigation, live planner context, upcoming races, training blocks, and the first write-capable planner loop now coexist in the React preview.',
                             ].map((item) => (
                                 <div key={item} className="rounded-2xl border border-gray-200 bg-white/80 p-4 dark:border-gray-800 dark:bg-gray-950/30">
                                     {item}
