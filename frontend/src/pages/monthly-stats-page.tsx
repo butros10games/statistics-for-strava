@@ -1,6 +1,5 @@
 import {useCallback} from 'react';
 import {Link, useParams} from 'react-router-dom';
-import {StatCard} from '../components/stat-card';
 import {buildAppPath, type ReactPreviewBootstrap} from '../lib/bootstrap';
 import {
     fetchMonthlyStatsPreview,
@@ -18,6 +17,9 @@ interface MonthlyStatsPageProps {
     bootstrap: ReactPreviewBootstrap;
 }
 
+const toolbarButtonClass = 'inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-[13px] font-medium text-gray-700 shadow-xs transition hover:bg-gray-50 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-gray-600';
+const toolbarPrimaryButtonClass = 'inline-flex items-center gap-2 rounded-lg bg-strava-orange px-2.5 py-1.5 text-[13px] font-semibold text-white shadow-sm transition hover:bg-orange-600';
+
 function normaliseMonthId(monthId?: string): string | undefined {
     return monthId?.replace(/^month-/, '');
 }
@@ -27,14 +29,6 @@ function formatNumber(value: number, maximumFractionDigits = 0): string {
         maximumFractionDigits,
         minimumFractionDigits: 0,
     }).format(value);
-}
-
-function formatDate(value: string): string {
-    return new Intl.DateTimeFormat('en', {
-        month: 'short',
-        day: 'numeric',
-        year: 'numeric',
-    }).format(new Date(value));
 }
 
 function formatShortDate(value: string): string {
@@ -134,9 +128,9 @@ function buildMonthPreviewPath(monthId: string): string {
 
 function ActivityRow({activity, distanceSymbol, elevationSymbol}: {activity: MonthlyStatsPreviewActivity; distanceSymbol: string; elevationSymbol: string}) {
     return (
-        <div className={`rounded-2xl border px-3 py-2 ${buildActivityTone(activity.activityType)}`}>
-            <div className="font-medium">{activity.name}</div>
-            <div className="mt-1 text-xs opacity-80">
+        <div className={`rounded-lg border px-2.5 py-1.5 ${buildActivityTone(activity.activityType)}`}>
+            <div className="text-[13px] font-medium leading-5">{activity.name}</div>
+            <div className="mt-0.5 text-[11px] leading-4 opacity-80">
                 {activity.label} · {formatNumber(activity.distance, 1)} {distanceSymbol} · {formatNumber(activity.elevation)} {elevationSymbol}
             </div>
         </div>
@@ -151,16 +145,16 @@ function PlannedSessionRow({session, day}: {session: MonthlyStatsPreviewPlannedS
             : 'border-gray-200 bg-white/85 text-gray-800 dark:border-gray-800 dark:bg-gray-900/40 dark:text-gray-100';
 
     return (
-        <Link to={buildPlannedSessionEditorPreviewPath({plannedSessionId: session.id, day})} className={`block rounded-2xl border px-3 py-2 transition hover:translate-y-[-1px] ${accentClass}`}>
+        <Link to={buildPlannedSessionEditorPreviewPath({plannedSessionId: session.id, day})} className={`block rounded-lg border px-2.5 py-1.5 transition hover:translate-y-[-1px] ${accentClass}`}>
             <div className="flex items-center justify-between gap-2">
-                <div className="font-medium">{session.title}</div>
+                <div className="text-[13px] font-medium leading-5">{session.title}</div>
                 {session.targetIntensityLabel ? (
-                    <span className="rounded-full border border-white/70 bg-white/70 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.18em] dark:border-gray-800 dark:bg-gray-950/40">
+                    <span className="rounded-full border border-white/70 bg-white/70 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider dark:border-gray-800 dark:bg-gray-950/40">
                         {session.targetIntensityLabel}
                     </span>
                 ) : null}
             </div>
-            <div className="mt-1 text-xs opacity-80">
+            <div className="mt-0.5 text-[11px] leading-4 opacity-80">
                 {session.label}
                 {session.durationInSeconds ? ` · ${formatDuration(session.durationInSeconds)}` : ''}
                 {typeof session.estimatedLoad === 'number' ? ` · Load ${formatNumber(session.estimatedLoad, 1)}` : ''}
@@ -171,14 +165,14 @@ function PlannedSessionRow({session, day}: {session: MonthlyStatsPreviewPlannedS
 
 function RaceEventRow({raceEvent}: {raceEvent: MonthlyStatsPreviewRaceEvent}) {
     return (
-        <div className={`rounded-2xl border px-3 py-2 ${buildPriorityTone(raceEvent.priority)}`}>
+        <div className={`rounded-lg border px-2.5 py-1.5 ${buildPriorityTone(raceEvent.priority)}`}>
             <div className="flex items-center justify-between gap-2">
-                <div className="font-medium">{raceEvent.title}</div>
-                <span className="rounded-full border border-white/70 bg-white/70 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-[0.18em] dark:border-gray-800 dark:bg-gray-950/40">
+                <div className="text-[13px] font-medium leading-5">{raceEvent.title}</div>
+                <span className="rounded-full border border-white/70 bg-white/70 px-2 py-0.5 text-[11px] font-semibold uppercase tracking-wider dark:border-gray-800 dark:bg-gray-950/40">
                     {raceEvent.priority.toUpperCase()}
                 </span>
             </div>
-            <div className="mt-1 text-xs opacity-80">
+            <div className="mt-0.5 text-[11px] leading-4 opacity-80">
                 {raceEvent.profileLabel}
                 {raceEvent.location ? ` · ${raceEvent.location}` : ''}
                 {typeof raceEvent.countdownDays === 'number' ? ` · D-${Math.max(0, raceEvent.countdownDays)}` : ''}
@@ -189,9 +183,9 @@ function RaceEventRow({raceEvent}: {raceEvent: MonthlyStatsPreviewRaceEvent}) {
 
 function TrainingBlockRow({block}: {block: MonthlyStatsPreviewTrainingBlock}) {
     return (
-        <div className={`rounded-2xl border px-3 py-2 ${buildPhaseTone(block.phase)}`}>
-            <div className="font-medium">{block.title}</div>
-            <div className="mt-1 text-xs opacity-80">
+        <div className={`rounded-lg border px-2.5 py-1.5 ${buildPhaseTone(block.phase)}`}>
+            <div className="text-[13px] font-medium leading-5">{block.title}</div>
+            <div className="mt-0.5 text-[11px] leading-4 opacity-80">
                 {formatDateRange(block.startDay, block.endDay)}
                 {block.focus ? ` · ${block.focus}` : ''}
             </div>
@@ -209,37 +203,37 @@ function CalendarDayCard({
     elevationSymbol: string;
 }) {
     return (
-        <article className={`min-h-[16rem] rounded-[24px] border p-3 ${day.isCurrentMonth ? 'border-gray-200 bg-white/92 dark:border-gray-800 dark:bg-gray-950/45' : 'border-gray-200/70 bg-gray-50/75 text-gray-400 dark:border-gray-800/60 dark:bg-gray-900/25 dark:text-gray-500'}`}>
+        <article className={`min-h-[13rem] rounded-lg border p-2.5 ${day.isCurrentMonth ? 'border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-950' : 'border-gray-200/70 bg-gray-50/75 text-gray-400 dark:border-gray-800/60 dark:bg-gray-900/25 dark:text-gray-500'}`}>
             <div className="flex items-start justify-between gap-2">
                 <div>
-                    <div className={`inline-flex h-8 min-w-8 items-center justify-center rounded-full px-2 text-sm font-semibold ${day.isToday ? 'bg-strava-orange text-white' : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-100'}`}>
+                    <div className={`inline-flex h-7 min-w-7 items-center justify-center rounded-full px-2 text-[13px] font-semibold ${day.isToday ? 'bg-strava-orange text-white' : 'bg-gray-100 text-gray-700 dark:bg-gray-800 dark:text-gray-100'}`}>
                         {day.dayNumber}
                     </div>
-                    <div className="mt-2 text-[11px] uppercase tracking-[0.18em]">
+                    <div className="mt-1.5 text-[10px] uppercase tracking-wider">
                         {new Date(day.date).toLocaleDateString('en', {weekday: 'short'})}
                     </div>
                 </div>
                 <div className="flex flex-wrap justify-end gap-1">
                     <Link
                         to={buildPlannedSessionEditorPreviewPath({day: day.date})}
-                        className="rounded-full border border-gray-200 bg-white px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-700 transition hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-gray-600"
+                        className="rounded-lg border border-gray-200 bg-white px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wider text-gray-700 transition hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-gray-600"
                     >
                         Plan
                     </Link>
                     {day.trainingBlockPhase ? (
-                        <span className={`rounded-full border px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] ${buildPhaseTone(day.trainingBlockPhase)}`}>
+                        <span className={`rounded-full border px-2 py-1 text-[10px] font-semibold uppercase tracking-wider ${buildPhaseTone(day.trainingBlockPhase)}`}>
                             {day.trainingBlockPhase}
                         </span>
                     ) : null}
                     {day.racePriority ? (
-                        <span className={`rounded-full border px-2 py-1 text-[10px] font-semibold uppercase tracking-[0.18em] ${buildPriorityTone(day.racePriority)}`}>
+                        <span className={`rounded-full border px-2 py-1 text-[10px] font-semibold uppercase tracking-wider ${buildPriorityTone(day.racePriority)}`}>
                             {day.racePriority.toUpperCase()} race
                         </span>
                     ) : null}
                 </div>
             </div>
 
-            <div className="mt-3 space-y-2">
+            <div className="mt-2.5 space-y-1.5">
                 {day.raceEvents.map((raceEvent) => (
                     <RaceEventRow key={raceEvent.id} raceEvent={raceEvent} />
                 ))}
@@ -259,6 +253,15 @@ function CalendarDayCard({
     );
 }
 
+function SummaryPill({label, value}: {label: string; value: string}) {
+    return (
+        <div className="rounded-lg border border-gray-200 bg-gray-50 px-2.5 py-1.5 text-[13px] dark:border-gray-800 dark:bg-gray-900/60">
+            <span className="font-semibold text-gray-900 dark:text-white">{value}</span>
+            <span className="ml-2 text-gray-500 dark:text-gray-400">{label}</span>
+        </div>
+    );
+}
+
 export function MonthlyStatsPage({bootstrap}: MonthlyStatsPageProps) {
     const {monthId} = useParams<{monthId?: string}>();
     const selectedMonthId = normaliseMonthId(monthId);
@@ -272,118 +275,79 @@ export function MonthlyStatsPage({bootstrap}: MonthlyStatsPageProps) {
     const {data, loading, error, reload} = useAsyncResource(loadMonthlyStats);
 
     return (
-        <div className="space-y-8 pb-8">
-            <section className="glass-panel rounded-[36px] p-6 md:p-8">
-                <div className="grid gap-8 xl:grid-cols-[1.08fr_0.92fr]">
-                    <div>
-                        <div className="section-kicker">Monthly stats preview</div>
-                        <h1 className="mt-5 max-w-4xl text-4xl font-semibold tracking-tight text-gray-900 dark:text-white md:text-5xl">
-                            The calendar cockpit is now a route-sized React preview, with real month totals, live planner context, and the week-coach sidecar intact.
-                        </h1>
-                        <p className="mt-5 max-w-3xl text-base leading-8 text-gray-600 dark:text-gray-300 md:text-lg">
-                            This slice takes one of the app’s richest overview surfaces and turns it into a shareable preview route. It now doubles as a launchpad for live planned-session editing, so the calendar keeps its overview strength while gaining a practical day-by-day write path.
-                        </p>
-                        <div className="mt-6 flex flex-wrap gap-3">
-                            <a
-                                href={buildAppPath(bootstrap.basePath, data?.navigation.legacyPath ?? 'monthly-stats')}
-                                className="inline-flex items-center gap-2 rounded-2xl bg-gray-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-gray-800 dark:bg-white dark:text-gray-950 dark:hover:bg-gray-200"
-                            >
-                                Compare with the live route
-                                <span aria-hidden="true">↗</span>
+        <div className="space-y-6 pb-6">
+            <section className="ui-section">
+                <div className="flex flex-col gap-2.5 xl:flex-row xl:items-start xl:justify-between">
+                    <div className="min-w-0">
+                        <h1 className="text-[1.8rem] font-bold tracking-tight text-gray-900 dark:text-white">Monthly stats</h1>
+                        <p className="mt-1 max-w-3xl text-[13px] text-gray-500 dark:text-gray-400">Calendar-first month view with planned sessions, races, blocks, and completed activities in one place.</p>
+                    </div>
+                    <div className="flex flex-col items-start gap-1.5 xl:max-w-[42rem] xl:items-end">
+                        <div className="flex flex-wrap items-center gap-2 xl:justify-end">
+                            <a href={buildAppPath(bootstrap.basePath, data?.navigation.legacyPath ?? 'monthly-stats')} className={toolbarPrimaryButtonClass}>
+                                Open classic page
                             </a>
-                            <Link
-                                to="/monthly-stats"
-                                className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-gray-600"
-                            >
-                                Jump to this month
-                                <span aria-hidden="true">◎</span>
-                            </Link>
-                            <Link
-                                to="/training-blocks"
-                                className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-gray-600"
-                            >
-                                Manage training blocks
-                                <span aria-hidden="true">→</span>
-                            </Link>
-                            <Link
-                                to={buildPlannedSessionEditorPreviewPath({day: `${selectedMonthId ?? new Date().toISOString().slice(0, 7)}-01`})}
-                                className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-gray-600"
-                            >
-                                Plan a session in React
-                                <span aria-hidden="true">＋</span>
-                            </Link>
-                            <button
-                                type="button"
-                                onClick={reload}
-                                className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-gray-600"
-                            >
-                                Refresh preview data
-                                <span aria-hidden="true">↻</span>
-                            </button>
+                            <Link to={buildPlannedSessionEditorPreviewPath({day: `${selectedMonthId ?? new Date().toISOString().slice(0, 7)}-01`})} className={toolbarButtonClass}>Plan a session</Link>
+                            <button type="button" onClick={reload} className={toolbarButtonClass}>Refresh data</button>
                         </div>
-                    </div>
-                    <div className="rounded-[32px] border border-cyan-200 bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(236,254,255,0.96))] p-5 shadow-[0_45px_120px_-45px_rgba(15,23,42,0.65)] dark:border-cyan-900/40 dark:bg-[linear-gradient(135deg,rgba(17,24,39,0.94),rgba(8,47,73,0.55))]">
-                        <div className="text-xs font-semibold uppercase tracking-[0.24em] text-cyan-700 dark:text-cyan-200">Why this seam matters</div>
-                        <div className="mt-4 space-y-3 text-sm leading-7 text-gray-700 dark:text-gray-200">
-                            {[
-                                'It is a real route, not a modal or a narrow edge page, so it proves the preview can absorb a major navigation hub.',
-                                'The backend already centralizes its state assembly, which makes the migration safer than the sheer UI surface suggests.',
-                                'It also bridges several adjacent domains at once: activities, planner sessions, race targets, and training blocks.',
-                            ].map((item) => (
-                                <div key={item} className="rounded-2xl border border-white/80 bg-white/80 p-4 dark:border-gray-800 dark:bg-gray-950/40">
-                                    {item}
-                                </div>
-                            ))}
+                        <div className="flex flex-wrap items-center gap-x-4 gap-y-1 text-[13px] font-medium text-gray-500 dark:text-gray-400 xl:justify-end">
+                            <Link to="/monthly-stats" className="transition hover:text-gray-900 dark:hover:text-white">Jump to this month</Link>
+                            <Link to="/training-blocks" className="transition hover:text-gray-900 dark:hover:text-white">Manage training blocks</Link>
                         </div>
                     </div>
                 </div>
-            </section>
 
-            <section className="glass-panel rounded-[32px] p-6">
-                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
-                    <div>
-                        <div className="section-kicker">Month navigation</div>
-                        <h2 className="mt-4 text-3xl font-semibold tracking-tight text-gray-900 dark:text-white">{data?.navigation.currentMonthLabel ?? 'Loading month…'}</h2>
-                        <p className="mt-3 text-sm leading-7 text-gray-600 dark:text-gray-300">
-                            {data ? `Preview data refreshed ${formatRequestedAt(data.requestedAt)}.` : 'Selecting the month and assembling the calendar context.'}
-                        </p>
+                <div className="mt-3 border-t border-gray-100 pt-3 dark:border-gray-800">
+                    <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                        <div className="flex flex-wrap items-center gap-3">
+                            {data?.navigation.previousMonthId ? (
+                                <Link
+                                    to={buildMonthPreviewPath(data.navigation.previousMonthId)}
+                                    className="inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white p-1.5 text-gray-500 transition hover:bg-gray-50 hover:text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white"
+                                >
+                                    ←
+                                </Link>
+                            ) : null}
+                            <div>
+                                <h2 className="text-[1.15rem] font-semibold text-gray-900 dark:text-white">{data?.navigation.currentMonthLabel ?? 'Loading month…'}</h2>
+                                <p className="mt-0.5 text-[13px] text-gray-500 dark:text-gray-400">
+                                    {data ? `Refreshed ${formatRequestedAt(data.requestedAt)}.` : 'Loading month context.'}
+                                </p>
+                            </div>
+                            {data?.navigation.nextMonthId ? (
+                                <Link
+                                    to={buildMonthPreviewPath(data.navigation.nextMonthId)}
+                                    className="inline-flex items-center justify-center rounded-lg border border-gray-200 bg-white p-1.5 text-gray-500 transition hover:bg-gray-50 hover:text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:bg-gray-800 dark:hover:text-white"
+                                >
+                                    →
+                                </Link>
+                            ) : null}
+                        </div>
+                        <div className="flex flex-wrap gap-3 text-sm text-gray-500 dark:text-gray-400">
+                            {data?.navigation.previousMonthLabel ? <span>{data.navigation.previousMonthLabel}</span> : null}
+                            {data?.navigation.nextMonthLabel ? <span>{data.navigation.nextMonthLabel}</span> : null}
+                        </div>
                     </div>
-                    <div className="flex flex-wrap gap-3">
-                        {data?.navigation.previousMonthId ? (
-                            <Link
-                                to={buildMonthPreviewPath(data.navigation.previousMonthId)}
-                                className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-gray-600"
-                            >
-                                ← {data.navigation.previousMonthLabel}
-                            </Link>
-                        ) : null}
-                        {data?.navigation.nextMonthId ? (
-                            <Link
-                                to={buildMonthPreviewPath(data.navigation.nextMonthId)}
-                                className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-gray-600"
-                            >
-                                {data.navigation.nextMonthLabel} →
-                            </Link>
-                        ) : null}
+
+                    <div className="mt-3 flex flex-wrap gap-2">
+                        <SummaryPill label="activities" value={formatNumber(data?.summary.totalActivities ?? 0)} />
+                        <SummaryPill label={`distance (${unitSystem.distanceSymbol})`} value={formatNumber(data?.summary.totalDistance ?? 0, 1)} />
+                        <SummaryPill label="planned load" value={formatNumber(data?.summary.estimatedPlannedLoad ?? 0, 1)} />
+                        <SummaryPill label="race targets" value={formatNumber(data?.summary.raceEventCount ?? 0)} />
+                        <SummaryPill label="planned sessions" value={formatNumber(data?.summary.plannedSessionCount ?? 0)} />
+                        <SummaryPill label="linked" value={formatNumber(data?.summary.linkedPlannedSessionCount ?? 0)} />
                     </div>
                 </div>
-            </section>
-
-            <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                <StatCard label="Activities" value={formatNumber(data?.summary.totalActivities ?? 0)} hint="Completed workouts inside the selected month." tone="orange" />
-                <StatCard label="Distance" value={`${formatNumber(data?.summary.totalDistance ?? 0, 1)} ${unitSystem.distanceSymbol}`} hint="Summed from the same monthly stats query used by the live route." tone="blue" />
-                <StatCard label="Planned load" value={formatNumber(data?.summary.estimatedPlannedLoad ?? 0, 1)} hint="Estimated training load from the month’s planned sessions." tone="emerald" />
-                <StatCard label="Race targets" value={formatNumber(data?.summary.raceEventCount ?? 0)} hint="Race events overlapping the selected month." tone="slate" />
             </section>
 
             {loading && !data ? (
-                <section className="glass-panel rounded-[32px] p-6 text-sm text-gray-600 dark:text-gray-300">
-                    Loading monthly stats preview… unfolding the calendar one week at a time.
+                <section className="ui-section text-sm text-gray-600 dark:text-gray-300">
+                    Loading monthly stats…
                 </section>
             ) : null}
 
             {error ? (
-                <section className="rounded-[32px] border border-rose-200 bg-rose-50/90 p-6 text-sm text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-100">
+                <section className="rounded-lg border border-rose-200 bg-rose-50 p-6 text-sm text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-100">
                     {error}
                 </section>
             ) : null}
@@ -391,25 +355,32 @@ export function MonthlyStatsPage({bootstrap}: MonthlyStatsPageProps) {
             {data ? (
                 <>
                     {data.month.activityTypeBreakdown.length > 0 ? (
-                        <section className="glass-panel rounded-[32px] p-6">
+                        <section className="ui-section">
                             <div className="flex items-center justify-between gap-3">
                                 <div>
-                                    <div className="section-kicker">Activity mix</div>
-                                    <h2 className="mt-4 text-3xl font-semibold tracking-tight text-gray-900 dark:text-white">How the month is distributed</h2>
+                                    <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Activity mix</h2>
+                                    <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">How the month is distributed across activity families.</p>
                                 </div>
-                                <div className="rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100">
+                                <div className="rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-wider text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100">
                                     {formatNumber(data.month.activityTypeBreakdown.length)} families
                                 </div>
                             </div>
-                            <div className="mt-6 grid gap-4 xl:grid-cols-4">
+                            <div className="mt-3.5 grid gap-2.5 lg:grid-cols-3">
                                 {data.month.activityTypeBreakdown.map((entry) => (
-                                    <div key={entry.activityType} className={`rounded-[28px] border p-5 ${buildActivityTone(entry.activityType)}`}>
-                                        <div className="text-xs font-semibold uppercase tracking-[0.24em] opacity-70">{entry.label}</div>
-                                        <div className="mt-3 text-3xl font-semibold tracking-tight">{formatNumber(entry.count)}</div>
-                                        <div className="mt-4 space-y-1 text-sm opacity-85">
-                                            <div>{formatNumber(entry.distance, 1)} {unitSystem.distanceSymbol}</div>
-                                            <div>{formatNumber(entry.elevation)} {unitSystem.elevationSymbol}</div>
-                                            <div>{formatDuration(entry.movingTime)}</div>
+                                    <div key={entry.activityType} className={`rounded-lg border p-3 ${buildActivityTone(entry.activityType)}`}>
+                                        <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
+                                            <div>
+                                                <div className="text-[10px] font-semibold uppercase tracking-[0.18em] opacity-70">{entry.label}</div>
+                                                <div className="mt-1 flex items-baseline gap-2">
+                                                    <span className="text-[1.65rem] font-semibold tracking-tight">{formatNumber(entry.count)}</span>
+                                                    <span className="text-[11px] font-medium uppercase tracking-[0.18em] opacity-60">sessions</span>
+                                                </div>
+                                            </div>
+                                            <div className="space-y-0.5 text-[12px] opacity-85 sm:text-right">
+                                                <div>{formatNumber(entry.distance, 1)} {unitSystem.distanceSymbol}</div>
+                                                <div>{formatNumber(entry.elevation)} {unitSystem.elevationSymbol}</div>
+                                                <div>{formatDuration(entry.movingTime)}</div>
+                                            </div>
                                         </div>
                                     </div>
                                 ))}
@@ -419,23 +390,23 @@ export function MonthlyStatsPage({bootstrap}: MonthlyStatsPageProps) {
 
                     <section className="grid gap-6 xl:grid-cols-[minmax(0,1.18fr)_minmax(320px,0.82fr)]">
                         <div className="space-y-6">
-                            <section className="glass-panel rounded-[32px] p-6">
+                            <section className="ui-section">
                                 <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                                     <div>
-                                        <div className="section-kicker">Calendar view</div>
-                                        <h2 className="mt-4 text-3xl font-semibold tracking-tight text-gray-900 dark:text-white">Selected month at a glance</h2>
+                                        <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Calendar</h2>
+                                        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Selected month at a glance.</p>
                                     </div>
                                     <div className="text-sm text-gray-500 dark:text-gray-400">
                                         {formatNumber(data.summary.plannedSessionCount)} planned · {formatNumber(data.summary.linkedPlannedSessionCount)} linked · {formatNumber(data.summary.trainingBlockCount)} blocks
                                     </div>
                                 </div>
                                 <div className="mt-6 overflow-x-auto">
-                                    <div className="grid min-w-[980px] grid-cols-7 gap-3 text-xs font-semibold uppercase tracking-[0.22em] text-gray-500 dark:text-gray-400">
+                                    <div className="grid min-w-[980px] grid-cols-7 gap-3 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">
                                         {['Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat', 'Sun'].map((label) => (
                                             <div key={label} className="px-2">{label}</div>
                                         ))}
                                     </div>
-                                    <div className="mt-3 space-y-3 min-w-[980px]">
+                                    <div className="mt-3 min-w-[980px] space-y-3">
                                         {data.calendar.weeks.map((week) => (
                                             <div key={week.id} className="grid grid-cols-7 gap-3">
                                                 {week.days.map((day) => (
@@ -454,72 +425,72 @@ export function MonthlyStatsPage({bootstrap}: MonthlyStatsPageProps) {
                         </div>
 
                         <div className="space-y-6 xl:sticky xl:top-28 xl:self-start">
-                            <section className="glass-panel rounded-[32px] p-6">
+                            <section className="ui-section">
                                 <div className="flex items-center justify-between gap-3">
                                     <div>
-                                        <div className="section-kicker">Current week</div>
-                                        <h2 className="mt-4 text-3xl font-semibold tracking-tight text-gray-900 dark:text-white">Coach context</h2>
+                                        <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Current week</h2>
+                                        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Coach context for the active microcycle.</p>
                                     </div>
-                                    <div className="rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-sky-700 dark:border-sky-900/50 dark:bg-sky-950/40 dark:text-sky-100">
+                                    <div className="rounded-full border border-sky-200 bg-sky-50 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-sky-700 dark:border-sky-900/50 dark:bg-sky-950/40 dark:text-sky-100">
                                         {formatDateRange(data.currentWeek.from, data.currentWeek.to)}
                                     </div>
                                 </div>
-                                <div className="mt-6 grid gap-4 sm:grid-cols-3 xl:grid-cols-1">
-                                    <div className="rounded-[24px] border border-gray-200 bg-white/85 p-4 dark:border-gray-800 dark:bg-gray-900/40">
-                                        <div className="text-xs font-semibold uppercase tracking-[0.24em] text-gray-500 dark:text-gray-400">Estimated load</div>
-                                        <div className="mt-2 text-3xl font-semibold tracking-tight text-gray-900 dark:text-white">{formatNumber(data.currentWeek.estimatedLoad, 1)}</div>
+                                <div className="mt-3.5 grid grid-cols-3 gap-2">
+                                    <div className="rounded-lg border border-gray-200 bg-gray-50 p-2.5 dark:border-gray-800 dark:bg-gray-900">
+                                        <div className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Estimated load</div>
+                                        <div className="mt-1 text-[1.45rem] font-semibold tracking-tight text-gray-900 dark:text-white">{formatNumber(data.currentWeek.estimatedLoad, 1)}</div>
                                     </div>
-                                    <div className="rounded-[24px] border border-gray-200 bg-white/85 p-4 dark:border-gray-800 dark:bg-gray-900/40">
-                                        <div className="text-xs font-semibold uppercase tracking-[0.24em] text-gray-500 dark:text-gray-400">Sessions</div>
-                                        <div className="mt-2 text-3xl font-semibold tracking-tight text-gray-900 dark:text-white">{formatNumber(data.currentWeek.plannedSessionCount)}</div>
+                                    <div className="rounded-lg border border-gray-200 bg-gray-50 p-2.5 dark:border-gray-800 dark:bg-gray-900">
+                                        <div className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Sessions</div>
+                                        <div className="mt-1 text-[1.45rem] font-semibold tracking-tight text-gray-900 dark:text-white">{formatNumber(data.currentWeek.plannedSessionCount)}</div>
                                     </div>
-                                    <div className="rounded-[24px] border border-gray-200 bg-white/85 p-4 dark:border-gray-800 dark:bg-gray-900/40">
-                                        <div className="text-xs font-semibold uppercase tracking-[0.24em] text-gray-500 dark:text-gray-400">Race targets</div>
-                                        <div className="mt-2 text-3xl font-semibold tracking-tight text-gray-900 dark:text-white">{formatNumber(data.currentWeek.raceEventCount)}</div>
+                                    <div className="rounded-lg border border-gray-200 bg-gray-50 p-2.5 dark:border-gray-800 dark:bg-gray-900">
+                                        <div className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Race targets</div>
+                                        <div className="mt-1 text-[1.45rem] font-semibold tracking-tight text-gray-900 dark:text-white">{formatNumber(data.currentWeek.raceEventCount)}</div>
                                     </div>
                                 </div>
                                 {data.currentWeek.activityTypeSummaries.length > 0 ? (
-                                    <div className="mt-5 flex flex-wrap gap-2">
+                                    <div className="mt-3 flex flex-wrap gap-1.5">
                                         {data.currentWeek.activityTypeSummaries.map((entry) => (
-                                            <span key={entry.activityType} className="rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.2em] text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100">
+                                            <span key={entry.activityType} className="rounded-full border border-gray-200 bg-white px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100">
                                                 {entry.label} · {formatNumber(entry.count)}
                                             </span>
                                         ))}
                                     </div>
                                 ) : null}
                                 {data.currentWeek.raceIntent ? (
-                                    <div className={`mt-5 rounded-[24px] border p-4 ${buildCueTone(data.currentWeek.raceIntent.tone)}`}>
-                                        <div className="text-xs font-semibold uppercase tracking-[0.24em] opacity-75">{data.currentWeek.raceIntent.label}</div>
-                                        <div className="mt-2 font-semibold">{data.currentWeek.raceIntent.title}</div>
-                                        <p className="mt-2 text-sm leading-7 opacity-85">{data.currentWeek.raceIntent.body}</p>
+                                    <div className={`mt-3 rounded-lg border p-2.5 ${buildCueTone(data.currentWeek.raceIntent.tone)}`}>
+                                        <div className="text-[10px] font-semibold uppercase tracking-[0.18em] opacity-75">{data.currentWeek.raceIntent.label}</div>
+                                        <div className="mt-1 font-semibold">{data.currentWeek.raceIntent.title}</div>
+                                        <p className="mt-1 text-[13px] leading-5 opacity-85">{data.currentWeek.raceIntent.body}</p>
                                     </div>
                                 ) : null}
                                 {data.currentWeek.coachCues.length > 0 ? (
-                                    <div className="mt-5 space-y-3">
+                                    <div className="mt-3 space-y-2">
                                         {data.currentWeek.coachCues.map((cue) => (
-                                            <div key={`${cue.title}-${cue.body}`} className={`rounded-[24px] border p-4 ${buildCueTone(cue.tone)}`}>
+                                            <div key={`${cue.title}-${cue.body}`} className={`rounded-lg border p-2.5 ${buildCueTone(cue.tone)}`}>
                                                 <div className="font-semibold">{cue.title}</div>
-                                                <p className="mt-2 text-sm leading-7 opacity-85">{cue.body}</p>
+                                                <p className="mt-1 text-[13px] leading-5 opacity-85">{cue.body}</p>
                                             </div>
                                         ))}
                                     </div>
                                 ) : null}
                             </section>
 
-                            <section className="glass-panel rounded-[32px] p-6">
+                            <section className="ui-section">
                                 <div className="flex items-center justify-between gap-3">
                                     <div>
-                                        <div className="section-kicker">Upcoming races</div>
-                                        <h2 className="mt-4 text-3xl font-semibold tracking-tight text-gray-900 dark:text-white">Anchors ahead</h2>
+                                        <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Upcoming races</h2>
+                                        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Targets that anchor the next planning blocks.</p>
                                     </div>
-                                    <div className="rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-rose-700 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-100">
+                                    <div className="rounded-full border border-rose-200 bg-rose-50 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-rose-700 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-100">
                                         {formatNumber(data.upcomingRaceEvents.length)} races
                                     </div>
                                 </div>
                                 <div className="mt-5 space-y-3">
                                     {data.upcomingRaceEvents.length === 0 ? (
-                                        <div className="rounded-[24px] border border-gray-200 bg-white/85 p-4 text-sm leading-7 text-gray-600 dark:border-gray-800 dark:bg-gray-900/40 dark:text-gray-300">
-                                            No upcoming race targets yet. The preview still renders the calendar cleanly, but there is no future race anchor to highlight.
+                                        <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm leading-7 text-gray-600 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300">
+                                            No upcoming race targets yet. The calendar still renders cleanly, but there is no future race anchor to highlight.
                                         </div>
                                     ) : (
                                         data.upcomingRaceEvents.map((raceEvent) => <RaceEventRow key={raceEvent.id} raceEvent={raceEvent} />)
@@ -527,19 +498,19 @@ export function MonthlyStatsPage({bootstrap}: MonthlyStatsPageProps) {
                                 </div>
                             </section>
 
-                            <section className="glass-panel rounded-[32px] p-6">
+                            <section className="ui-section">
                                 <div className="flex items-center justify-between gap-3">
                                     <div>
-                                        <div className="section-kicker">Training blocks</div>
-                                        <h2 className="mt-4 text-3xl font-semibold tracking-tight text-gray-900 dark:text-white">Season structure</h2>
+                                        <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Training blocks</h2>
+                                        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Current and upcoming season structure.</p>
                                     </div>
                                     <div className="flex flex-wrap items-center gap-2">
-                                        <div className="rounded-full border border-violet-200 bg-violet-50 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-violet-700 dark:border-violet-900/50 dark:bg-violet-950/40 dark:text-violet-100">
+                                        <div className="rounded-full border border-violet-200 bg-violet-50 px-3 py-1 text-xs font-semibold uppercase tracking-wider text-violet-700 dark:border-violet-900/50 dark:bg-violet-950/40 dark:text-violet-100">
                                             {formatNumber((data.trainingBlocks.current ? 1 : 0) + data.trainingBlocks.upcoming.length)} blocks
                                         </div>
                                         <Link
                                             to="/training-blocks"
-                                            className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-3 py-2 text-xs font-semibold uppercase tracking-[0.18em] text-gray-700 transition hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-gray-600"
+                                            className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-3 py-2 text-xs font-semibold uppercase tracking-wider text-gray-700 transition hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-gray-600"
                                         >
                                             Manage
                                             <span aria-hidden="true">→</span>
@@ -549,13 +520,13 @@ export function MonthlyStatsPage({bootstrap}: MonthlyStatsPageProps) {
                                 <div className="mt-5 space-y-3">
                                     {data.trainingBlocks.current ? (
                                         <div>
-                                            <div className="mb-2 text-xs font-semibold uppercase tracking-[0.24em] text-gray-500 dark:text-gray-400">Current</div>
+                                            <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Current</div>
                                             <TrainingBlockRow block={data.trainingBlocks.current} />
                                         </div>
                                     ) : null}
                                     {data.trainingBlocks.upcoming.length > 0 ? (
                                         <div>
-                                            <div className="mb-2 text-xs font-semibold uppercase tracking-[0.24em] text-gray-500 dark:text-gray-400">Upcoming</div>
+                                            <div className="mb-2 text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">Upcoming</div>
                                             <div className="space-y-3">
                                                 {data.trainingBlocks.upcoming.map((block) => (
                                                     <TrainingBlockRow key={block.id} block={block} />
@@ -564,39 +535,12 @@ export function MonthlyStatsPage({bootstrap}: MonthlyStatsPageProps) {
                                         </div>
                                     ) : null}
                                     {!data.trainingBlocks.current && data.trainingBlocks.upcoming.length === 0 ? (
-                                        <div className="rounded-[24px] border border-gray-200 bg-white/85 p-4 text-sm leading-7 text-gray-600 dark:border-gray-800 dark:bg-gray-900/40 dark:text-gray-300">
+                                        <div className="rounded-lg border border-gray-200 bg-gray-50 p-4 text-sm leading-7 text-gray-600 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300">
                                             No training blocks are queued yet for the current planning window.
                                         </div>
                                     ) : null}
                                 </div>
                             </section>
-                        </div>
-                    </section>
-
-                    <section className="glass-panel rounded-[32px] p-6">
-                        <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                            <div>
-                                <div className="section-kicker">Migration note</div>
-                                <h2 className="mt-4 text-3xl font-semibold tracking-tight text-gray-900 dark:text-white">A proper route-sized calendar preview</h2>
-                            </div>
-                            <Link
-                                to="/roadmap"
-                                className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-gray-600"
-                            >
-                                Open the migration roadmap
-                                <span aria-hidden="true">→</span>
-                            </Link>
-                        </div>
-                        <div className="mt-5 space-y-3 text-sm leading-7 text-gray-600 dark:text-gray-300">
-                            {[
-                                'Monthly stats is a meaningful milestone because it turns a navigation hub, not just a detail slice, into a React preview route.',
-                                'The route now also opens the planned-session editor directly from each day card and existing planned session, which makes the calendar genuinely useful for live planning.',
-                                'That means month navigation, live planner context, upcoming races, training blocks, and the first write-capable planner loop now coexist in the React preview.',
-                            ].map((item) => (
-                                <div key={item} className="rounded-2xl border border-gray-200 bg-white/80 p-4 dark:border-gray-800 dark:bg-gray-950/30">
-                                    {item}
-                                </div>
-                            ))}
                         </div>
                     </section>
                 </>

@@ -6,7 +6,6 @@ namespace App\Controller;
 
 use App\Application\Build\BuildDashboardHtml\BuildDashboardHtml;
 use App\Application\Build\BuildMonthlyStatsHtml\BuildMonthlyStatsHtml;
-use App\Application\Build\BuildRacePlannerHtml\BuildRacePlannerHtml;
 use App\Domain\TrainingPlanner\RaceEventId;
 use App\Domain\TrainingPlanner\RaceEventRepository;
 use App\Domain\TrainingPlanner\RacePlannerRecoveryManager;
@@ -58,7 +57,6 @@ final readonly class RacePlannerSaveRecoveryRequestHandler
 
         $this->commandBus->dispatch(new BuildDashboardHtml());
         $this->commandBus->dispatch(new BuildMonthlyStatsHtml($now));
-        $this->commandBus->dispatch(new BuildRacePlannerHtml($now));
     }
 
     private function createRedirectResponse(Request $request): RedirectResponse

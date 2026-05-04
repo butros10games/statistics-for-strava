@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Application\Build\BuildMonthlyStatsHtml\BuildMonthlyStatsHtml;
-use App\Application\Build\BuildRacePlannerHtml\BuildRacePlannerHtml;
 use App\Domain\TrainingPlanner\DbalRaceEventRepository;
 use App\Domain\TrainingPlanner\DbalTrainingBlockRepository;
 use App\Domain\TrainingPlanner\TrainingBlock;
@@ -114,7 +113,6 @@ final readonly class TrainingBlockRequestHandler
         $now ??= $this->clock->getCurrentDateTimeImmutable();
 
         $this->commandBus->dispatch(new BuildMonthlyStatsHtml($now));
-        $this->commandBus->dispatch(new BuildRacePlannerHtml($now));
     }
 
     private function nullableString(?string $value): ?string

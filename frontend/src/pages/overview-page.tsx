@@ -1,133 +1,264 @@
+import type {ReactNode} from 'react';
 import {Link} from 'react-router-dom';
-import {StatCard} from '../components/stat-card';
 import {buildAppPath, type ReactPreviewBootstrap} from '../lib/bootstrap';
 
 interface OverviewPageProps {
     bootstrap: ReactPreviewBootstrap;
 }
 
-const userImprovements = [
-    'Faster-feeling navigation with a stable app shell and route-level rendering.',
-    'Consistent loading, error, and modal patterns instead of page-specific behavior.',
-    'Better state preservation for filters, sidebars, route context, and multi-step flows.',
-];
+interface InternalShortcut {
+    label: string;
+    to: string;
+    note: string;
+    badge?: string | number;
+}
 
-const developerImprovements = [
-    'Vite-powered iteration with hot reload instead of rebuild-heavy asset loops.',
-    'Component-level state and route composition instead of DOM manager orchestration.',
-    'A clearer path to testing screens, hooks, and route flows in isolation.',
-];
+interface ExternalShortcut {
+    label: string;
+    href: string;
+    note: string;
+}
+
+function SummaryTile({label, value, note}: {label: string; value: string | number; note: string}) {
+    return (
+        <div className="metric-card">
+            <div className="text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">{label}</div>
+            <div className="mt-1 text-[1.1rem] font-semibold text-gray-900 dark:text-white">{value}</div>
+            <div className="mt-1 text-[11px] leading-4 text-gray-500 dark:text-gray-400">{note}</div>
+        </div>
+    );
+}
+
+function ShortcutList({title, description, children}: {title: string; description: string; children: ReactNode}) {
+    return (
+        <section className="ui-section">
+            <div>
+                <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">{title}</h2>
+                <p className="mt-1 text-sm leading-6 text-gray-500 dark:text-gray-400">{description}</p>
+            </div>
+            <div className="mt-4 space-y-2">{children}</div>
+        </section>
+    );
+}
+
+function InternalShortcutRow({item}: {item: InternalShortcut}) {
+    return (
+        <Link
+            to={item.to}
+            className="flex items-start justify-between gap-3 rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm transition hover:border-gray-300 hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-900 dark:hover:border-gray-700 dark:hover:bg-gray-800"
+        >
+            <div className="min-w-0">
+                <div className="font-medium text-gray-900 dark:text-white">{item.label}</div>
+                <div className="mt-0.5 text-[11px] leading-4 text-gray-500 dark:text-gray-400">{item.note}</div>
+            </div>
+            <div className="flex shrink-0 items-center gap-2">
+                {item.badge ? <span className="ui-pill">{item.badge}</span> : null}
+                <span className="text-gray-400 dark:text-gray-500">→</span>
+            </div>
+        </Link>
+    );
+}
+
+function ExternalShortcutRow({item}: {item: ExternalShortcut}) {
+    return (
+        <a
+            href={item.href}
+            className="flex items-start justify-between gap-3 rounded-lg border border-gray-200 bg-white px-3 py-2.5 text-sm transition hover:border-gray-300 hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-900 dark:hover:border-gray-700 dark:hover:bg-gray-800"
+        >
+            <div className="min-w-0">
+                <div className="font-medium text-gray-900 dark:text-white">{item.label}</div>
+                <div className="mt-0.5 text-[11px] leading-4 text-gray-500 dark:text-gray-400">{item.note}</div>
+            </div>
+            <span className="shrink-0 text-gray-400 dark:text-gray-500">↗</span>
+        </a>
+    );
+}
 
 export function OverviewPage({bootstrap}: OverviewPageProps) {
+    const featureBadges = [
+        bootstrap.counts.hasGear ? 'Gear enabled' : null,
+        bootstrap.counts.hasBestEfforts ? 'Best efforts enabled' : null,
+        bootstrap.athlete.name,
+    ].filter(Boolean) as string[];
+
+    const trainingShortcuts: InternalShortcut[] = [
+        {
+            label: 'Plan manager',
+            to: '/training-plans',
+            note: 'Manage season plans, race builds, and continuity checks.',
+        },
+        {
+            label: 'Race planner',
+            to: '/race-planner',
+            note: 'Review goal races, projections, and planner recommendations.',
+        },
+        {
+            label: 'Training calendar',
+            to: '/monthly-stats',
+            note: 'Open the calendar-style training overview.',
+        },
+        {
+            label: 'Training blocks',
+            to: '/training-blocks',
+            note: 'Edit compact season blocks and supporting notes.',
+        },
+    ];
+
+    const analysisShortcuts: InternalShortcut[] = [
+        {
+            label: 'Dashboard',
+            to: '/dashboard',
+            note: 'Open the live widget dashboard inside the app shell.',
+        },
+        {
+            label: 'Heatmap',
+            to: '/heatmap',
+            note: 'Inspect route coverage on the simplified map-first screen.',
+        },
+        {
+            label: 'Rewind',
+            to: '/rewind',
+            note: 'Browse yearly recap cards and mixed-media summaries.',
+        },
+        {
+            label: 'Segments',
+            to: '/segments',
+            note: 'Search segments and drill into effort history.',
+        },
+    ];
+
+    const libraryShortcuts: InternalShortcut[] = [
+        {
+            label: 'Photos',
+            to: '/photos',
+            note: 'Browse the gallery wall with lightweight filters.',
+            badge: bootstrap.counts.photos,
+        },
+        {
+            label: 'Challenges',
+            to: '/challenges',
+            note: 'Review challenge badges grouped by month.',
+            badge: bootstrap.counts.challenges,
+        },
+        {
+            label: 'Badges',
+            to: '/badges',
+            note: 'Copy badge embeds and export snippets.',
+        },
+        {
+            label: 'Account settings',
+            to: '/account/settings',
+            note: 'Check sync status and linked service connections.',
+        },
+    ];
+
+    const classicShortcuts: ExternalShortcut[] = [
+        {
+            label: 'Classic dashboard',
+            href: buildAppPath(bootstrap.basePath, 'dashboard'),
+            note: 'Jump back to the original dashboard route.',
+        },
+        {
+            label: 'Classic plan manager',
+            href: buildAppPath(bootstrap.basePath, 'training-plans'),
+            note: 'Open the current Symfony training plans page.',
+        },
+        {
+            label: 'AI chat',
+            href: buildAppPath(bootstrap.basePath, 'ai/chat'),
+            note: 'Open the existing assistant route outside this shell.',
+        },
+    ];
+
     return (
-        <div className="space-y-8 pb-8">
-            <section className="glass-panel overflow-hidden rounded-[36px] p-6 md:p-8">
-                <div className="grid gap-8 xl:grid-cols-[1.4fr_0.95fr]">
-                    <div>
-                        <div className="section-kicker">Migration workbench</div>
-                        <h1 className="mt-5 max-w-3xl text-4xl font-semibold tracking-tight text-gray-900 dark:text-white md:text-5xl">
-                            A parallel React shell for the next iteration of Statistics for Strava.
-                        </h1>
-                        <p className="mt-5 max-w-2xl text-base leading-8 text-gray-600 dark:text-gray-300 md:text-lg">
-                            This first implementation slice proves the new frontend can coexist safely with Symfony,
-                            preserve current theme and sidebar preferences, and grow route-by-route without breaking the live app.
-                        </p>
-                        <div className="mt-6 flex flex-wrap gap-3">
-                            <Link
-                                to="/training-plans"
-                                className="inline-flex items-center gap-2 rounded-2xl bg-gray-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-gray-800 dark:bg-white dark:text-gray-950 dark:hover:bg-gray-200"
-                            >
-                                Explore the training plans spike
-                                <span aria-hidden="true">→</span>
-                            </Link>
-                            <Link
-                                to="/training-plan-editor"
-                                className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-gray-600"
-                            >
-                                Open the plan editor route
-                                <span aria-hidden="true">→</span>
-                            </Link>
-                            <a
-                                href={buildAppPath(bootstrap.basePath, 'training-plans')}
-                                className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-gray-600"
-                            >
-                                Open the current training plans page
-                                <span aria-hidden="true">↗</span>
-                            </a>
-                        </div>
-                    </div>
-                    <div className="rounded-[32px] border border-orange-200/70 bg-[linear-gradient(135deg,rgba(255,255,255,0.92),rgba(255,244,237,0.96))] p-5 shadow-[0_30px_80px_-50px_rgba(242,103,34,0.55)] dark:border-orange-900/40 dark:bg-[linear-gradient(135deg,rgba(17,24,39,0.94),rgba(49,24,17,0.92))]">
-                        <div className="text-xs font-semibold uppercase tracking-[0.24em] text-orange-700 dark:text-orange-300">Implemented now</div>
-                        <div className="mt-4 space-y-3 text-sm leading-7 text-gray-700 dark:text-gray-200">
-                            <div className="rounded-2xl border border-white/80 bg-white/80 p-4 dark:border-gray-800 dark:bg-gray-950/40">
-                                React Router shell with a dedicated Symfony preview route.
-                            </div>
-                            <div className="rounded-2xl border border-white/80 bg-white/80 p-4 dark:border-gray-800 dark:bg-gray-950/40">
-                                Theme + sidebar persistence mapped to the existing localStorage keys.
-                            </div>
-                            <div className="rounded-2xl border border-white/80 bg-white/80 p-4 dark:border-gray-800 dark:bg-gray-950/40">
-                                Shared build pipeline hooks so React assets ship alongside the current frontend.
-                            </div>
-                        </div>
-                    </div>
+        <div className="space-y-6 pb-6">
+            <section className="ui-section">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                <div className="min-w-0">
+                    <h1 className="text-[1.8rem] font-bold tracking-tight text-gray-900 dark:text-white">Overview</h1>
+                    <p className="mt-1 max-w-3xl text-[13px] text-gray-500 dark:text-gray-400">
+                        Workspace launcher for the app shell, with quick access to the routes that already feel closest to the main product.
+                    </p>
                 </div>
-            </section>
-
-            <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                <StatCard label="Activities" value={bootstrap.counts.activities} hint="Live count from the existing Symfony index bootstrap." tone="orange" />
-                <StatCard label="Photos" value={bootstrap.counts.photos} hint="Shows the new app can reuse current top-level context." tone="blue" />
-                <StatCard label="Challenges" value={bootstrap.counts.challenges} hint="Useful for nav badges and shared shell metadata." tone="emerald" />
-                <StatCard label="Capabilities" value={`${bootstrap.counts.hasGear ? 'Gear' : 'No gear'} · ${bootstrap.counts.hasBestEfforts ? 'Best efforts' : 'No best efforts'}`} hint="Feature flags can move into typed bootstrap/config next." />
-            </section>
-
-            <section className="grid gap-6 xl:grid-cols-2">
-                <div className="glass-panel rounded-[32px] p-6">
-                    <div className="section-kicker">User-facing upside</div>
-                    <div className="mt-5 space-y-4">
-                        {userImprovements.map((item) => (
-                            <div key={item} className="rounded-2xl border border-gray-200 bg-white/80 p-4 text-sm leading-7 text-gray-700 dark:border-gray-800 dark:bg-gray-900/60 dark:text-gray-200">
-                                {item}
-                            </div>
-                        ))}
-                    </div>
-                </div>
-                <div className="glass-panel rounded-[32px] p-6">
-                    <div className="section-kicker">Developer-facing upside</div>
-                    <div className="mt-5 space-y-4">
-                        {developerImprovements.map((item) => (
-                            <div key={item} className="rounded-2xl border border-gray-200 bg-white/80 p-4 text-sm leading-7 text-gray-700 dark:border-gray-800 dark:bg-gray-900/60 dark:text-gray-200">
-                                {item}
-                            </div>
-                        ))}
-                    </div>
-                </div>
-            </section>
-
-            <section className="glass-panel rounded-[32px] p-6">
-                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                    <div>
-                        <div className="section-kicker">Next implementation slice</div>
-                        <h2 className="mt-4 text-3xl font-semibold tracking-tight text-gray-900 dark:text-white">What this unlocks immediately</h2>
-                    </div>
-                    <Link
-                        to="/roadmap"
-                        className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-gray-600"
-                    >
-                        Open the migration roadmap
-                        <span aria-hidden="true">→</span>
+                <div className="flex flex-wrap items-center gap-2">
+                    <Link to="/dashboard" className="ui-button ui-button-primary">
+                        Open dashboard
                     </Link>
+                    <Link to="/training-plans" className="ui-button">
+                        Open plan manager
+                    </Link>
+                    <a href={buildAppPath(bootstrap.basePath, 'dashboard')} className="ui-button">
+                        Classic dashboard
+                    </a>
                 </div>
-                <div className="mt-6 grid gap-4 lg:grid-cols-3">
-                    {[
-                        'Promote the training-plan preview fetch layer into shared route-level query utilities.',
-                        'Convert one modal flow end-to-end as a React flow backed by JSON instead of HTML fragments.',
-                        'Wrap chart, table, and planner surfaces in reusable route-level components.',
-                    ].map((item) => (
-                        <div key={item} className="rounded-[28px] border border-gray-200 bg-white/85 p-5 text-sm leading-7 text-gray-700 shadow-sm dark:border-gray-800 dark:bg-gray-900/60 dark:text-gray-200">
-                            {item}
-                        </div>
+                </div>
+            </section>
+
+            <section className="grid gap-3 sm:grid-cols-2 xl:grid-cols-4">
+                <SummaryTile
+                    label="Activities"
+                    value={bootstrap.counts.activities}
+                    note="Live count from the current bootstrap context."
+                />
+                <SummaryTile
+                    label="Photos"
+                    value={bootstrap.counts.photos}
+                    note="Available gallery items in the current account."
+                />
+                <SummaryTile
+                    label="Challenges"
+                    value={bootstrap.counts.challenges}
+                    note="Badge wall entries and challenge history."
+                />
+                <SummaryTile
+                    label="Workspace"
+                    value={bootstrap.experience === 'preview' ? 'Preview' : 'App'}
+                    note="Theme and sidebar behavior stay aligned with the main app."
+                />
+            </section>
+
+            <section className="ui-section">
+                <div className="flex flex-col gap-3 lg:flex-row lg:items-center lg:justify-between">
+                    <div>
+                        <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Session snapshot</h2>
+                        <p className="mt-1 text-sm leading-6 text-gray-500 dark:text-gray-400">
+                            The app shell reuses your current athlete context and available feature flags.
+                        </p>
+                    </div>
+                    <div className="flex flex-wrap gap-2">
+                        {featureBadges.map((badge) => (
+                            <span key={badge} className="ui-pill">
+                                {badge}
+                            </span>
+                        ))}
+                    </div>
+                </div>
+            </section>
+
+            <section className="grid gap-3 xl:grid-cols-2">
+                <ShortcutList title="Training" description="Season planning and calendar-heavy routes.">
+                    {trainingShortcuts.map((item) => (
+                        <InternalShortcutRow key={item.to} item={item} />
                     ))}
-                </div>
+                </ShortcutList>
+
+                <ShortcutList title="Analysis" description="Routes centered on metrics, maps, and recap views.">
+                    {analysisShortcuts.map((item) => (
+                        <InternalShortcutRow key={item.to} item={item} />
+                    ))}
+                </ShortcutList>
+
+                <ShortcutList title="Library & tools" description="Media, badges, and account-focused utility screens.">
+                    {libraryShortcuts.map((item) => (
+                        <InternalShortcutRow key={item.to} item={item} />
+                    ))}
+                </ShortcutList>
+
+                <ShortcutList title="Classic routes" description="Fallback links to the original Symfony pages.">
+                    {classicShortcuts.map((item) => (
+                        <ExternalShortcutRow key={item.href} item={item} />
+                    ))}
+                </ShortcutList>
             </section>
         </div>
     );

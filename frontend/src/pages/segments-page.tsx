@@ -1,6 +1,5 @@
 import {useCallback, useEffect, useMemo, useState} from 'react';
 import {EChartPanel} from '../components/echart-panel';
-import {StatCard} from '../components/stat-card';
 import {type ReactPreviewBootstrap, buildAppPath} from '../lib/bootstrap';
 import {
     type SegmentDetailResponse,
@@ -85,20 +84,20 @@ function SegmentRow({
         <button
             type="button"
             onClick={() => onSelect(segment.id)}
-            className={`w-full rounded-[24px] border p-4 text-left transition ${
+            className={`w-full rounded-lg border px-4 py-3 text-left transition ${
                 isActive
-                    ? 'border-orange-500 bg-orange-50/90 shadow-[0_30px_80px_-50px_rgba(242,103,34,0.55)] dark:border-orange-400 dark:bg-orange-950/40'
-                    : 'border-gray-200 bg-white/90 hover:border-gray-300 dark:border-gray-800 dark:bg-gray-950/30 dark:hover:border-gray-700'
+                    ? 'border-orange-300 bg-orange-50 dark:border-orange-400 dark:bg-orange-950/30'
+                    : 'border-gray-200 bg-white hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-950 dark:hover:bg-gray-900'
             }`}
         >
             <div className="flex items-start justify-between gap-3">
                 <div className="min-w-0">
                     <div className="flex flex-wrap items-center gap-2">
-                        <h3 className="truncate text-base font-semibold text-gray-900 dark:text-white">{segment.displayName}</h3>
-                        {segment.isFavourite ? <span className="rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-amber-800 dark:border-amber-700 dark:bg-amber-950/30 dark:text-amber-200">Starred</span> : null}
-                        {segment.isKom ? <span className="rounded-full border border-emerald-300 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-[0.2em] text-emerald-800 dark:border-emerald-800/60 dark:bg-emerald-950/30 dark:text-emerald-200">KOM</span> : null}
+                        <h3 className="truncate text-sm font-semibold text-gray-900 dark:text-white">{segment.displayName}</h3>
+                        {segment.isFavourite ? <span className="rounded-full border border-amber-300 bg-amber-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-amber-800 dark:border-amber-700 dark:bg-amber-950/30 dark:text-amber-200">Starred</span> : null}
+                        {segment.isKom ? <span className="rounded-full border border-emerald-300 bg-emerald-50 px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide text-emerald-800 dark:border-emerald-800/60 dark:bg-emerald-950/30 dark:text-emerald-200">KOM</span> : null}
                     </div>
-                    <p className="mt-2 text-sm text-gray-500 dark:text-gray-400">
+                    <p className="mt-1 text-xs text-gray-500 dark:text-gray-400">
                         {segment.sportType.label}
                         {segment.countryName ? ` · ${segment.countryName}` : ''}
                         {segment.lastEffortDate ? ` · last effort ${formatDate(segment.lastEffortDate)}` : ''}
@@ -110,23 +109,23 @@ function SegmentRow({
                 </div>
             </div>
 
-            <div className="mt-4 grid gap-3 sm:grid-cols-3">
-                <div className="rounded-2xl border border-white/80 bg-white/80 p-3 text-sm dark:border-gray-800 dark:bg-gray-950/40">
-                    <div className="text-xs uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">Best effort</div>
-                    <div className="mt-2 font-semibold text-gray-900 dark:text-white">{segment.bestEffort?.elapsedTimeFormatted ?? '—'}</div>
-                    <div className="mt-1 text-gray-600 dark:text-gray-300">
-                        {segment.bestEffort ? `${segment.bestEffort.averageSpeed.value} ${segment.bestEffort.averageSpeed.symbol}` : 'No effort yet'}
-                    </div>
+            <div className="mt-3 grid gap-2 sm:grid-cols-4">
+                <div className="rounded-lg border border-gray-200 bg-gray-50 p-2.5 text-xs dark:border-gray-800 dark:bg-gray-900/60">
+                    <div className="uppercase tracking-wide text-gray-500 dark:text-gray-400">Best effort</div>
+                    <div className="mt-1 font-semibold text-gray-900 dark:text-white">{segment.bestEffort?.elapsedTimeFormatted ?? '—'}</div>
+                    <div className="mt-0.5 text-gray-600 dark:text-gray-300">{segment.bestEffort ? `${segment.bestEffort.averageSpeed.value} ${segment.bestEffort.averageSpeed.symbol}` : 'No effort yet'}</div>
                 </div>
-                <div className="rounded-2xl border border-white/80 bg-white/80 p-3 text-sm dark:border-gray-800 dark:bg-gray-950/40">
-                    <div className="text-xs uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">Average gradient</div>
-                    <div className="mt-2 font-semibold text-gray-900 dark:text-white">{segment.averageGradient ?? '—'}%</div>
-                    <div className="mt-1 text-gray-600 dark:text-gray-300">Max {segment.maxGradient}%</div>
+                <div className="rounded-lg border border-gray-200 bg-gray-50 p-2.5 text-xs dark:border-gray-800 dark:bg-gray-900/60">
+                    <div className="uppercase tracking-wide text-gray-500 dark:text-gray-400">Distance</div>
+                    <div className="mt-1 font-semibold text-gray-900 dark:text-white">{segment.distance.value} {segment.distance.symbol}</div>
                 </div>
-                <div className="rounded-2xl border border-white/80 bg-white/80 p-3 text-sm dark:border-gray-800 dark:bg-gray-950/40">
-                    <div className="text-xs uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">Segment link</div>
-                    <div className="mt-2 font-semibold text-gray-900 dark:text-white">Open in Strava</div>
-                    <div className="mt-1 text-gray-600 dark:text-gray-300">Compare the preview against the source.</div>
+                <div className="rounded-lg border border-gray-200 bg-gray-50 p-2.5 text-xs dark:border-gray-800 dark:bg-gray-900/60">
+                    <div className="uppercase tracking-wide text-gray-500 dark:text-gray-400">Avg gradient</div>
+                    <div className="mt-1 font-semibold text-gray-900 dark:text-white">{segment.averageGradient ?? '—'}%</div>
+                </div>
+                <div className="rounded-lg border border-gray-200 bg-gray-50 p-2.5 text-xs dark:border-gray-800 dark:bg-gray-900/60">
+                    <div className="uppercase tracking-wide text-gray-500 dark:text-gray-400">Max gradient</div>
+                    <div className="mt-1 font-semibold text-gray-900 dark:text-white">{segment.maxGradient}%</div>
                 </div>
             </div>
         </button>
@@ -136,19 +135,19 @@ function SegmentRow({
 function SegmentEffortsTable({efforts}: {efforts: SegmentEffortRow[]}) {
     if (0 === efforts.length) {
         return (
-            <div className="rounded-[28px] border border-gray-200 bg-white/92 p-5 text-sm text-gray-600 dark:border-gray-800 dark:bg-gray-950/40 dark:text-gray-300">
+            <div className="rounded-lg border border-gray-200 bg-white p-5 text-sm text-gray-600 dark:border-gray-800 dark:bg-gray-950/40 dark:text-gray-300">
                 No efforts available for this segment yet.
             </div>
         );
     }
 
     return (
-        <div className="rounded-[28px] border border-gray-200 bg-white/92 p-5 shadow-sm dark:border-gray-800 dark:bg-gray-950/40">
-            <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Top efforts</h3>
+        <div className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-950/40">
+            <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Top efforts</h3>
             <div className="mt-4 overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200 text-left text-sm dark:divide-gray-800">
                     <thead>
-                        <tr className="text-xs uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
+                        <tr className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
                             <th className="px-3 py-3 font-semibold">#</th>
                             <th className="px-3 py-3 font-semibold">Date</th>
                             <th className="px-3 py-3 font-semibold">Activity</th>
@@ -196,17 +195,23 @@ function SegmentDetailPanel({
     loading: boolean;
     error: string | null;
 }) {
+    const [activeTab, setActiveTab] = useState<'top-ten' | 'heart-rate' | 'history'>('top-ten');
+
+    useEffect(() => {
+        setActiveTab('top-ten');
+    }, [detail?.segment.id]);
+
     if (loading && !detail) {
         return (
-            <div className="glass-panel rounded-[32px] p-6 text-sm text-gray-600 dark:text-gray-300">
-                Loading segment detail… chasing PRs without having to actually suffer on the climb right now.
+            <div className="ui-section text-sm text-gray-600 dark:text-gray-300">
+                Loading segment detail.
             </div>
         );
     }
 
     if (error) {
         return (
-            <div className="rounded-[32px] border border-rose-200 bg-rose-50/90 p-6 text-sm text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-100">
+            <div className="rounded-lg border border-rose-200 bg-rose-50 p-6 text-sm text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-100">
                 {error}
             </div>
         );
@@ -214,8 +219,8 @@ function SegmentDetailPanel({
 
     if (!detail) {
         return (
-            <div className="glass-panel rounded-[32px] p-6 text-sm text-gray-600 dark:text-gray-300">
-                Pick a segment to inspect its effort history, heart-rate scatter, and the top ten leaderboard.
+            <div className="ui-section text-sm text-gray-600 dark:text-gray-300">
+                Pick a segment to inspect its top efforts and charts.
             </div>
         );
     }
@@ -223,13 +228,13 @@ function SegmentDetailPanel({
     const segment = detail.segment;
 
     return (
-        <div className="space-y-6">
-            <section className="glass-panel rounded-[32px] p-6">
+        <div className="space-y-4">
+            <section className="ui-section">
                 <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                     <div>
-                        <div className="section-kicker">Selected segment</div>
-                        <h2 className="mt-4 text-3xl font-semibold tracking-tight text-gray-900 dark:text-white">{segment.displayName}</h2>
-                        <p className="mt-3 text-sm leading-7 text-gray-600 dark:text-gray-300">
+                        <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Selected segment</h2>
+                        <div className="mt-1 text-base font-semibold text-gray-900 dark:text-white">{segment.displayName}</div>
+                        <p className="mt-2 text-sm leading-7 text-gray-500 dark:text-gray-400">
                             {segment.sportType.label}
                             {segment.countryName ? ` · ${segment.countryName}` : ''}
                             {segment.lastEffortDate ? ` · last effort ${formatDate(segment.lastEffortDate)}` : ''}
@@ -240,37 +245,70 @@ function SegmentDetailPanel({
                             href={segment.url}
                             target="_blank"
                             rel="noreferrer"
-                            className="inline-flex items-center gap-2 rounded-2xl bg-gray-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-gray-800 dark:bg-white dark:text-gray-950 dark:hover:bg-gray-200"
+                            className="ui-button"
                         >
                             Open in Strava
-                            <span aria-hidden="true">↗</span>
                         </a>
                     </div>
                 </div>
 
-                <div className="mt-6 grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                    <StatCard label="Distance" value={`${segment.distance.value} ${segment.distance.symbol}`} hint="Current segment length in the active unit system." tone="orange" />
-                    <StatCard label="Ride count" value={formatNumber(segment.numberOfTimesRidden)} hint="How many times this segment has been completed." tone="emerald" />
-                    <StatCard label="Average gradient" value={null === segment.averageGradient ? '—' : `${segment.averageGradient}%`} hint="Average gradient reported by the segment metadata." tone="blue" />
-                    <StatCard label="Max gradient" value={`${segment.maxGradient}%`} hint="Peak gradient captured for the segment." tone="slate" />
+                <div className="mt-4 grid gap-2 sm:grid-cols-4">
+                    <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 text-xs dark:border-gray-800 dark:bg-gray-900/60">
+                        <div className="uppercase tracking-wide text-gray-500 dark:text-gray-400">Distance</div>
+                        <div className="mt-1 font-semibold text-gray-900 dark:text-white">{segment.distance.value} {segment.distance.symbol}</div>
+                    </div>
+                    <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 text-xs dark:border-gray-800 dark:bg-gray-900/60">
+                        <div className="uppercase tracking-wide text-gray-500 dark:text-gray-400">Ride count</div>
+                        <div className="mt-1 font-semibold text-gray-900 dark:text-white">{formatNumber(segment.numberOfTimesRidden)}</div>
+                    </div>
+                    <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 text-xs dark:border-gray-800 dark:bg-gray-900/60">
+                        <div className="uppercase tracking-wide text-gray-500 dark:text-gray-400">Average gradient</div>
+                        <div className="mt-1 font-semibold text-gray-900 dark:text-white">{null === segment.averageGradient ? '—' : `${segment.averageGradient}%`}</div>
+                    </div>
+                    <div className="rounded-lg border border-gray-200 bg-gray-50 p-3 text-xs dark:border-gray-800 dark:bg-gray-900/60">
+                        <div className="uppercase tracking-wide text-gray-500 dark:text-gray-400">Max gradient</div>
+                        <div className="mt-1 font-semibold text-gray-900 dark:text-white">{segment.maxGradient}%</div>
+                    </div>
                 </div>
             </section>
 
-            <section className="grid gap-6 xl:grid-cols-2">
-                <EChartPanel title="Effort history" options={detail.charts.history} heightClassName="h-96" />
-                {detail.charts.effortVsHeartRate ? (
-                    <EChartPanel title="Effort vs heart rate" options={detail.charts.effortVsHeartRate} heightClassName="h-96" />
-                ) : (
-                    <div className="rounded-[28px] border border-gray-200 bg-white/92 p-5 text-sm text-gray-600 shadow-sm dark:border-gray-800 dark:bg-gray-950/40 dark:text-gray-300">
-                        <h3 className="text-lg font-semibold text-gray-900 dark:text-white">Effort vs heart rate</h3>
-                        <p className="mt-4 leading-7">
-                            There are no heart-rate samples for this segment yet, so the scatter chart is sitting this interval out.
-                        </p>
-                    </div>
-                )}
-            </section>
+            <section className="ui-section">
+                <div className="inline-flex rounded-lg border border-gray-200 bg-gray-100 p-1 dark:border-gray-700 dark:bg-gray-900">
+                    {[
+                        {key: 'top-ten', label: 'Top 10'},
+                        {key: 'heart-rate', label: 'Effort vs heart rate'},
+                        {key: 'history', label: 'History'},
+                    ].map((tab) => (
+                        <button
+                            key={tab.key}
+                            type="button"
+                            onClick={() => setActiveTab(tab.key as 'top-ten' | 'heart-rate' | 'history')}
+                            className={`rounded-md px-4 py-2 text-sm font-medium transition ${activeTab === tab.key
+                                ? 'bg-white text-gray-900 shadow-sm dark:bg-gray-800 dark:text-white'
+                                : 'text-gray-500 dark:text-gray-400'}`}
+                        >
+                            {tab.label}
+                        </button>
+                    ))}
+                </div>
 
-            <SegmentEffortsTable efforts={detail.topEfforts} />
+                <div className="mt-4">
+                    {activeTab === 'top-ten' ? <SegmentEffortsTable efforts={detail.topEfforts} /> : null}
+                    {activeTab === 'heart-rate' ? (
+                        detail.charts.effortVsHeartRate ? (
+                            <EChartPanel title="Effort vs heart rate" options={detail.charts.effortVsHeartRate} heightClassName="h-96" />
+                        ) : (
+                            <div className="rounded-lg border border-gray-200 bg-white p-5 text-sm text-gray-600 shadow-sm dark:border-gray-800 dark:bg-gray-950/40 dark:text-gray-300">
+                                <h3 className="text-sm font-semibold text-gray-900 dark:text-white">Effort vs heart rate</h3>
+                                <p className="mt-3 leading-7">
+                                    There are no heart-rate samples for this segment yet.
+                                </p>
+                            </div>
+                        )
+                    ) : null}
+                    {activeTab === 'history' ? <EChartPanel title="History" options={detail.charts.history} heightClassName="h-96" /> : null}
+                </div>
+            </section>
         </div>
     );
 }
@@ -361,63 +399,34 @@ export function SegmentsPage({bootstrap}: SegmentsPageProps) {
     const visibleDetail = detail && detail.segment.id === selectedSegmentId ? detail : null;
 
     return (
-        <div className="space-y-8 pb-8">
-            <section className="glass-panel rounded-[36px] p-6 md:p-8">
-                <div className="grid gap-8 xl:grid-cols-[1.1fr_0.9fr]">
-                    <div>
-                        <div className="section-kicker">Segments preview</div>
-                        <h1 className="mt-5 max-w-3xl text-4xl font-semibold tracking-tight text-gray-900 dark:text-white md:text-5xl">
-                            Filterable segment hunting, now with React driving the table and charts instead of a modal maze.
-                        </h1>
-                        <p className="mt-5 max-w-2xl text-base leading-8 text-gray-600 dark:text-gray-300 md:text-lg">
-                            This slice keeps the route read-only, preserves the leaderboard and chart analysis, and turns segment exploration into a quicker compare-and-inspect workflow.
+        <div className="space-y-6 pb-6">
+            <section className="ui-section">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="min-w-0">
+                        <h1 className="text-xl font-bold tracking-tight text-gray-900 dark:text-white md:text-2xl">Segments</h1>
+                        <p className="mt-1 max-w-3xl text-sm leading-7 text-gray-500 dark:text-gray-400">
+                            Search segments, narrow the results, and inspect the selected segment’s top ten and charts.
                         </p>
-                        <div className="mt-6 flex flex-wrap gap-3">
-                            <a
-                                href={buildAppPath(bootstrap.basePath, 'segments')}
-                                className="inline-flex items-center gap-2 rounded-2xl bg-gray-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-gray-800 dark:bg-white dark:text-gray-950 dark:hover:bg-gray-200"
-                            >
-                                Open the current segments page
-                                <span aria-hidden="true">↗</span>
-                            </a>
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    reload();
-                                    reloadDetail();
-                                }}
-                                className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-gray-600"
-                            >
-                                Refresh preview data
-                                <span aria-hidden="true">↻</span>
-                            </button>
-                        </div>
                     </div>
-                    <div className="rounded-[32px] border border-violet-200 bg-violet-50/80 p-5 shadow-[0_45px_120px_-45px_rgba(15,23,42,0.65)] dark:border-violet-900/50 dark:bg-violet-950/30">
-                        <div className="text-xs font-semibold uppercase tracking-[0.24em] text-violet-700 dark:text-violet-200">Why this seam works</div>
-                        <div className="mt-4 space-y-3 text-sm leading-7 text-gray-700 dark:text-gray-200">
-                            {[
-                                'It reuses the filter-heavy table pattern from activities without dragging in write flows.',
-                                'It exercises the reusable chart wrapper on another route, this time with a focused detail view.',
-                                'It sets up a sturdy pattern for other inspectable analytics routes such as best efforts and photos.',
-                            ].map((item) => (
-                                <div key={item} className="rounded-2xl border border-white/80 bg-white/80 p-4 dark:border-gray-800 dark:bg-gray-950/40">
-                                    {item}
-                                </div>
-                            ))}
-                        </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                        <a href={buildAppPath(bootstrap.basePath, 'segments')} className="ui-button">
+                            Open classic segments page
+                        </a>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                reload();
+                                reloadDetail();
+                            }}
+                            className="ui-button"
+                        >
+                            Refresh data
+                        </button>
                     </div>
                 </div>
             </section>
 
-            <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                <StatCard label="Visible segments" value={formatNumber(filteredSegments.length)} hint="Rows matching the currently active preview filters." tone="orange" />
-                <StatCard label="Starred" value={formatNumber(filteredSegments.filter((segment) => segment.isFavourite).length)} hint="Favourite segments in the current filtered result set." tone="emerald" />
-                <StatCard label="KOM markers" value={formatNumber(filteredSegments.filter((segment) => segment.isKom).length)} hint="Segments flagged as KOMs or climb-category standouts." tone="blue" />
-                <StatCard label="Countries" value={formatNumber(new Set(filteredSegments.map((segment) => segment.countryCode).filter(Boolean)).size)} hint="Distinct countries represented in the filtered set." tone="slate" />
-            </section>
-
-            <section className="glass-panel rounded-[32px] p-6">
+            <section className="ui-section">
                 <div className="grid gap-4 lg:grid-cols-[minmax(0,1.6fr)_repeat(4,minmax(0,1fr))] xl:grid-cols-[minmax(0,1.8fr)_repeat(6,minmax(0,1fr))]">
                     <label className="flex flex-col gap-2 text-sm font-medium text-gray-700 dark:text-gray-200">
                         Search
@@ -426,12 +435,12 @@ export function SegmentsPage({bootstrap}: SegmentsPageProps) {
                             value={search}
                             onChange={(event) => setSearch(event.target.value)}
                             placeholder="Search segment, sport type, or country"
-                            className="rounded-2xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-orange-400 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                            className="ui-input"
                         />
                     </label>
                     <label className="flex flex-col gap-2 text-sm font-medium text-gray-700 dark:text-gray-200">
                         Sport type
-                        <select value={sportType} onChange={(event) => setSportType(event.target.value)} className="rounded-2xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-orange-400 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100">
+                        <select value={sportType} onChange={(event) => setSportType(event.target.value)} className="ui-input">
                             <option value="all">All sport types</option>
                             {data?.filters.sportTypes.map((option) => (
                                 <option key={option.value} value={option.value}>{option.label}</option>
@@ -440,7 +449,7 @@ export function SegmentsPage({bootstrap}: SegmentsPageProps) {
                     </label>
                     <label className="flex flex-col gap-2 text-sm font-medium text-gray-700 dark:text-gray-200">
                         Country
-                        <select value={countryCode} onChange={(event) => setCountryCode(event.target.value)} className="rounded-2xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-orange-400 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100">
+                        <select value={countryCode} onChange={(event) => setCountryCode(event.target.value)} className="ui-input">
                             <option value="all">All countries</option>
                             {data?.filters.countries.map((option) => (
                                 <option key={option.value} value={option.value}>{option.label}</option>
@@ -449,28 +458,28 @@ export function SegmentsPage({bootstrap}: SegmentsPageProps) {
                     </label>
                     <label className="flex flex-col gap-2 text-sm font-medium text-gray-700 dark:text-gray-200">
                         Distance min
-                        <input type="number" min="0" step="0.1" value={distanceMin} onChange={(event) => setDistanceMin(event.target.value)} className="rounded-2xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-orange-400 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100" />
+                        <input type="number" min="0" step="0.1" value={distanceMin} onChange={(event) => setDistanceMin(event.target.value)} className="ui-input" />
                     </label>
                     <label className="flex flex-col gap-2 text-sm font-medium text-gray-700 dark:text-gray-200">
                         Distance max
-                        <input type="number" min="0" step="0.1" value={distanceMax} onChange={(event) => setDistanceMax(event.target.value)} className="rounded-2xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-orange-400 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100" />
+                        <input type="number" min="0" step="0.1" value={distanceMax} onChange={(event) => setDistanceMax(event.target.value)} className="ui-input" />
                     </label>
                     <label className="flex flex-col gap-2 text-sm font-medium text-gray-700 dark:text-gray-200">
                         Gradient min
-                        <input type="number" step="0.1" value={gradientMin} onChange={(event) => setGradientMin(event.target.value)} className="rounded-2xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-orange-400 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100" />
+                        <input type="number" step="0.1" value={gradientMin} onChange={(event) => setGradientMin(event.target.value)} className="ui-input" />
                     </label>
                     <label className="flex flex-col gap-2 text-sm font-medium text-gray-700 dark:text-gray-200">
                         Gradient max
-                        <input type="number" step="0.1" value={gradientMax} onChange={(event) => setGradientMax(event.target.value)} className="rounded-2xl border border-gray-300 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-orange-400 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100" />
+                        <input type="number" step="0.1" value={gradientMax} onChange={(event) => setGradientMax(event.target.value)} className="ui-input" />
                     </label>
                 </div>
 
                 <div className="mt-4 flex flex-wrap items-center gap-3 text-sm">
-                    <label className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100">
+                    <label className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100">
                         <input type="checkbox" checked={onlyFavourites} onChange={(event) => setOnlyFavourites(event.target.checked)} />
                         Only favourites
                     </label>
-                    <label className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100">
+                    <label className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-2.5 text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100">
                         <input type="checkbox" checked={onlyKom} onChange={(event) => setOnlyKom(event.target.checked)} />
                         Only KOMs
                     </label>
@@ -487,31 +496,37 @@ export function SegmentsPage({bootstrap}: SegmentsPageProps) {
                             setGradientMin('');
                             setGradientMax('');
                         }}
-                        className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-3 font-semibold text-gray-700 transition hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-gray-600"
+                        className="ui-button"
                     >
                         Clear filters
                     </button>
-                    {data ? <div className="text-gray-500 dark:text-gray-400">Data refreshed {formatRequestedAt(data.requestedAt)}</div> : null}
+                    <div className="ui-pill">{formatNumber(filteredSegments.length)} results</div>
+                    {data ? <div className="text-gray-500 dark:text-gray-400">Refreshed {formatRequestedAt(data.requestedAt)}</div> : null}
                 </div>
             </section>
 
             {loading && !data ? (
-                <section className="glass-panel rounded-[32px] p-6 text-sm text-gray-600 dark:text-gray-300">
-                    Loading segments preview… one suspiciously specific climb at a time.
+                <section className="ui-section text-sm text-gray-600 dark:text-gray-300">
+                    Loading segments.
                 </section>
             ) : null}
 
             {error ? (
-                <section className="rounded-[32px] border border-rose-200 bg-rose-50/90 p-6 text-sm text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-100">
+                <section className="rounded-lg border border-rose-200 bg-rose-50 p-6 text-sm text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-100">
                     {error}
                 </section>
             ) : null}
 
-            <section className="grid gap-6 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
-                <div className="space-y-4">
+            <section className="grid gap-4 xl:grid-cols-[minmax(0,0.9fr)_minmax(0,1.1fr)]">
+                <div className="ui-section">
+                    <div className="mb-4 flex items-center justify-between gap-3">
+                        <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Results</h2>
+                        <div className="ui-pill">{formatNumber(filteredSegments.length)}</div>
+                    </div>
+                    <div className="space-y-2">
                     {0 === filteredSegments.length ? (
-                        <div className="glass-panel rounded-[32px] p-6 text-sm text-gray-600 dark:text-gray-300">
-                            No segments match the current filters. Time to loosen the net a little.
+                        <div className="text-sm text-gray-600 dark:text-gray-300">
+                            No segments match the current filters.
                         </div>
                     ) : (
                         filteredSegments.map((segment) => (
@@ -523,6 +538,7 @@ export function SegmentsPage({bootstrap}: SegmentsPageProps) {
                             />
                         ))
                     )}
+                    </div>
                 </div>
 
                 <SegmentDetailPanel detail={selectedSegment ? visibleDetail : null} loading={detailLoading} error={detailError} />

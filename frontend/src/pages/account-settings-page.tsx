@@ -48,20 +48,32 @@ function formatDateTime(value: string): string {
 function buildStatusTone(tone: SyncTone): string {
     switch (tone) {
         case 'success':
-            return 'border-emerald-200 bg-emerald-50/90 text-emerald-800 dark:border-emerald-800/60 dark:bg-emerald-950/30 dark:text-emerald-100';
+            return 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-800/60 dark:bg-emerald-950/30 dark:text-emerald-100';
         case 'error':
-            return 'border-rose-200 bg-rose-50/90 text-rose-800 dark:border-rose-800/60 dark:bg-rose-950/30 dark:text-rose-100';
+            return 'border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-800/60 dark:bg-rose-950/30 dark:text-rose-100';
         case 'info':
-            return 'border-amber-200 bg-amber-50/90 text-amber-800 dark:border-amber-800/60 dark:bg-amber-950/30 dark:text-amber-100';
+            return 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-800/60 dark:bg-amber-950/30 dark:text-amber-100';
         default:
-            return 'border-gray-200 bg-white/85 text-gray-700 dark:border-gray-800 dark:bg-gray-950/40 dark:text-gray-200';
+            return 'border-gray-200 bg-white text-gray-700 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-200';
     }
 }
 
-function buildServiceTone(connected: boolean): string {
+function buildConnectionBadgeTone(connected: boolean): string {
     return connected
-        ? 'border-emerald-200 bg-emerald-50/90 dark:border-emerald-800/60 dark:bg-emerald-950/30'
-        : 'border-gray-200 bg-white/85 dark:border-gray-800 dark:bg-gray-950/40';
+        ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-100'
+        : 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-200';
+}
+
+function buildGarminBadgeTone(enabled: boolean, configured: boolean): string {
+    if (enabled && configured) {
+        return 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-100';
+    }
+
+    if (enabled) {
+        return 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-100';
+    }
+
+    return 'bg-gray-100 text-gray-600 dark:bg-gray-800 dark:text-gray-200';
 }
 
 function SyncStatusCard({title, state}: {title: string; state: SyncState}) {
@@ -70,12 +82,21 @@ function SyncStatusCard({title, state}: {title: string; state: SyncState}) {
     }
 
     return (
-        <div className={`rounded-[24px] border px-4 py-4 text-sm leading-7 ${buildStatusTone(state.tone)}`}>
-            <div className="text-xs font-semibold uppercase tracking-[0.24em] opacity-75">{title}</div>
+        <div className={`rounded-lg border px-4 py-4 text-sm leading-7 ${buildStatusTone(state.tone)}`}>
+            <div className="text-[10px] font-semibold uppercase tracking-wide opacity-75">{title}</div>
             {state.message ? <div className="mt-2 font-semibold">{state.message}</div> : null}
             {state.output ? (
-                <pre className="mt-3 max-h-72 overflow-auto rounded-[20px] bg-gray-950 px-4 py-3 text-xs leading-6 text-gray-100">{state.output}</pre>
+                <pre className="mt-3 max-h-72 overflow-auto rounded-lg bg-gray-950 px-4 py-3 text-xs leading-6 text-gray-100">{state.output}</pre>
             ) : null}
+        </div>
+    );
+}
+
+function DetailTile({label, value, breakAll = false}: {label: string; value: string; breakAll?: boolean}) {
+    return (
+        <div className="rounded-lg bg-gray-50 p-3 dark:bg-gray-800/60">
+            <div className="text-[10px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">{label}</div>
+            <div className={`mt-1 text-sm font-medium text-gray-900 dark:text-white ${breakAll ? 'break-all' : ''}`}>{value}</div>
         </div>
     );
 }
@@ -124,7 +145,7 @@ export function AccountSettingsPage({bootstrap}: AccountSettingsPageProps) {
 
         return data.account.emailVerified
             ? 'Your login is fully verified and ready for long-term app access.'
-            : 'Email verification is still pending, so the React route keeps the live follow-up link visible.';
+            : 'Email verification is still pending, so the live follow-up link stays visible here.';
     }, [data]);
 
     async function handleManualSync(provider: SyncProvider) {
@@ -203,18 +224,17 @@ export function AccountSettingsPage({bootstrap}: AccountSettingsPageProps) {
 
     if (loading) {
         return (
-            <section className="glass-panel rounded-[36px] p-6 md:p-8">
-                <div className="section-kicker">Loading</div>
-                <div className="mt-5 grid gap-4 xl:grid-cols-[1.08fr_0.92fr]">
-                    <div className="animate-pulse space-y-4 rounded-[28px] border border-gray-200 bg-white/90 p-6 dark:border-gray-800 dark:bg-gray-900/60">
+            <section className="rounded-lg border border-gray-200 bg-white p-5 shadow-sm dark:border-gray-800 dark:bg-gray-900">
+                <div className="grid gap-4 xl:grid-cols-[1.08fr_0.92fr]">
+                    <div className="animate-pulse space-y-4 rounded-lg border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
                         <div className="h-4 w-40 rounded-full bg-gray-200 dark:bg-gray-800" />
-                        <div className="h-10 w-3/4 rounded-full bg-gray-200 dark:bg-gray-800" />
-                        <div className="h-28 rounded-[24px] bg-gray-100 dark:bg-gray-800" />
+                        <div className="h-8 w-3/4 rounded-full bg-gray-200 dark:bg-gray-800" />
+                        <div className="h-24 rounded-lg bg-gray-100 dark:bg-gray-800" />
                     </div>
-                    <div className="animate-pulse space-y-4 rounded-[28px] border border-gray-200 bg-white/90 p-6 dark:border-gray-800 dark:bg-gray-900/60">
-                        <div className="h-14 rounded-[20px] bg-gray-100 dark:bg-gray-800" />
-                        <div className="h-14 rounded-[20px] bg-gray-100 dark:bg-gray-800" />
-                        <div className="h-14 rounded-[20px] bg-gray-100 dark:bg-gray-800" />
+                    <div className="animate-pulse space-y-4 rounded-lg border border-gray-200 bg-white p-5 dark:border-gray-800 dark:bg-gray-900">
+                        <div className="h-14 rounded-lg bg-gray-100 dark:bg-gray-800" />
+                        <div className="h-14 rounded-lg bg-gray-100 dark:bg-gray-800" />
+                        <div className="h-14 rounded-lg bg-gray-100 dark:bg-gray-800" />
                     </div>
                 </div>
             </section>
@@ -223,16 +243,12 @@ export function AccountSettingsPage({bootstrap}: AccountSettingsPageProps) {
 
     if (loadError || !data) {
         return (
-            <section className="rounded-[32px] border border-rose-200 bg-rose-50/90 p-6 text-sm leading-7 text-rose-800 dark:border-rose-800/60 dark:bg-rose-950/30 dark:text-rose-100">
-                <div className="text-xs font-semibold uppercase tracking-[0.24em]">Could not load account settings</div>
+            <section className="rounded-lg border border-rose-200 bg-rose-50 p-5 text-sm leading-7 text-rose-800 shadow-sm dark:border-rose-800/60 dark:bg-rose-950/30 dark:text-rose-100">
+                <div className="text-[10px] font-semibold uppercase tracking-wide">Could not load account settings</div>
                 <p className="mt-3">{loadError ?? 'No data was returned.'}</p>
-                <div className="mt-5 flex flex-wrap gap-3">
-                    <a
-                        href={buildAppPath(bootstrap.basePath, 'account/settings')}
-                        className="inline-flex items-center gap-2 rounded-2xl bg-gray-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-gray-800 dark:bg-white dark:text-gray-950 dark:hover:bg-gray-200"
-                    >
-                        Open legacy account settings
-                        <span aria-hidden="true">↗</span>
+                <div className="mt-4 flex flex-wrap gap-2">
+                    <a href={buildAppPath(bootstrap.basePath, 'account/settings')} className="ui-button">
+                        Open classic account settings
                     </a>
                 </div>
             </section>
@@ -240,54 +256,25 @@ export function AccountSettingsPage({bootstrap}: AccountSettingsPageProps) {
     }
 
     return (
-        <div className="space-y-8 pb-8">
-            <section className="glass-panel rounded-[36px] p-6 md:p-8">
-                <div className="grid gap-8 xl:grid-cols-[1.08fr_0.92fr]">
-                    <div>
-                        <div className="section-kicker">Account settings preview</div>
-                        <h1 className="mt-5 max-w-4xl text-4xl font-semibold tracking-tight text-gray-900 dark:text-white md:text-5xl">
-                            Manage identity, service links, and manual syncs in a route-sized React control room.
-                        </h1>
-                        <p className="mt-5 max-w-3xl text-base leading-8 text-gray-600 dark:text-gray-300 md:text-lg">
-                            This slice keeps the live account actions intact, but replaces the fragment-oriented legacy settings surface with a proper preview route that can own connection status, manual imports, and service diagnostics without hiding in a sidebar panel.
+        <div className="space-y-6 pb-6">
+            <section className="ui-section">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="min-w-0">
+                        <h1 className="text-xl font-bold tracking-tight text-gray-900 dark:text-white md:text-2xl">Account settings</h1>
+                        <p className="mt-1 max-w-3xl text-sm leading-7 text-gray-500 dark:text-gray-400">
+                            Manage your account details, connected services, and manual sync tools.
                         </p>
-                        <div className="mt-6 flex flex-wrap gap-3">
-                            <a
-                                href={buildAppPath(bootstrap.basePath, data.legacyPath)}
-                                className="inline-flex items-center gap-2 rounded-2xl bg-gray-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-gray-800 dark:bg-white dark:text-gray-950 dark:hover:bg-gray-200"
-                            >
-                                Compare with the live route
-                                <span aria-hidden="true">↗</span>
-                            </a>
-                            <Link
-                                to="/dashboard"
-                                className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-gray-600"
-                            >
-                                Back to dashboard
-                                <span aria-hidden="true">←</span>
-                            </Link>
-                            <a
-                                href={buildAppPath(bootstrap.basePath, data.actions.logoutPath)}
-                                className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-gray-600"
-                            >
-                                Sign out
-                                <span aria-hidden="true">⇢</span>
-                            </a>
-                        </div>
                     </div>
-                    <div className="rounded-[32px] border border-sky-200 bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(239,246,255,0.96))] p-5 shadow-[0_45px_120px_-45px_rgba(15,23,42,0.65)] dark:border-sky-900/40 dark:bg-[linear-gradient(135deg,rgba(17,24,39,0.94),rgba(8,47,73,0.42))]">
-                        <div className="text-xs font-semibold uppercase tracking-[0.24em] text-sky-700 dark:text-sky-200">Why this seam works</div>
-                        <div className="mt-4 space-y-3 text-sm leading-7 text-gray-700 dark:text-gray-200">
-                            {[
-                                'Account settings is still legacy-only, but the live actions already exist in well-defined endpoints, which makes it a clean bridge slice.',
-                                'It adds visible migration progress outside the planner domain, helping the React preview feel more like a full app and less like a sports-science annex.',
-                                'Manual Strava and Garmin syncs are operationally useful, so this route carries real user value even before broader auth flows move over.',
-                            ].map((item) => (
-                                <div key={item} className="rounded-2xl border border-white/80 bg-white/80 p-4 dark:border-gray-800 dark:bg-gray-950/40">
-                                    {item}
-                                </div>
-                            ))}
-                        </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                        <a href={buildAppPath(bootstrap.basePath, data.legacyPath)} className="ui-button">
+                            Open classic account settings
+                        </a>
+                        <Link to="/dashboard" className="ui-button">
+                            Dashboard
+                        </Link>
+                        <a href={buildAppPath(bootstrap.basePath, data.actions.logoutPath)} className="ui-button">
+                            Sign out
+                        </a>
                     </div>
                 </div>
             </section>
@@ -296,144 +283,148 @@ export function AccountSettingsPage({bootstrap}: AccountSettingsPageProps) {
                 <StatCard label="Email" value={data.account.emailVerified ? 'Verified' : 'Pending'} hint={verificationHint} tone="orange" />
                 <StatCard label="Connected services" value={String(data.summary.connectedServices)} hint="Strava and Garmin availability are summarized from the live account state." tone="emerald" />
                 <StatCard label="Manual syncs" value={String(data.summary.manualSyncProviders)} hint="Providers that can be triggered immediately from this route." tone="blue" />
-                <StatCard label="Garmin import" value={data.summary.garminLastImportedDay ? formatDate(data.summary.garminLastImportedDay) : 'Not yet'} hint={`Preview refreshed ${formatRequestedAt(data.requestedAt)}.`} />
+                <StatCard label="Garmin import" value={data.summary.garminLastImportedDay ? formatDate(data.summary.garminLastImportedDay) : 'Not yet'} hint={`Updated ${formatRequestedAt(data.requestedAt)}.`} />
             </section>
 
-            <section className="grid gap-6 xl:grid-cols-[minmax(0,1.08fr)_minmax(320px,0.92fr)]">
-                <div className="space-y-6">
-                    <section className="glass-panel rounded-[32px] p-6 md:p-7">
-                        <div className="section-kicker">Account</div>
-                        <div className="mt-5 grid gap-4 md:grid-cols-2">
-                            <div className="rounded-[24px] border border-gray-200 bg-white/85 p-5 dark:border-gray-800 dark:bg-gray-950/40">
-                                <div className="text-xs font-semibold uppercase tracking-[0.24em] text-gray-500 dark:text-gray-400">Email</div>
-                                <div className="mt-3 text-2xl font-semibold tracking-tight text-gray-900 dark:text-white">{data.account.email}</div>
-                            </div>
-                            <div className={`rounded-[24px] border p-5 ${data.account.emailVerified ? 'border-emerald-200 bg-emerald-50/90 dark:border-emerald-800/60 dark:bg-emerald-950/30' : 'border-amber-200 bg-amber-50/90 dark:border-amber-800/60 dark:bg-amber-950/30'}`}>
-                                <div className="text-xs font-semibold uppercase tracking-[0.24em] text-gray-500 dark:text-gray-400">Verification</div>
-                                <div className="mt-3 text-2xl font-semibold tracking-tight text-gray-900 dark:text-white">{data.account.emailVerificationStatusLabel}</div>
-                                {!data.account.emailVerified && data.account.verifyEmailPath ? (
-                                    <a
-                                        href={buildAppPath(bootstrap.basePath, data.account.verifyEmailPath)}
-                                        className="mt-4 inline-flex items-center gap-2 rounded-2xl border border-white/80 bg-white/90 px-4 py-3 text-sm font-semibold text-amber-900 transition hover:bg-white dark:border-gray-800 dark:bg-gray-950/40 dark:text-amber-100"
-                                    >
-                                        Verify now
-                                        <span aria-hidden="true">→</span>
-                                    </a>
-                                ) : null}
-                            </div>
+            <section className="grid gap-4 xl:grid-cols-[minmax(0,1.08fr)_minmax(320px,0.92fr)]">
+                <div className="space-y-4">
+                    <section className="ui-section">
+                        <div className="flex items-center justify-between gap-3">
+                            <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Account</h2>
+                            <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-semibold ${data.account.emailVerified ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-100' : 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-100'}`}>
+                                {data.account.emailVerified ? 'Verified' : 'Pending'}
+                            </span>
                         </div>
+                        <dl className="mt-4 divide-y divide-gray-100 text-sm dark:divide-gray-800">
+                            <div className="flex items-center justify-between gap-3 py-3 first:pt-0">
+                                <dt className="text-gray-500 dark:text-gray-400">Email</dt>
+                                <dd className="text-right font-medium text-gray-900 dark:text-white">{data.account.email}</dd>
+                            </div>
+                            <div className="flex items-center justify-between gap-3 py-3 last:pb-0">
+                                <dt className="text-gray-500 dark:text-gray-400">Email verification</dt>
+                                <dd className="text-right">
+                                    <div className="flex flex-wrap items-center justify-end gap-2">
+                                        <span className={`inline-flex items-center rounded-full px-2.5 py-1 text-[10px] font-semibold ${data.account.emailVerified ? 'bg-emerald-100 text-emerald-700 dark:bg-emerald-950/40 dark:text-emerald-100' : 'bg-amber-100 text-amber-700 dark:bg-amber-950/40 dark:text-amber-100'}`}>
+                                            {data.account.emailVerificationStatusLabel}
+                                        </span>
+                                        {!data.account.emailVerified && data.account.verifyEmailPath ? (
+                                            <a href={buildAppPath(bootstrap.basePath, data.account.verifyEmailPath)} className="text-xs font-medium text-strava-orange hover:text-orange-600">
+                                                Verify now
+                                            </a>
+                                        ) : null}
+                                    </div>
+                                </dd>
+                            </div>
+                        </dl>
                     </section>
 
-                    <section className={`glass-panel rounded-[32px] p-6 md:p-7 ${buildServiceTone(data.strava.connected)}`}>
+                    <section className="ui-section">
                         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                             <div>
-                                <div className="section-kicker">Strava connection</div>
-                                <h2 className="mt-4 text-3xl font-semibold tracking-tight text-gray-900 dark:text-white">Live activity import link</h2>
-                                <p className="mt-3 text-sm leading-7 text-gray-600 dark:text-gray-300">
-                                    Connect or disconnect the source of truth for activity imports, then kick off a manual refresh without leaving the preview shell.
+                                <div className="flex items-center gap-2">
+                                    <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Strava connection</h2>
+                                    <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${buildConnectionBadgeTone(data.strava.connected)}`}>
+                                        {data.strava.statusLabel}
+                                    </span>
+                                </div>
+                                <p className="mt-1 text-sm leading-7 text-gray-500 dark:text-gray-400">
+                                    Connect your Strava account and trigger a manual refresh whenever you want.
                                 </p>
                             </div>
-                            <div className="rounded-full border border-white/80 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-gray-700 dark:border-gray-800 dark:bg-gray-950/40 dark:text-gray-100">
-                                {data.strava.statusLabel}
-                            </div>
                         </div>
-                        <div className="mt-6 grid gap-4 md:grid-cols-2">
-                            <div className="rounded-[24px] border border-gray-200 bg-white/90 p-4 dark:border-gray-800 dark:bg-gray-950/40">
-                                <div className="text-xs font-semibold uppercase tracking-[0.24em] text-gray-500 dark:text-gray-400">Athlete ID</div>
-                                <div className="mt-2 text-lg font-semibold text-gray-900 dark:text-white">{data.strava.athleteId ?? 'No linked athlete yet'}</div>
-                            </div>
-                            <div className="rounded-[24px] border border-gray-200 bg-white/90 p-4 dark:border-gray-800 dark:bg-gray-950/40">
-                                <div className="text-xs font-semibold uppercase tracking-[0.24em] text-gray-500 dark:text-gray-400">Scopes</div>
-                                <div className="mt-2 text-sm leading-7 text-gray-700 dark:text-gray-200">{data.strava.scopeLabel ?? 'No scopes until Strava is connected.'}</div>
-                            </div>
-                        </div>
-                        {data.strava.tokenRefreshedAt ? (
-                            <div className="mt-4 rounded-[24px] border border-gray-200 bg-white/90 p-4 text-sm leading-7 text-gray-600 dark:border-gray-800 dark:bg-gray-950/40 dark:text-gray-300">
-                                Last token refresh: {formatDateTime(data.strava.tokenRefreshedAt)}
-                            </div>
-                        ) : null}
-                        <div className="mt-5 flex flex-wrap gap-3">
-                            <a
-                                href={buildAppPath(bootstrap.basePath, data.actions.connectStravaPath)}
-                                className="inline-flex items-center gap-2 rounded-2xl bg-strava-orange px-5 py-3 text-sm font-semibold text-white transition hover:bg-orange-600"
-                            >
+                        <div className="mt-4 flex flex-wrap gap-2">
+                            <a href={buildAppPath(bootstrap.basePath, data.actions.connectStravaPath)} className="ui-button ui-button-primary">
                                 {data.strava.connected ? 'Reconnect Strava' : 'Connect Strava'}
-                                <span aria-hidden="true">→</span>
                             </a>
                             {data.strava.connected ? (
-                                <button
-                                    type="button"
-                                    onClick={() => void handleDisconnectStrava()}
-                                    disabled={isBusy}
-                                    className="inline-flex items-center gap-2 rounded-2xl border border-rose-200 bg-rose-50 px-5 py-3 text-sm font-semibold text-rose-800 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-rose-800/60 dark:bg-rose-950/30 dark:text-rose-100"
-                                >
+                                <button type="button" onClick={() => void handleDisconnectStrava()} disabled={isBusy} className="ui-button ui-button-danger disabled:cursor-not-allowed disabled:opacity-60">
                                     {disconnecting ? 'Disconnecting…' : 'Disconnect'}
                                 </button>
                             ) : null}
-                            <button
-                                type="button"
-                                onClick={() => void handleManualSync('strava')}
-                                disabled={!data.strava.canSync || isBusy}
-                                className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-gray-600"
-                            >
-                                {activeProvider === 'strava' ? 'Syncing Strava…' : 'Sync Strava now'}
-                            </button>
                         </div>
-                        <div className="mt-5">
+
+                        {data.strava.connected ? (
+                            <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                                <DetailTile label="Athlete ID" value={data.strava.athleteId ?? 'No linked athlete yet'} />
+                                <DetailTile label="Scopes" value={data.strava.scopeLabel ?? 'No scopes until Strava is connected.'} />
+                            </div>
+                        ) : (
+                            <div className="mt-4 rounded-lg border border-dashed border-gray-300 bg-gray-50 px-4 py-5 text-sm text-gray-500 dark:border-gray-700 dark:bg-gray-950/25 dark:text-gray-300">
+                                No Strava account is linked yet.
+                            </div>
+                        )}
+
+                        {data.strava.tokenRefreshedAt ? (
+                            <div className="mt-4 text-xs text-gray-500 dark:text-gray-400">
+                                Last token refresh: {formatDateTime(data.strava.tokenRefreshedAt)}
+                            </div>
+                        ) : null}
+
+                        <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-950/30">
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                <div>
+                                    <div className="text-sm font-medium text-gray-900 dark:text-white">Manual Strava import</div>
+                                    <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">Pull the latest Strava data and rebuild the app now.</p>
+                                </div>
+                                <button type="button" onClick={() => void handleManualSync('strava')} disabled={!data.strava.canSync || isBusy} className="ui-button disabled:cursor-not-allowed disabled:opacity-60">
+                                    {activeProvider === 'strava' ? 'Syncing Strava…' : 'Sync Strava now'}
+                                </button>
+                            </div>
+                        </div>
+
+                        <div className="mt-4">
                             <SyncStatusCard title="Strava sync status" state={stravaSyncState} />
                         </div>
                     </section>
                 </div>
 
-                <div className="space-y-6 xl:sticky xl:top-28 xl:self-start">
-                    <section className={`glass-panel rounded-[32px] p-6 md:p-7 ${buildServiceTone(data.garmin.enabled && data.garmin.configured)}`}>
+                <div className="space-y-4 xl:sticky xl:top-28 xl:self-start">
+                    <section className="ui-section">
                         <div className="flex flex-col gap-4 md:flex-row md:items-start md:justify-between">
                             <div>
-                                <div className="section-kicker">Garmin wellness</div>
-                                <h2 className="mt-4 text-3xl font-semibold tracking-tight text-gray-900 dark:text-white">Recovery data bridge</h2>
-                                <p className="mt-3 text-sm leading-7 text-gray-600 dark:text-gray-300">
-                                    The React route surfaces the same environment-driven Garmin configuration as the live account page, including connection mode, source file, and manual import controls.
+                                <div className="flex items-center gap-2">
+                                    <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Garmin wellness</h2>
+                                    <span className={`inline-flex rounded-full px-2 py-0.5 text-[10px] font-semibold ${buildGarminBadgeTone(data.garmin.enabled, data.garmin.configured)}`}>
+                                        {data.garmin.enabled ? (data.garmin.configured ? 'Connected' : 'Needs setup') : 'Disabled'}
+                                    </span>
+                                </div>
+                                <p className="mt-1 text-sm leading-7 text-gray-500 dark:text-gray-400">
+                                    Garmin sync uses the wellness bridge configuration from your app environment and config files.
                                 </p>
                             </div>
-                            <div className="rounded-full border border-white/80 bg-white/80 px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-gray-700 dark:border-gray-800 dark:bg-gray-950/40 dark:text-gray-100">
-                                {data.garmin.enabled ? (data.garmin.configured ? 'Connected' : 'Needs setup') : 'Disabled'}
-                            </div>
                         </div>
-                        <div className="mt-6 space-y-4">
-                            <div className="rounded-[24px] border border-gray-200 bg-white/90 p-4 dark:border-gray-800 dark:bg-gray-950/40">
-                                <div className="text-xs font-semibold uppercase tracking-[0.24em] text-gray-500 dark:text-gray-400">Connection mode</div>
-                                <div className="mt-2 text-lg font-semibold text-gray-900 dark:text-white">{data.garmin.connectionModeLabel}</div>
-                            </div>
-                            <div className="rounded-[24px] border border-gray-200 bg-white/90 p-4 dark:border-gray-800 dark:bg-gray-950/40">
-                                <div className="text-xs font-semibold uppercase tracking-[0.24em] text-gray-500 dark:text-gray-400">Bridge source file</div>
-                                <div className="mt-2 break-all text-sm leading-7 text-gray-700 dark:text-gray-200">{data.garmin.bridgeSourcePath}</div>
-                            </div>
-                            <div className="rounded-[24px] border border-gray-200 bg-white/90 p-4 dark:border-gray-800 dark:bg-gray-950/40">
-                                <div className="text-xs font-semibold uppercase tracking-[0.24em] text-gray-500 dark:text-gray-400">Last imported Garmin day</div>
-                                <div className="mt-2 text-lg font-semibold text-gray-900 dark:text-white">{data.garmin.lastImportedDay ? formatDate(data.garmin.lastImportedDay) : 'No Garmin wellness days imported yet'}</div>
-                            </div>
+
+                        <div className="mt-4 grid gap-3 sm:grid-cols-2">
+                            <DetailTile label="Connection mode" value={data.garmin.connectionModeLabel} />
+                            <DetailTile label="Wellness import" value={data.garmin.enabled ? 'Enabled' : 'Disabled'} />
+                            <DetailTile label="Bridge source file" value={data.garmin.bridgeSourcePath} breakAll />
+                            <DetailTile label="Last imported Garmin day" value={data.garmin.lastImportedDay ? formatDate(data.garmin.lastImportedDay) : 'No Garmin wellness days imported yet'} />
                         </div>
+
                         {!data.garmin.enabled ? (
-                            <div className="mt-4 rounded-[24px] border border-amber-200 bg-amber-50/90 p-4 text-sm leading-7 text-amber-800 dark:border-amber-800/60 dark:bg-amber-950/30 dark:text-amber-100">
-                                Garmin wellness sync is disabled in the current app configuration.
+                            <div className="mt-4 rounded-lg border border-dashed border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-800/60 dark:bg-amber-950/30 dark:text-amber-100">
+                                Enable wellness integration in the app configuration before Garmin sync can run.
                             </div>
                         ) : null}
                         {data.garmin.enabled && !data.garmin.configured ? (
-                            <div className="mt-4 rounded-[24px] border border-amber-200 bg-amber-50/90 p-4 text-sm leading-7 text-amber-800 dark:border-amber-800/60 dark:bg-amber-950/30 dark:text-amber-100">
+                            <div className="mt-4 rounded-lg border border-dashed border-amber-300 bg-amber-50 px-4 py-3 text-sm text-amber-800 dark:border-amber-800/60 dark:bg-amber-950/30 dark:text-amber-100">
                                 Add Garmin credentials or tokens to the environment before running a manual sync.
                             </div>
                         ) : null}
-                        <div className="mt-5 flex flex-wrap gap-3">
-                            <button
-                                type="button"
-                                onClick={() => void handleManualSync('garmin')}
-                                disabled={!data.garmin.canSync || isBusy}
-                                className="inline-flex items-center gap-2 rounded-2xl bg-gray-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-gray-800 disabled:cursor-not-allowed disabled:opacity-60 dark:bg-white dark:text-gray-950 dark:hover:bg-gray-200"
-                            >
-                                {activeProvider === 'garmin' ? 'Syncing Garmin…' : 'Sync Garmin now'}
-                            </button>
+
+                        <div className="mt-4 rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-950/30">
+                            <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
+                                <div>
+                                    <div className="text-sm font-medium text-gray-900 dark:text-white">Manual Garmin import</div>
+                                    <p className="mt-0.5 text-xs text-gray-500 dark:text-gray-400">Refresh Garmin wellness bridge data, import it, and rebuild the app now.</p>
+                                </div>
+                                <button type="button" onClick={() => void handleManualSync('garmin')} disabled={!data.garmin.canSync || isBusy} className="ui-button disabled:cursor-not-allowed disabled:opacity-60">
+                                    {activeProvider === 'garmin' ? 'Syncing Garmin…' : 'Sync Garmin now'}
+                                </button>
+                            </div>
                         </div>
-                        <div className="mt-5">
+
+                        <div className="mt-4">
                             <SyncStatusCard title="Garmin sync status" state={garminSyncState} />
                         </div>
                     </section>

@@ -4,7 +4,6 @@
 @source "../**/*.{ts,tsx}";
 
 @theme {
-    --font-display: "Iowan Old Style", "Palatino Linotype", "Book Antiqua", Palatino, Georgia, serif;
     --color-strava-orange: #F26722;
     --color-grey-yo: #cccccc;
 }
@@ -27,67 +26,103 @@
 
     body {
         min-height: 100vh;
-        background: linear-gradient(180deg, rgba(249, 250, 251, 1) 0%, rgba(255, 247, 237, 0.72) 100%);
+        background: rgb(249 250 251);
         color: var(--color-gray-900);
         font-family: ui-sans-serif, system-ui, sans-serif;
     }
 
     [data-theme='dark'] body {
-        background: linear-gradient(180deg, rgb(2, 6, 23) 0%, rgba(17, 24, 39, 0.98) 100%);
+        background: rgb(3 7 18);
         color: white;
-    }
-
-    h1,
-    h2,
-    h3,
-    h4 {
-        font-family: var(--font-display);
     }
 }
 
 @layer utilities {
     .dot-grid-bg {
-        background-image:
-            radial-gradient(circle at 1px 1px, rgba(148, 163, 184, 0.18) 1px, transparent 0),
-            linear-gradient(180deg, transparent 0%, rgba(255, 255, 255, 0.58) 100%);
-        background-size: 24px 24px, 100% 100%;
+        background-color: transparent;
     }
 
     [data-theme='dark'] .dot-grid-bg {
-        background-image:
-            radial-gradient(circle at 1px 1px, rgba(71, 85, 105, 0.28) 1px, transparent 0),
-            linear-gradient(180deg, transparent 0%, rgba(2, 6, 23, 0.3) 100%);
+        background-color: transparent;
     }
 
     .glass-panel {
-        @apply border border-white/60 bg-white/80 shadow-[0_30px_90px_-60px_rgba(15,23,42,0.35)] backdrop-blur-xl;
+        @apply border border-gray-200 bg-white shadow-xs;
     }
 
     [data-theme='dark'] .glass-panel {
-        @apply border-gray-800 bg-gray-950/72 shadow-none;
+        @apply border-gray-800 bg-gray-950 shadow-none;
     }
 
     .section-kicker {
-        @apply inline-flex items-center gap-2 rounded-full border border-orange-200 bg-orange-50 px-3 py-1 text-[11px] font-semibold uppercase tracking-[0.26em] text-orange-700;
+        @apply text-[10px] font-semibold uppercase tracking-[0.18em] text-gray-400;
     }
 
     [data-theme='dark'] .section-kicker {
-        @apply border-orange-900/45 bg-orange-950/40 text-orange-300;
+        @apply text-gray-500;
     }
 
     .sidebar-link {
-        @apply flex items-center gap-3 rounded-[22px] px-3 py-2.5 text-sm font-medium text-gray-600 transition duration-200;
+        @apply flex items-center gap-3 rounded-lg px-3 py-2 text-sm font-medium text-gray-700 transition duration-150 hover:bg-gray-50;
     }
 
     .sidebar-link-active {
-        @apply bg-gray-900 text-white shadow-sm;
+        @apply border border-gray-200 bg-gray-50 text-gray-900 shadow-xs;
     }
 
     [data-theme='dark'] .sidebar-link-active {
-        @apply bg-white text-gray-950;
+        @apply border-gray-700 bg-gray-900 text-white;
     }
 
     .metric-card {
-        @apply rounded-[28px] border p-5 shadow-[0_20px_70px_-55px_rgba(15,23,42,0.5)];
+        @apply rounded-lg border bg-white p-2.5 shadow-xs;
+    }
+
+    [data-theme='dark'] .metric-card {
+        @apply border-gray-800 bg-gray-950 shadow-none;
+    }
+
+    .ui-section {
+        @apply rounded-lg border border-gray-200 bg-white p-3.5 shadow-xs md:p-4;
+    }
+
+    [data-theme='dark'] .ui-section {
+        @apply border-gray-800 bg-gray-950 shadow-none;
+    }
+
+    .ui-input {
+        @apply block w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2 text-sm text-gray-900 outline-none transition focus:border-orange-400 focus:bg-white;
+    }
+
+    [data-theme='dark'] .ui-input {
+        @apply border-gray-700 bg-gray-950 text-white focus:bg-gray-950;
+    }
+
+    .ui-button {
+        @apply inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-2.5 py-1.5 text-[13px] font-medium text-gray-700 shadow-xs transition hover:bg-gray-50;
+    }
+
+    [data-theme='dark'] .ui-button {
+        @apply border-gray-700 bg-gray-900 text-gray-100 hover:border-gray-600 hover:bg-gray-900;
+    }
+
+    .ui-button-primary {
+        @apply inline-flex items-center gap-2 rounded-lg bg-strava-orange px-2.5 py-1.5 text-[13px] font-semibold text-white shadow-sm transition hover:bg-orange-600;
+    }
+
+    .ui-button-danger {
+        @apply inline-flex items-center gap-2 rounded-lg border border-rose-200 bg-rose-50 px-2.5 py-1.5 text-[13px] font-semibold text-rose-800 transition hover:bg-rose-100;
+    }
+
+    [data-theme='dark'] .ui-button-danger {
+        @apply border-rose-800/60 bg-rose-950/30 text-rose-100;
+    }
+
+    .ui-pill {
+        @apply rounded-full border border-gray-200 bg-white px-2.5 py-1 text-[11px] font-semibold uppercase tracking-[0.18em] text-gray-700;
+    }
+
+    [data-theme='dark'] .ui-pill {
+        @apply border-gray-700 bg-gray-900 text-gray-100;
     }
 }

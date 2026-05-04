@@ -6,7 +6,6 @@ namespace App\Tests\Controller;
 
 use App\Application\Build\BuildDashboardHtml\BuildDashboardHtml;
 use App\Application\Build\BuildMonthlyStatsHtml\BuildMonthlyStatsHtml;
-use App\Application\Build\BuildRacePlannerHtml\BuildRacePlannerHtml;
 use App\Controller\RacePlannerRegenerateUpcomingSessionsRequestHandler;
 use App\Domain\Activity\ActivityId;
 use App\Domain\Activity\ActivityType;
@@ -153,12 +152,11 @@ final class RacePlannerRegenerateUpcomingSessionsRequestHandlerTest extends Cont
         $this->plannedSessionRepository->upsert($staleUpcomingSession);
 
         $this->commandBus
-            ->expects(self::exactly(3))
+            ->expects(self::exactly(2))
             ->method('dispatch')
             ->with(self::logicalOr(
                 self::isInstanceOf(BuildDashboardHtml::class),
                 self::isInstanceOf(BuildMonthlyStatsHtml::class),
-                self::isInstanceOf(BuildRacePlannerHtml::class),
             ));
 
         $response = $this->requestHandler->handle(new Request(

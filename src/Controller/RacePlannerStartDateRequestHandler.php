@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
-use App\Application\Build\BuildRacePlannerHtml\BuildRacePlannerHtml;
 use App\Domain\TrainingPlanner\RaceEvent;
 use App\Domain\TrainingPlanner\RaceEventPriority;
 use App\Domain\TrainingPlanner\RaceEventRepository;
@@ -44,8 +43,6 @@ final readonly class RacePlannerStartDateRequestHandler
                 $this->racePlannerConfiguration->savePlanStartDay($normalizedPlanStartDay);
             }
         }
-
-        $this->commandBus->dispatch(new BuildRacePlannerHtml($now));
 
         return new RedirectResponse($this->resolveRedirectTarget($request), Response::HTTP_FOUND);
     }

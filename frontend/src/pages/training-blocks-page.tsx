@@ -70,11 +70,11 @@ function phaseTone(phase: string): string {
 function stateTone(state: TrainingBlocksPreviewBlock['state']): string {
     switch (state) {
         case 'current':
-            return 'border-emerald-200 bg-emerald-50/90 text-emerald-800 dark:border-emerald-800/60 dark:bg-emerald-950/30 dark:text-emerald-100';
+            return 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-800/60 dark:bg-emerald-950/30 dark:text-emerald-100';
         case 'upcoming':
-            return 'border-sky-200 bg-sky-50/90 text-sky-800 dark:border-sky-800/60 dark:bg-sky-950/30 dark:text-sky-100';
+            return 'border-sky-200 bg-sky-50 text-sky-800 dark:border-sky-800/60 dark:bg-sky-950/30 dark:text-sky-100';
         default:
-            return 'border-slate-200 bg-slate-50/90 text-slate-800 dark:border-slate-800 dark:bg-slate-900/40 dark:text-slate-100';
+            return 'border-slate-200 bg-slate-50 text-slate-800 dark:border-slate-800 dark:bg-slate-900/40 dark:text-slate-100';
     }
 }
 
@@ -91,8 +91,8 @@ function stateLabel(state: TrainingBlocksPreviewBlock['state']): string {
 
 function saveBannerClasses(success: boolean): string {
     return success
-        ? 'border-emerald-200 bg-emerald-50/90 text-emerald-800 dark:border-emerald-800/60 dark:bg-emerald-950/30 dark:text-emerald-100'
-        : 'border-rose-200 bg-rose-50/90 text-rose-800 dark:border-rose-800/60 dark:bg-rose-950/30 dark:text-rose-100';
+    ? 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-800/60 dark:bg-emerald-950/30 dark:text-emerald-100'
+    : 'border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-800/60 dark:bg-rose-950/30 dark:text-rose-100';
 }
 
 function createNewFormState(data: TrainingBlocksPreviewResponse): TrainingBlockFormState {
@@ -236,62 +236,34 @@ export function TrainingBlocksPage({bootstrap}: TrainingBlocksPageProps) {
     }
 
     return (
-        <div className="space-y-8 pb-8">
-            <section className="glass-panel rounded-[36px] p-6 md:p-8">
-                <div className="grid gap-8 xl:grid-cols-[1.08fr_0.92fr]">
-                    <div>
-                        <div className="section-kicker">Route migration</div>
-                        <h1 className="mt-5 max-w-4xl text-4xl font-semibold tracking-tight text-gray-900 dark:text-white md:text-5xl">
-                            Training blocks now have a real React planning workspace instead of living as a hidden modal behind the calendar.
-                        </h1>
-                        <p className="mt-5 max-w-3xl text-base leading-8 text-gray-600 dark:text-gray-300 md:text-lg">
-                            This route turns season structure into a first-class editing surface. The Symfony backend still owns persistence and planner rebuilds, but React now gives block sequencing, race alignment, and phase context room to breathe.
+        <div className="space-y-6 pb-6">
+            <section className="ui-section">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="min-w-0">
+                        <h1 className="text-xl font-bold tracking-tight text-gray-900 dark:text-white md:text-2xl">Training blocks</h1>
+                        <p className="mt-1 max-w-3xl text-sm leading-7 text-gray-500 dark:text-gray-400">
+                            Manage season phases, block sequencing, and race alignment without diving back into modal UI.
                         </p>
-                        <div className="mt-6 flex flex-wrap gap-3">
-                            <button
-                                type="button"
-                                onClick={handleNewBlock}
-                                className="inline-flex items-center gap-2 rounded-2xl bg-strava-orange px-5 py-3 text-sm font-semibold text-white transition hover:bg-orange-600"
-                            >
-                                Create block in React
-                                <span aria-hidden="true">+</span>
-                            </button>
-                            <a
-                                href={buildAppPath(bootstrap.basePath, selectedBlock?.legacyModalPath ?? displayData?.legacyCreatePath ?? 'training-block?redirectTo=/monthly-stats')}
-                                className="inline-flex items-center gap-2 rounded-2xl bg-gray-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-gray-800 dark:bg-white dark:text-gray-950 dark:hover:bg-gray-200"
-                            >
-                                Compare with the live modal
-                                <span aria-hidden="true">↗</span>
-                            </a>
-                            <Link
-                                to="/monthly-stats"
-                                className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-gray-600"
-                            >
-                                Open monthly stats
-                                <span aria-hidden="true">→</span>
-                            </Link>
-                            <Link
-                                to="/race-planner"
-                                className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-gray-600"
-                            >
-                                Open race planner
-                                <span aria-hidden="true">→</span>
-                            </Link>
-                        </div>
                     </div>
-                    <div className="rounded-[32px] border border-violet-200 bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(245,243,255,0.96))] p-5 shadow-[0_45px_120px_-45px_rgba(15,23,42,0.65)] dark:border-violet-900/40 dark:bg-[linear-gradient(135deg,rgba(17,24,39,0.94),rgba(49,46,129,0.3))]">
-                        <div className="text-xs font-semibold uppercase tracking-[0.24em] text-violet-700 dark:text-violet-200">Why this cut works</div>
-                        <div className="mt-4 space-y-3 text-sm leading-7 text-gray-700 dark:text-gray-200">
-                            {[
-                                'It upgrades a planner primitive that already appears across monthly stats and race-planner views, so the migration value lands immediately.',
-                                'It reuses the same live save/delete contract we just proved for race events, which keeps risk modest while expanding planner depth.',
-                                'It sets up future planner editing work because block structure, phase sequencing, and race alignment can now evolve in React instead of modal HTML.',
-                            ].map((item) => (
-                                <div key={item} className="rounded-2xl border border-white/80 bg-white/80 p-4 dark:border-gray-800 dark:bg-gray-950/40">
-                                    {item}
-                                </div>
-                            ))}
-                        </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                        <button type="button" onClick={handleNewBlock} className="ui-button ui-button-primary">
+                            New block
+                        </button>
+                        <a href={buildAppPath(bootstrap.basePath, selectedBlock?.legacyModalPath ?? displayData?.legacyCreatePath ?? 'training-block?redirectTo=/monthly-stats')} className="ui-button">
+                            Open classic modal
+                        </a>
+                        <Link to="/monthly-stats" className="ui-button">Monthly stats</Link>
+                        <Link to="/race-planner" className="ui-button">Race planner</Link>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setFlashMessage(null);
+                                reload();
+                            }}
+                            className="ui-button"
+                        >
+                            Refresh block data
+                        </button>
                     </div>
                 </div>
             </section>
@@ -304,32 +276,32 @@ export function TrainingBlocksPage({bootstrap}: TrainingBlocksPageProps) {
             </section>
 
             {loading && !displayData ? (
-                <section className="glass-panel rounded-[32px] p-6 text-sm text-gray-600 dark:text-gray-300">
-                    Loading training blocks… pulling phase structure out of the planner attic.
+                <section className="ui-section text-sm text-gray-600 dark:text-gray-300">
+                    Loading training blocks.
                 </section>
             ) : null}
 
             {error && !displayData ? (
-                <section className="rounded-[32px] border border-rose-200 bg-rose-50/90 p-6 text-sm text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-100">
+                <section className="rounded-lg border border-rose-200 bg-rose-50 p-6 text-sm text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-100">
                     {error}
                 </section>
             ) : null}
 
             {displayData ? (
-                <section className="grid gap-6 xl:grid-cols-[0.96fr_1.04fr]">
-                    <section className="glass-panel rounded-[32px] p-6">
+                <section className="grid gap-4 xl:grid-cols-[0.96fr_1.04fr]">
+                    <section className="ui-section">
                         <div className="flex flex-wrap items-center justify-between gap-3">
                             <div>
-                                <div className="section-kicker">Season structure</div>
-                                <h2 className="mt-4 text-3xl font-semibold tracking-tight text-gray-900 dark:text-white">Block timeline with race anchors</h2>
+                                <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Season structure</h2>
+                                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Select a block to edit details and inspect race anchors.</p>
                             </div>
-                            <div className="rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100">
+                            <div className="ui-pill">
                                 {displayData.blocks.length} blocks
                             </div>
                         </div>
-                        <div className="mt-6 space-y-3">
+                        <div className="mt-4 space-y-2">
                             {displayData.blocks.length === 0 ? (
-                                <div className="rounded-[24px] border border-dashed border-gray-300 bg-gray-50/80 p-5 text-sm leading-7 text-gray-600 dark:border-gray-700 dark:bg-gray-950/25 dark:text-gray-300">
+                                <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-4 text-sm leading-7 text-gray-600 dark:border-gray-700 dark:bg-gray-950/25 dark:text-gray-300">
                                     No training blocks exist yet. Create one here and the calendar gets a proper season backbone immediately.
                                 </div>
                             ) : displayData.blocks.map((block) => {
@@ -343,42 +315,42 @@ export function TrainingBlocksPage({bootstrap}: TrainingBlocksPageProps) {
                                             setSelectedBlockId(block.id);
                                             setFlashMessage(null);
                                         }}
-                                        className={`block w-full rounded-[26px] border p-5 text-left transition ${selected
-                                            ? 'border-violet-300 bg-violet-50/70 shadow-sm dark:border-violet-800/50 dark:bg-violet-950/20'
-                                            : 'border-gray-200 bg-white/85 hover:-translate-y-0.5 hover:shadow-md dark:border-gray-800 dark:bg-gray-900/55'
+                                        className={`block w-full rounded-lg border p-4 text-left transition ${selected
+                                            ? 'border-violet-300 bg-violet-50 shadow-sm dark:border-violet-800/50 dark:bg-violet-950/20'
+                                            : 'border-gray-200 bg-white hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-950 dark:hover:bg-gray-900'
                                         }`}
                                     >
                                         <div className="flex flex-wrap items-start justify-between gap-3">
                                             <div>
                                                 <div className="flex flex-wrap items-center gap-2">
-                                                    <span className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] ${phaseTone(block.phase)}`}>
+                                                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${phaseTone(block.phase)}`}>
                                                         {block.phaseLabel}
                                                     </span>
-                                                    <span className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] ${stateTone(block.state)}`}>
+                                                    <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${stateTone(block.state)}`}>
                                                         {stateLabel(block.state)}
                                                     </span>
                                                 </div>
-                                                <h3 className="mt-3 text-xl font-semibold text-gray-900 dark:text-white">{block.title}</h3>
-                                                <div className="mt-2 text-sm leading-7 text-gray-600 dark:text-gray-300">
+                                                <h3 className="mt-2 text-base font-semibold text-gray-900 dark:text-white">{block.title}</h3>
+                                                <div className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                                                     {formatDateRange(block.startDay, block.endDay)} · {block.durationInDays} days
                                                 </div>
                                             </div>
-                                            <div className="rounded-[18px] border border-gray-200 bg-white/80 px-4 py-3 text-sm text-gray-700 dark:border-gray-800 dark:bg-gray-950/30 dark:text-gray-100">
-                                                <div className="text-xs font-semibold uppercase tracking-[0.24em] text-gray-400 dark:text-gray-500">Window</div>
-                                                <div className="mt-2 font-semibold">{formatDate(block.startDay)}</div>
+                                            <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-700 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-100">
+                                                <div className="font-semibold text-gray-400 dark:text-gray-500">Window</div>
+                                                <div className="mt-1 font-semibold">{formatDate(block.startDay)}</div>
                                             </div>
                                         </div>
                                         {block.focus ? (
-                                            <div className="mt-4 rounded-2xl border border-gray-200 bg-white/80 p-4 text-sm leading-7 text-gray-700 dark:border-gray-800 dark:bg-gray-950/25 dark:text-gray-200">
-                                                <div className="text-xs font-semibold uppercase tracking-[0.24em] text-gray-500 dark:text-gray-400">Focus</div>
-                                                <div className="mt-2">{block.focus}</div>
+                                            <div className="mt-3 rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm leading-6 text-gray-700 dark:border-gray-800 dark:bg-gray-900/40 dark:text-gray-200">
+                                                <div className="text-[10px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Focus</div>
+                                                <div className="mt-1">{block.focus}</div>
                                             </div>
                                         ) : null}
                                         {block.linkedRace ? (
-                                            <div className="mt-4 rounded-2xl border border-rose-200 bg-rose-50/80 p-4 text-sm leading-7 text-rose-900 dark:border-rose-900/50 dark:bg-rose-950/20 dark:text-rose-100">
-                                                <div className="text-xs font-semibold uppercase tracking-[0.24em] opacity-75">Linked race</div>
-                                                <div className="mt-2 font-semibold">{block.linkedRace.title}</div>
-                                                <div className="mt-1 opacity-80">
+                                            <div className="mt-3 rounded-lg border border-rose-200 bg-rose-50 p-3 text-sm leading-6 text-rose-900 dark:border-rose-900/50 dark:bg-rose-950/20 dark:text-rose-100">
+                                                <div className="text-[10px] font-semibold uppercase tracking-wide opacity-75">Linked race</div>
+                                                <div className="mt-1 font-semibold">{block.linkedRace.title}</div>
+                                                <div className="mt-1 text-xs opacity-80">
                                                     {formatDate(block.linkedRace.day)} · {block.linkedRace.profileLabel}
                                                     {block.linkedRace.location ? ` · ${block.linkedRace.location}` : ''}
                                                 </div>
@@ -390,48 +362,45 @@ export function TrainingBlocksPage({bootstrap}: TrainingBlocksPageProps) {
                         </div>
                     </section>
 
-                    <section className="glass-panel rounded-[32px] p-6 md:p-7">
+                    <section className="ui-section">
                         <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                             <div>
-                                <div className="section-kicker">Live write flow</div>
-                                <h2 className="mt-4 text-3xl font-semibold tracking-tight text-gray-900 dark:text-white">
+                                <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Training block editor</h2>
+                                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                                     {selectedBlock ? 'Edit the selected training block.' : 'Create a new block for the season timeline.'}
-                                </h2>
-                                <p className="mt-3 max-w-3xl text-sm leading-7 text-gray-600 dark:text-gray-300">
-                                    This form writes through the live Symfony backend and rebuilds the monthly stats and race planner views, just like the legacy modal. React simply makes the workflow dramatically more usable.
                                 </p>
+                                <div className="mt-3 text-xs text-gray-400 dark:text-gray-500">
+                                    Saving here triggers the same monthly stats and race planner rebuilds used elsewhere in the planner.
+                                </div>
                             </div>
                             <div className="flex flex-wrap gap-2">
-                                <button
-                                    type="button"
-                                    onClick={handleNewBlock}
-                                    className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-gray-600"
-                                >
+                                <button type="button" onClick={handleNewBlock} className="ui-button">
                                     New block
-                                    <span aria-hidden="true">+</span>
                                 </button>
                                 {selectedBlock ? (
-                                    <a
-                                        href={buildAppPath(bootstrap.basePath, selectedBlock.legacyModalPath)}
-                                        className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-gray-600"
-                                    >
-                                        Open legacy modal
-                                        <span aria-hidden="true">↗</span>
+                                    <a href={buildAppPath(bootstrap.basePath, selectedBlock.legacyModalPath)} className="ui-button">
+                                        Open classic modal
                                     </a>
                                 ) : null}
                             </div>
                         </div>
 
                         {flashMessage ? (
-                            <div className={`mt-5 rounded-2xl border p-4 text-sm leading-7 ${saveBannerClasses(flashSuccess)}`}>
+                            <div className={`mt-4 rounded-lg border p-4 text-sm leading-7 ${saveBannerClasses(flashSuccess)}`}>
                                 {flashMessage}
                             </div>
                         ) : null}
 
-                        <form onSubmit={(event) => void handleSubmit(event)} className="mt-6 space-y-5">
-                            <div className="grid gap-4 md:grid-cols-2">
+                        <form onSubmit={(event) => void handleSubmit(event)} className="mt-4 space-y-4">
+                            <div className="rounded-lg border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-950/40">
+                                <div className="border-b border-gray-100 px-4 py-3 dark:border-gray-800">
+                                    <div className="text-[10px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Block details</div>
+                                    <div className="mt-0.5 text-[11px] text-gray-400 dark:text-gray-500">Keep phase structure visible so the calendar can organize the season around it.</div>
+                                </div>
+                                <div className="px-4 py-4">
+                                    <div className="grid gap-4 md:grid-cols-2">
                                 <div>
-                                    <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.24em] text-gray-500 dark:text-gray-400" htmlFor="training-block-start-day">Start day</label>
+                                    <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400" htmlFor="training-block-start-day">Start day</label>
                                     <input
                                         id="training-block-start-day"
                                         required
@@ -442,11 +411,11 @@ export function TrainingBlocksPage({bootstrap}: TrainingBlocksPageProps) {
                                             startDay: event.target.value,
                                             endDay: current.endDay < event.target.value ? event.target.value : current.endDay,
                                         } : current)}
-                                        className="block w-full rounded-[20px] border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm focus:border-orange-400 focus:outline-none dark:border-gray-700 dark:bg-gray-950 dark:text-white"
+                                        className="ui-input"
                                     />
                                 </div>
                                 <div>
-                                    <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.24em] text-gray-500 dark:text-gray-400" htmlFor="training-block-end-day">End day</label>
+                                    <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400" htmlFor="training-block-end-day">End day</label>
                                     <input
                                         id="training-block-end-day"
                                         required
@@ -454,16 +423,16 @@ export function TrainingBlocksPage({bootstrap}: TrainingBlocksPageProps) {
                                         value={formState?.endDay ?? ''}
                                         min={formState?.startDay}
                                         onChange={(event) => setFormState((current) => current ? {...current, endDay: event.target.value} : current)}
-                                        className="block w-full rounded-[20px] border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm focus:border-orange-400 focus:outline-none dark:border-gray-700 dark:bg-gray-950 dark:text-white"
+                                        className="ui-input"
                                     />
                                 </div>
                                 <div>
-                                    <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.24em] text-gray-500 dark:text-gray-400" htmlFor="training-block-phase">Phase</label>
+                                    <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400" htmlFor="training-block-phase">Phase</label>
                                     <select
                                         id="training-block-phase"
                                         value={formState?.phase ?? ''}
                                         onChange={(event) => setFormState((current) => current ? {...current, phase: event.target.value} : current)}
-                                        className="block w-full rounded-[20px] border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm focus:border-orange-400 focus:outline-none dark:border-gray-700 dark:bg-gray-950 dark:text-white"
+                                        className="ui-input"
                                     >
                                         {displayData.options.phases.map((phase) => (
                                             <option key={phase.value} value={phase.value}>{phase.label}</option>
@@ -471,12 +440,12 @@ export function TrainingBlocksPage({bootstrap}: TrainingBlocksPageProps) {
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.24em] text-gray-500 dark:text-gray-400" htmlFor="training-block-race">Target race</label>
+                                    <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400" htmlFor="training-block-race">Target race</label>
                                     <select
                                         id="training-block-race"
                                         value={formState?.targetRaceEventId ?? ''}
                                         onChange={(event) => setFormState((current) => current ? {...current, targetRaceEventId: event.target.value} : current)}
-                                        className="block w-full rounded-[20px] border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm focus:border-orange-400 focus:outline-none dark:border-gray-700 dark:bg-gray-950 dark:text-white"
+                                        className="ui-input"
                                     >
                                         <option value="">No linked race</option>
                                         {displayData.options.raceEvents.map((raceEvent) => (
@@ -487,98 +456,65 @@ export function TrainingBlocksPage({bootstrap}: TrainingBlocksPageProps) {
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.24em] text-gray-500 dark:text-gray-400" htmlFor="training-block-title">Title</label>
+                                    <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400" htmlFor="training-block-title">Title</label>
                                     <input
                                         id="training-block-title"
                                         value={formState?.title ?? ''}
                                         onChange={(event) => setFormState((current) => current ? {...current, title: event.target.value} : current)}
                                         placeholder="Early summer build"
-                                        className="block w-full rounded-[20px] border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm focus:border-orange-400 focus:outline-none dark:border-gray-700 dark:bg-gray-950 dark:text-white"
+                                        className="ui-input"
                                     />
                                 </div>
                                 <div>
-                                    <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.24em] text-gray-500 dark:text-gray-400" htmlFor="training-block-focus">Focus</label>
+                                    <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400" htmlFor="training-block-focus">Focus</label>
                                     <input
                                         id="training-block-focus"
                                         value={formState?.focus ?? ''}
                                         onChange={(event) => setFormState((current) => current ? {...current, focus: event.target.value} : current)}
                                         placeholder="Aerobic durability and threshold support"
-                                        className="block w-full rounded-[20px] border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm focus:border-orange-400 focus:outline-none dark:border-gray-700 dark:bg-gray-950 dark:text-white"
+                                        className="ui-input"
                                     />
                                 </div>
                                 <div className="md:col-span-2">
-                                    <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.24em] text-gray-500 dark:text-gray-400" htmlFor="training-block-notes">Notes</label>
+                                    <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400" htmlFor="training-block-notes">Notes</label>
                                     <textarea
                                         id="training-block-notes"
-                                        rows={5}
+                                        rows={4}
                                         value={formState?.notes ?? ''}
                                         onChange={(event) => setFormState((current) => current ? {...current, notes: event.target.value} : current)}
                                         placeholder="Key reminders, constraints, or the feel this phase should create."
-                                        className="block w-full rounded-[20px] border border-gray-200 bg-white px-4 py-3 text-sm leading-7 text-gray-900 shadow-sm focus:border-orange-400 focus:outline-none dark:border-gray-700 dark:bg-gray-950 dark:text-white"
+                                        className="ui-input min-h-[7rem]"
                                     />
+                                </div>
+                                    </div>
                                 </div>
                             </div>
 
-                            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                                <div className="text-sm leading-7 text-gray-600 dark:text-gray-300">
-                                    Saving here triggers the same monthly-stats and race-planner rebuilds as the legacy training-block modal.
-                                </div>
-                                <div className="flex flex-wrap gap-3">
+                            <div className="flex items-center justify-between gap-3">
+                                <div>
                                     {selectedBlock ? (
                                         <button
                                             type="button"
                                             onClick={() => void handleDelete()}
                                             disabled={submitting || deleting}
-                                            className="inline-flex items-center gap-2 rounded-2xl border border-rose-300 bg-white px-4 py-3 text-sm font-semibold text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-rose-800/60 dark:bg-gray-900 dark:text-rose-200 dark:hover:bg-rose-950/20"
+                                            className="ui-button ui-button-danger disabled:cursor-not-allowed disabled:opacity-60"
                                         >
                                             {deleting ? 'Deleting…' : 'Delete block'}
                                         </button>
-                                    ) : null}
-                                    <button
-                                        type="submit"
-                                        disabled={submitting || deleting || !formState}
-                                        className="inline-flex items-center gap-2 rounded-2xl bg-strava-orange px-5 py-3 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-70"
-                                    >
-                                        {submitting ? 'Saving…' : selectedBlock ? 'Save changes' : 'Create block'}
-                                        <span aria-hidden="true">→</span>
-                                    </button>
+                                    ) : <span />}
                                 </div>
+                                <button
+                                    type="submit"
+                                    disabled={submitting || deleting || !formState}
+                                    className="ui-button ui-button-primary disabled:cursor-not-allowed disabled:opacity-70"
+                                >
+                                    {submitting ? 'Saving…' : selectedBlock ? 'Save changes' : 'Create block'}
+                                </button>
                             </div>
                         </form>
                     </section>
                 </section>
             ) : null}
-
-            <section className="glass-panel rounded-[32px] p-6">
-                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                    <div>
-                        <div className="section-kicker">Migration note</div>
-                        <h2 className="mt-4 text-3xl font-semibold tracking-tight text-gray-900 dark:text-white">Season structure is now a route, not just a modal footnote</h2>
-                    </div>
-                    <button
-                        type="button"
-                        onClick={() => {
-                            setFlashMessage(null);
-                            reload();
-                        }}
-                        className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-gray-600"
-                    >
-                        Refresh block data
-                        <span aria-hidden="true">↻</span>
-                    </button>
-                </div>
-                <div className="mt-5 space-y-3 text-sm leading-7 text-gray-600 dark:text-gray-300">
-                    {[
-                        'This route upgrades training blocks from hidden scaffolding into a visible planning tool that users can actually scan and manage.',
-                        'It also complements the race-events slice: now both the target events and the season phases around them can be managed in React.',
-                        'That leaves richer planner editing as the next layer, rather than forcing every future improvement through legacy modal UI first.',
-                    ].map((item) => (
-                        <div key={item} className="rounded-2xl border border-gray-200 bg-white/80 p-4 dark:border-gray-800 dark:bg-gray-950/30">
-                            {item}
-                        </div>
-                    ))}
-                </div>
-            </section>
         </div>
     );
 }

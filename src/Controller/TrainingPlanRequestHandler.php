@@ -6,8 +6,6 @@ namespace App\Controller;
 
 use App\Application\Build\BuildDashboardHtml\BuildDashboardHtml;
 use App\Application\Build\BuildMonthlyStatsHtml\BuildMonthlyStatsHtml;
-use App\Application\Build\BuildRacePlannerHtml\BuildRacePlannerHtml;
-use App\Application\Build\BuildTrainingPlansHtml\BuildTrainingPlansHtml;
 use App\Domain\Performance\PerformanceAnchor\PerformanceAnchorHistory;
 use App\Domain\Performance\PerformanceAnchor\PerformanceAnchorType;
 use App\Domain\TrainingPlanner\DbalRaceEventRepository;
@@ -305,14 +303,10 @@ final readonly class TrainingPlanRequestHandler
     {
         $now ??= $this->clock->getCurrentDateTimeImmutable();
 
-        $this->commandBus->dispatch(new BuildTrainingPlansHtml($now));
-
         if ($plannerDataChanged) {
             $this->commandBus->dispatch(new BuildDashboardHtml());
             $this->commandBus->dispatch(new BuildMonthlyStatsHtml($now));
         }
-
-        $this->commandBus->dispatch(new BuildRacePlannerHtml($now));
     }
 
     private function synchronizeLinkedRacePlan(

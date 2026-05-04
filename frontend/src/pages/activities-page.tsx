@@ -1,6 +1,5 @@
 import {useCallback, useMemo, useState} from 'react';
 import {Link} from 'react-router-dom';
-import {StatCard} from '../components/stat-card';
 import {type ReactPreviewBootstrap, buildAppPath} from '../lib/bootstrap';
 import {
     fetchActivitiesPreview,
@@ -67,6 +66,10 @@ const sortOptions: Array<{value: ActivitySortField; label: string}> = [
     {value: 'calories', label: 'Calories'},
     {value: 'power', label: 'Power'},
 ];
+
+const secondaryButtonClass = 'ui-button';
+const primaryButtonClass = 'ui-button-primary';
+const inputClass = 'ui-input';
 
 function formatNumber(value: number, maximumFractionDigits = 0): string {
     return new Intl.NumberFormat('en-US', {maximumFractionDigits}).format(value);
@@ -175,7 +178,7 @@ function FiltersSelect({
             <select
                 value={value}
                 onChange={(event) => onChange(event.target.value)}
-                className="rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-orange-400 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                className={inputClass}
             >
                 <option value="">All</option>
                 {options.map((option) => (
@@ -185,6 +188,15 @@ function FiltersSelect({
                 ))}
             </select>
         </label>
+    );
+}
+
+function MetricPill({label, value}: {label: string; value: string}) {
+    return (
+        <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-sm dark:border-gray-800 dark:bg-gray-900/60">
+            <span className="font-medium text-gray-900 dark:text-white">{value}</span>
+            <span className="ml-2 text-gray-500 dark:text-gray-400">{label}</span>
+        </div>
     );
 }
 
@@ -343,70 +355,32 @@ export function ActivitiesPage({bootstrap}: ActivitiesPageProps) {
     }
 
     return (
-        <div className="space-y-8 pb-8">
-            <section className="glass-panel overflow-hidden rounded-[36px] p-6 md:p-8">
-                <div className="grid gap-8 xl:grid-cols-[1.2fr_0.8fr]">
-                    <div>
-                        <div className="section-kicker">Activities preview</div>
-                        <h1 className="mt-5 max-w-3xl text-4xl font-semibold tracking-tight text-gray-900 dark:text-white md:text-5xl">
-                            A React take on the busiest read-heavy screen in the app.
-                        </h1>
-                        <p className="mt-5 max-w-2xl text-base leading-8 text-gray-600 dark:text-gray-300 md:text-lg">
-                            This slice keeps the proven Symfony activity exports as the source of truth while moving
-                            search, filtering, sorting, and route-level polish into the new preview shell.
-                        </p>
-                        <div className="mt-6 flex flex-wrap gap-3">
-                            <a
-                                href={buildAppPath(bootstrap.basePath, 'activities')}
-                                className="inline-flex items-center gap-2 rounded-2xl bg-gray-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-gray-800 dark:bg-white dark:text-gray-950 dark:hover:bg-gray-200"
-                            >
-                                Open the current activities page
-                                <span aria-hidden="true">↗</span>
-                            </a>
-                            <button
-                                type="button"
-                                onClick={reload}
-                                className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-gray-600"
-                            >
-                                Refresh preview data
-                                <span aria-hidden="true">↻</span>
-                            </button>
-                        </div>
+        <div className="space-y-6 pb-6">
+            <section className="ui-section">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                    <div className="min-w-0">
+                        <h1 className="text-xl font-bold tracking-tight text-gray-900 dark:text-white md:text-2xl">Activities</h1>
+                        <p className="mt-1 max-w-3xl text-sm text-gray-500 dark:text-gray-400">Search, filter, and sort the full activity log in a layout that stays close to the original activities screen.</p>
                     </div>
-                    <div className="rounded-[32px] border border-sky-200 bg-[linear-gradient(135deg,rgba(255,255,255,0.95),rgba(240,249,255,0.96))] p-5 shadow-[0_45px_120px_-45px_rgba(15,23,42,0.65)] dark:border-sky-900/40 dark:bg-[linear-gradient(135deg,rgba(17,24,39,0.94),rgba(8,47,73,0.92))]">
-                        <div className="text-xs font-semibold uppercase tracking-[0.24em] text-sky-700 dark:text-sky-300">Why this route matters</div>
-                        <div className="mt-4 space-y-3 text-sm leading-7 text-gray-700 dark:text-gray-200">
-                            {[
-                                'Search and filter behavior now lives in typed React state instead of DOM manager orchestration.',
-                                'The preview still rides on the existing activity export pipeline, so no write-side logic is duplicated.',
-                                'The same route-level patterns can roll into segments, photos, and other data-dense screens next.',
-                            ].map((item) => (
-                                <div key={item} className="rounded-2xl border border-white/80 bg-white/80 p-4 dark:border-gray-800 dark:bg-gray-950/40">
-                                    {item}
-                                </div>
-                            ))}
-                        </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                        <a href={buildAppPath(bootstrap.basePath, 'activities')} className={primaryButtonClass}>
+                            Open classic page
+                        </a>
+                        <button type="button" onClick={reload} className={secondaryButtonClass}>
+                            Refresh data
+                        </button>
                     </div>
                 </div>
             </section>
 
-            <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                <StatCard label="Visible activities" value={`${formatNumber(filteredRows.length)} / ${formatNumber(data?.rows.length ?? 0)}`} hint="Filtered rows update instantly in the preview shell." tone="orange" />
-                <StatCard label="Distance" value={`${formatNumber(totals.distance, 1)} ${unitSystem.distanceSymbol}`} hint="Summed from the same exported rows the legacy screen uses." tone="blue" />
-                <StatCard label="Elevation" value={`${formatNumber(totals.elevation, 0)} ${unitSystem.elevationSymbol}`} hint="Great quick check when filters get mountain-bike spicy." tone="emerald" />
-                <StatCard label="Moving time" value={formatHours(totals.movingTime)} hint="Computed client-side from the preview rows." tone="slate" />
-            </section>
-
-            <section className="glass-panel rounded-[32px] p-6">
+            <section className="ui-section">
                 <div className="flex flex-col gap-4 xl:flex-row xl:items-end xl:justify-between">
                     <div className="flex-1">
-                        <div className="section-kicker">Filters and sorting</div>
-                        <p className="mt-4 max-w-3xl text-sm leading-7 text-gray-600 dark:text-gray-300">
-                            The legacy screen is famously filter-happy. This preview keeps the same filtering model but presents it in a calmer route-level layout.
-                        </p>
+                        <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Filters and sorting</h2>
+                        <p className="mt-1 max-w-3xl text-sm leading-6 text-gray-500 dark:text-gray-400">Keep the filters tight, then scan the sticky table below.</p>
                     </div>
                     <div className="flex flex-wrap items-center gap-3">
-                        <label className="flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100">
+                        <label className="flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm font-medium text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100">
                             <span>Sort by</span>
                             <select
                                 value={sortField}
@@ -423,7 +397,7 @@ export function ActivitiesPage({bootstrap}: ActivitiesPageProps) {
                         <button
                             type="button"
                             onClick={() => setSortDirection((current) => (current === 'asc' ? 'desc' : 'asc'))}
-                            className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-gray-600"
+                            className={secondaryButtonClass}
                         >
                             {sortDirection === 'asc' ? 'Ascending' : 'Descending'}
                             <span aria-hidden="true">{sortDirection === 'asc' ? '↑' : '↓'}</span>
@@ -431,12 +405,20 @@ export function ActivitiesPage({bootstrap}: ActivitiesPageProps) {
                         <button
                             type="button"
                             onClick={() => setFilters(initialFilters)}
-                            className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-gray-600"
+                            className={secondaryButtonClass}
                         >
                             Reset filters
                             <span className="rounded-full bg-gray-100 px-2 py-0.5 text-xs text-gray-500 dark:bg-gray-800 dark:text-gray-300">{activeFilterCount}</span>
                         </button>
                     </div>
+                </div>
+
+                <div className="mt-4 flex flex-wrap gap-2">
+                    <MetricPill label="visible" value={`${formatNumber(filteredRows.length)} / ${formatNumber(data?.rows.length ?? 0)}`} />
+                    <MetricPill label={`distance (${unitSystem.distanceSymbol})`} value={formatNumber(totals.distance, 1)} />
+                    <MetricPill label={`elevation (${unitSystem.elevationSymbol})`} value={formatNumber(totals.elevation, 0)} />
+                    <MetricPill label="moving time" value={formatHours(totals.movingTime)} />
+                    <MetricPill label="calories" value={`${formatNumber(totals.calories)} kcal`} />
                 </div>
 
                 <div className="mt-6 grid gap-4 lg:grid-cols-[1.2fr_0.8fr]">
@@ -447,7 +429,7 @@ export function ActivitiesPage({bootstrap}: ActivitiesPageProps) {
                             value={filters.search}
                             onChange={(event) => updateFilter('search', event.target.value)}
                             placeholder="Search by activity name"
-                            className="rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-orange-400 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                            className={inputClass}
                         />
                     </label>
                     <div className="grid gap-4 sm:grid-cols-2">
@@ -468,7 +450,7 @@ export function ActivitiesPage({bootstrap}: ActivitiesPageProps) {
                                         key={option.value}
                                         type="button"
                                         onClick={() => toggleSportType(option.value)}
-                                        className={`rounded-full border px-4 py-2 text-sm font-medium transition ${active
+                                        className={`rounded-lg border px-4 py-2 text-sm font-medium transition ${active
                                             ? 'border-orange-500 bg-orange-50 text-orange-700 dark:border-orange-400 dark:bg-orange-950/40 dark:text-orange-200'
                                             : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:border-gray-600 dark:hover:text-white'}`}
                                     >
@@ -489,7 +471,7 @@ export function ActivitiesPage({bootstrap}: ActivitiesPageProps) {
                             type="date"
                             value={filters.startDateFrom}
                             onChange={(event) => updateFilter('startDateFrom', event.target.value)}
-                            className="rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-orange-400 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                            className={inputClass}
                         />
                     </label>
                     <label className="flex flex-col gap-2 text-sm font-medium text-gray-600 dark:text-gray-300">
@@ -498,7 +480,7 @@ export function ActivitiesPage({bootstrap}: ActivitiesPageProps) {
                             type="date"
                             value={filters.startDateTo}
                             onChange={(event) => updateFilter('startDateTo', event.target.value)}
-                            className="rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-orange-400 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                            className={inputClass}
                         />
                     </label>
                     <label className="flex flex-col gap-2 text-sm font-medium text-gray-600 dark:text-gray-300">
@@ -510,7 +492,7 @@ export function ActivitiesPage({bootstrap}: ActivitiesPageProps) {
                             value={filters.distanceFrom}
                             onChange={(event) => updateFilter('distanceFrom', event.target.value)}
                             placeholder={unitSystem.distanceSymbol}
-                            className="rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-orange-400 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                            className={inputClass}
                         />
                     </label>
                     <label className="flex flex-col gap-2 text-sm font-medium text-gray-600 dark:text-gray-300">
@@ -522,7 +504,7 @@ export function ActivitiesPage({bootstrap}: ActivitiesPageProps) {
                             value={filters.distanceTo}
                             onChange={(event) => updateFilter('distanceTo', event.target.value)}
                             placeholder={unitSystem.distanceSymbol}
-                            className="rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-orange-400 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                            className={inputClass}
                         />
                     </label>
                 </div>
@@ -538,7 +520,7 @@ export function ActivitiesPage({bootstrap}: ActivitiesPageProps) {
                                 value={filters.elevationFrom}
                                 onChange={(event) => updateFilter('elevationFrom', event.target.value)}
                                 placeholder={unitSystem.elevationSymbol}
-                                className="rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-orange-400 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                                className={inputClass}
                             />
                         </label>
                         <label className="flex flex-col gap-2 text-sm font-medium text-gray-600 dark:text-gray-300">
@@ -550,13 +532,13 @@ export function ActivitiesPage({bootstrap}: ActivitiesPageProps) {
                                 value={filters.elevationTo}
                                 onChange={(event) => updateFilter('elevationTo', event.target.value)}
                                 placeholder={unitSystem.elevationSymbol}
-                                className="rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 outline-none transition focus:border-orange-400 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100"
+                                className={inputClass}
                             />
                         </label>
                     </div>
                     <div>
                         <div className="text-sm font-medium text-gray-600 dark:text-gray-300">Commute filter</div>
-                        <div className="mt-2 inline-flex rounded-2xl border border-gray-200 bg-gray-100 p-1 dark:border-gray-700 dark:bg-gray-900">
+                        <div className="mt-2 inline-flex rounded-lg border border-gray-200 bg-gray-100 p-1 dark:border-gray-700 dark:bg-gray-900">
                             {[
                                 {value: 'all', label: 'All'},
                                 {value: 'true', label: 'Commutes only'},
@@ -566,7 +548,7 @@ export function ActivitiesPage({bootstrap}: ActivitiesPageProps) {
                                     key={option.value}
                                     type="button"
                                     onClick={() => updateFilter('commute', option.value as CommuteFilter)}
-                                    className={`rounded-[18px] px-4 py-2 text-sm font-medium transition ${filters.commute === option.value
+                                    className={`rounded-md px-4 py-2 text-sm font-medium transition ${filters.commute === option.value
                                         ? 'bg-white text-gray-900 shadow-sm dark:bg-gray-800 dark:text-white'
                                         : 'text-gray-500 dark:text-gray-400'}`}
                                 >
@@ -576,48 +558,47 @@ export function ActivitiesPage({bootstrap}: ActivitiesPageProps) {
                         </div>
                     </div>
                     <div className="flex items-end text-sm text-gray-500 dark:text-gray-400">
-                        {data ? `Preview data refreshed ${formatRequestedAt(data.requestedAt)}.` : 'Waiting for preview data.'}
+                        {data ? `Data refreshed ${formatRequestedAt(data.requestedAt)}.` : 'Waiting for activity data.'}
                     </div>
                 </div>
             </section>
 
-            <section className="glass-panel rounded-[32px] p-6">
+            <section className="ui-section">
                 <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                     <div>
-                        <div className="section-kicker">Live table</div>
-                        <h2 className="mt-4 text-3xl font-semibold tracking-tight text-gray-900 dark:text-white">Previewed activity rows</h2>
+                        <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Activity table</h2>
+                        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Sticky header, dense columns, and the original row markup underneath.</p>
                     </div>
                     <div className="flex items-center gap-3 text-sm text-gray-500 dark:text-gray-400">
                         <span>{formatNumber(filteredRows.length)} visible rows</span>
-                        <Link to="/roadmap" className="font-semibold text-strava-orange">
-                            See migration roadmap →
-                        </Link>
+                        <span>•</span>
+                        <span>{activeFilterCount} active filters</span>
                     </div>
                 </div>
 
                 {loading && !data ? (
-                    <div className="mt-6 rounded-[28px] border border-gray-200 bg-white/85 p-6 text-sm text-gray-600 dark:border-gray-800 dark:bg-gray-900/60 dark:text-gray-300">
-                        Loading activities preview… one hydration sip at a time.
+                    <div className="mt-6 rounded-lg border border-gray-200 bg-gray-50 p-6 text-sm text-gray-600 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300">
+                        Loading activities…
                     </div>
                 ) : null}
 
                 {error ? (
-                    <div className="mt-6 rounded-[28px] border border-rose-200 bg-rose-50/90 p-6 text-sm text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-100">
+                    <div className="mt-6 rounded-lg border border-rose-200 bg-rose-50 p-6 text-sm text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-100">
                         {error}
                     </div>
                 ) : null}
 
                 {!loading && !error && filteredRows.length === 0 ? (
-                    <div className="mt-6 rounded-[28px] border border-gray-200 bg-white/85 p-6 text-sm text-gray-600 dark:border-gray-800 dark:bg-gray-900/60 dark:text-gray-300">
-                        No activities match the current filters. Try loosening the net a little.
+                    <div className="mt-6 rounded-lg border border-gray-200 bg-gray-50 p-6 text-sm text-gray-600 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-300">
+                        No activities match the current filters.
                     </div>
                 ) : null}
 
                 {filteredRows.length > 0 ? (
-                    <div className="mt-6 overflow-hidden rounded-[28px] border border-gray-200 bg-white/92 dark:border-gray-800 dark:bg-gray-950/40">
-                        <div className="overflow-x-auto">
+                    <div className="mt-6 overflow-hidden rounded-lg border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-950">
+                        <div className="max-h-[calc(100vh-285px)] overflow-auto">
                             <table className="w-full min-w-[1750px] text-sm text-center text-gray-600 dark:text-gray-200">
-                                <thead className="sticky top-0 z-10 bg-gray-50 text-[11px] uppercase tracking-[0.2em] text-gray-500 dark:bg-gray-900 dark:text-gray-400">
+                                <thead className="sticky top-0 z-10 bg-gray-50 text-xs uppercase tracking-wider text-gray-500 dark:bg-gray-900 dark:text-gray-400">
                                     <tr>
                                         <th className="px-2 py-3">Date</th>
                                         <th className="bg-gray-50 px-2 py-3 text-left dark:bg-gray-900">Activity</th>

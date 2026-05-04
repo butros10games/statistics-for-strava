@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
-use App\Application\Build\BuildRacePlannerHtml\BuildRacePlannerHtml;
-use App\Application\Build\BuildTrainingPlansHtml\BuildTrainingPlansHtml;
 use App\Domain\TrainingPlanner\AdaptivePlanningContextBuilder;
 use App\Domain\TrainingPlanner\PlanGenerator\RaceProfileTrainingRules;
 use App\Domain\TrainingPlanner\PlanGenerator\TrainingPlanGenerator;
@@ -80,9 +78,6 @@ final readonly class RacePlannerSetupPlanRequestHandler
             targetRaceProfile: $existingTrainingPlan?->getTargetRaceProfile() ?? $targetRace->getProfile(),
             trainingFocus: $existingTrainingPlan?->getTrainingFocus(),
         ));
-
-        $this->commandBus->dispatch(new BuildTrainingPlansHtml($now));
-        $this->commandBus->dispatch(new BuildRacePlannerHtml($now));
 
         return new RedirectResponse($this->resolveRedirectTarget($request), Response::HTTP_FOUND);
     }

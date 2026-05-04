@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Tests\Controller;
 
 use App\Application\Build\BuildMonthlyStatsHtml\BuildMonthlyStatsHtml;
-use App\Application\Build\BuildRacePlannerHtml\BuildRacePlannerHtml;
 use App\Controller\TrainingBlockRequestHandler;
 use App\Domain\TrainingPlanner\DbalRaceEventRepository;
 use App\Domain\TrainingPlanner\DbalTrainingBlockRepository;
@@ -115,11 +114,8 @@ final class TrainingBlockRequestHandlerTest extends ContainerTestCase
     private function expectMonthlyStatsRebuilds(int $times = 1): void
     {
         $this->commandBus
-            ->expects(self::exactly($times * 2))
+            ->expects(self::exactly($times))
             ->method('dispatch')
-            ->with(self::logicalOr(
-                self::isInstanceOf(BuildMonthlyStatsHtml::class),
-                self::isInstanceOf(BuildRacePlannerHtml::class),
-            ));
+            ->with(self::isInstanceOf(BuildMonthlyStatsHtml::class));
     }
 }

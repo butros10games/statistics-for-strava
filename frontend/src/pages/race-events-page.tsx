@@ -46,11 +46,11 @@ function formatDate(value: string): string {
 function coverageTone(state: RaceEventsPreviewRace['coverage']['state']): string {
     switch (state) {
         case 'linked':
-            return 'border-emerald-200 bg-emerald-50/90 text-emerald-800 dark:border-emerald-800/60 dark:bg-emerald-950/30 dark:text-emerald-100';
+            return 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-800/60 dark:bg-emerald-950/30 dark:text-emerald-100';
         case 'covered':
-            return 'border-sky-200 bg-sky-50/90 text-sky-800 dark:border-sky-800/60 dark:bg-sky-950/30 dark:text-sky-100';
+            return 'border-sky-200 bg-sky-50 text-sky-800 dark:border-sky-800/60 dark:bg-sky-950/30 dark:text-sky-100';
         default:
-            return 'border-amber-200 bg-amber-50/90 text-amber-800 dark:border-amber-800/60 dark:bg-amber-950/30 dark:text-amber-100';
+            return 'border-amber-200 bg-amber-50 text-amber-800 dark:border-amber-800/60 dark:bg-amber-950/30 dark:text-amber-100';
     }
 }
 
@@ -96,8 +96,8 @@ function createFormStateFromRace(race: RaceEventsPreviewRace): RaceEventFormStat
 
 function saveBannerClasses(success: boolean): string {
     return success
-        ? 'border-emerald-200 bg-emerald-50/90 text-emerald-800 dark:border-emerald-800/60 dark:bg-emerald-950/30 dark:text-emerald-100'
-        : 'border-rose-200 bg-rose-50/90 text-rose-800 dark:border-rose-800/60 dark:bg-rose-950/30 dark:text-rose-100';
+        ? 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-800/60 dark:bg-emerald-950/30 dark:text-emerald-100'
+        : 'border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-800/60 dark:bg-rose-950/30 dark:text-rose-100';
 }
 
 export function RaceEventsPage({bootstrap}: RaceEventsPageProps) {
@@ -236,62 +236,34 @@ export function RaceEventsPage({bootstrap}: RaceEventsPageProps) {
     }
 
     return (
-        <div className="space-y-8 pb-8">
-            <section className="glass-panel rounded-[36px] p-6 md:p-8">
-                <div className="grid gap-8 xl:grid-cols-[1.08fr_0.92fr]">
-                    <div>
-                        <div className="section-kicker">Route migration</div>
-                        <h1 className="mt-5 max-w-4xl text-4xl font-semibold tracking-tight text-gray-900 dark:text-white md:text-5xl">
-                            Race events now have a proper React workspace instead of being squeezed into a tiny modal with big responsibilities.
-                        </h1>
-                        <p className="mt-5 max-w-3xl text-base leading-8 text-gray-600 dark:text-gray-300 md:text-lg">
-                            This route promotes the season-target editor into a real planning surface. The live Symfony backend still owns persistence and rebuilds the planner views, but React now gives race targets room for context, coverage state, and faster iteration.
+        <div className="space-y-6 pb-6">
+            <section className="ui-section">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="min-w-0">
+                        <h1 className="text-xl font-bold tracking-tight text-gray-900 dark:text-white md:text-2xl">Race events</h1>
+                        <p className="mt-1 max-w-3xl text-sm leading-7 text-gray-500 dark:text-gray-400">
+                            Keep target races visible so the planner can organize blocks, tapers, and key sessions around real goals.
                         </p>
-                        <div className="mt-6 flex flex-wrap gap-3">
-                            <button
-                                type="button"
-                                onClick={handleNewRace}
-                                className="inline-flex items-center gap-2 rounded-2xl bg-strava-orange px-5 py-3 text-sm font-semibold text-white transition hover:bg-orange-600"
-                            >
-                                Create race in React
-                                <span aria-hidden="true">+</span>
-                            </button>
-                            <a
-                                href={buildAppPath(bootstrap.basePath, selectedRace?.legacyModalPath ?? displayData?.legacyCreatePath ?? 'race-event?redirectTo=/race-planner')}
-                                className="inline-flex items-center gap-2 rounded-2xl bg-gray-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-gray-800 dark:bg-white dark:text-gray-950 dark:hover:bg-gray-200"
-                            >
-                                Compare with the live modal
-                                <span aria-hidden="true">↗</span>
-                            </a>
-                            <Link
-                                to="/race-planner"
-                                className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-gray-600"
-                            >
-                                Open race planner
-                                <span aria-hidden="true">→</span>
-                            </Link>
-                            <Link
-                                to="/training-plans"
-                                className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-gray-600"
-                            >
-                                Open training plans
-                                <span aria-hidden="true">→</span>
-                            </Link>
-                        </div>
                     </div>
-                    <div className="rounded-[32px] border border-orange-200 bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(255,244,237,0.96))] p-5 shadow-[0_45px_120px_-45px_rgba(15,23,42,0.65)] dark:border-orange-900/40 dark:bg-[linear-gradient(135deg,rgba(17,24,39,0.94),rgba(49,24,17,0.92))]">
-                        <div className="text-xs font-semibold uppercase tracking-[0.24em] text-orange-700 dark:text-orange-200">Why this cut works</div>
-                        <div className="mt-4 space-y-3 text-sm leading-7 text-gray-700 dark:text-gray-200">
-                            {[
-                                'It upgrades an important planner dependency from modal-only UI into a first-class route with list state, editing context, and linked-plan visibility.',
-                                'It reuses the same live-write pattern proven by recovery check-in, but with slightly richer form semantics and delete support.',
-                                'It directly supports the already-migrated race-planner and training-plans routes, so the value lands immediately instead of waiting for a later phase.',
-                            ].map((item) => (
-                                <div key={item} className="rounded-2xl border border-white/80 bg-white/80 p-4 dark:border-gray-800 dark:bg-gray-950/40">
-                                    {item}
-                                </div>
-                            ))}
-                        </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                        <button type="button" onClick={handleNewRace} className="ui-button ui-button-primary">
+                            New race
+                        </button>
+                        <a href={buildAppPath(bootstrap.basePath, selectedRace?.legacyModalPath ?? displayData?.legacyCreatePath ?? 'race-event?redirectTo=/race-planner')} className="ui-button">
+                            Open classic modal
+                        </a>
+                        <Link to="/race-planner" className="ui-button">Race planner</Link>
+                        <Link to="/training-plans" className="ui-button">Training plans</Link>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                setFlashMessage(null);
+                                reload();
+                            }}
+                            className="ui-button"
+                        >
+                            Refresh race data
+                        </button>
                     </div>
                 </div>
             </section>
@@ -300,36 +272,34 @@ export function RaceEventsPage({bootstrap}: RaceEventsPageProps) {
                 <StatCard label="Total races" value={displayData?.summary.totalRaces ?? 0} hint="All known race targets currently stored for the athlete." tone="orange" />
                 <StatCard label="Upcoming races" value={displayData?.summary.upcomingRaces ?? 0} hint="Targets still ahead on the calendar." tone="emerald" />
                 <StatCard label="Covered races" value={displayData ? `${displayData.summary.coveredRaces}/${displayData.summary.totalRaces}` : '0/0'} hint="Race targets already linked to, or at least covered by, an existing training plan window." tone="blue" />
-                <StatCard label="Preview refresh" value={displayData ? formatRequestedAt(displayData.requestedAt) : 'Waiting…'} hint="Updated whenever the route reloads or a save/delete succeeds." tone="slate" />
+                <StatCard label="Last refresh" value={displayData ? formatRequestedAt(displayData.requestedAt) : 'Waiting…'} hint="Updated whenever the route reloads or a save/delete succeeds." tone="slate" />
             </section>
 
             {loading && !displayData ? (
-                <section className="glass-panel rounded-[32px] p-6 text-sm text-gray-600 dark:text-gray-300">
-                    Loading race targets… assembling calendars, priorities, and a little controlled ambition.
+                <section className="ui-section text-sm text-gray-600 dark:text-gray-300">
+                    Loading race targets.
                 </section>
             ) : null}
 
             {error && !displayData ? (
-                <section className="rounded-[32px] border border-rose-200 bg-rose-50/90 p-6 text-sm text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-100">
+                <section className="rounded-lg border border-rose-200 bg-rose-50 p-6 text-sm text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-100">
                     {error}
                 </section>
             ) : null}
 
             {displayData ? (
-                <section className="grid gap-6 xl:grid-cols-[0.96fr_1.04fr]">
-                    <section className="glass-panel rounded-[32px] p-6">
+                <section className="grid gap-4 xl:grid-cols-[0.96fr_1.04fr]">
+                    <section className="ui-section">
                         <div className="flex flex-wrap items-center justify-between gap-3">
                             <div>
-                                <div className="section-kicker">Season targets</div>
-                                <h2 className="mt-4 text-3xl font-semibold tracking-tight text-gray-900 dark:text-white">Race list with plan coverage</h2>
+                                <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Season targets</h2>
+                                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Select a race to edit details and inspect planner coverage.</p>
                             </div>
-                            <div className="rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100">
-                                {displayData.races.length} events
-                            </div>
+                            <div className="ui-pill">{displayData.races.length} events</div>
                         </div>
-                        <div className="mt-6 space-y-3">
+                        <div className="mt-4 space-y-2">
                             {displayData.races.length === 0 ? (
-                                <div className="rounded-[24px] border border-dashed border-gray-300 bg-gray-50/80 p-5 text-sm leading-7 text-gray-600 dark:border-gray-700 dark:bg-gray-950/25 dark:text-gray-300">
+                                <div className="rounded-lg border border-dashed border-gray-300 bg-gray-50 p-4 text-sm leading-7 text-gray-600 dark:border-gray-700 dark:bg-gray-950/25 dark:text-gray-300">
                                     No race events exist yet. Create one here and the planner routes immediately gain a real target to steer toward.
                                 </div>
                             ) : displayData.races.map((race) => {
@@ -343,42 +313,42 @@ export function RaceEventsPage({bootstrap}: RaceEventsPageProps) {
                                             setSelectedRaceId(race.id);
                                             setFlashMessage(null);
                                         }}
-                                        className={`block w-full rounded-[26px] border p-5 text-left transition ${selected
-                                            ? 'border-orange-300 bg-orange-50/70 shadow-sm dark:border-orange-800/50 dark:bg-orange-950/20'
-                                            : 'border-gray-200 bg-white/85 hover:-translate-y-0.5 hover:shadow-md dark:border-gray-800 dark:bg-gray-900/55'
+                                        className={`block w-full rounded-lg border p-4 text-left transition ${selected
+                                            ? 'border-orange-300 bg-orange-50 shadow-sm dark:border-orange-800/50 dark:bg-orange-950/20'
+                                            : 'border-gray-200 bg-white hover:bg-gray-50 dark:border-gray-800 dark:bg-gray-950 dark:hover:bg-gray-900'
                                         }`}
                                     >
                                         <div className="flex flex-wrap items-start justify-between gap-3">
                                             <div>
                                                 <div className="flex flex-wrap items-center gap-2">
-                                                    <span className={`rounded-full px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] ${priorityTone(race.priority)}`}>
+                                                    <span className={`rounded-full px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${priorityTone(race.priority)}`}>
                                                         {race.priorityLabel}
                                                     </span>
-                                                    <span className={`rounded-full border px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] ${coverageTone(race.coverage.state)}`}>
+                                                    <span className={`rounded-full border px-2 py-0.5 text-[10px] font-semibold uppercase tracking-wide ${coverageTone(race.coverage.state)}`}>
                                                         {race.coverage.state === 'linked' ? 'Directly linked' : race.coverage.state === 'covered' ? 'Covered by a plan' : 'Needs a plan'}
                                                     </span>
                                                 </div>
-                                                <h3 className="mt-3 text-xl font-semibold text-gray-900 dark:text-white">{race.title}</h3>
-                                                <div className="mt-2 text-sm leading-7 text-gray-600 dark:text-gray-300">
+                                                <h3 className="mt-2 text-base font-semibold text-gray-900 dark:text-white">{race.title}</h3>
+                                                <div className="mt-1 text-sm text-gray-500 dark:text-gray-400">
                                                     {formatDate(race.day)} · {race.profileLabel}{race.location ? ` · ${race.location}` : ''}
                                                 </div>
                                             </div>
                                             {typeof race.countdownDays === 'number' ? (
-                                                <div className="rounded-[18px] border border-gray-200 bg-white/80 px-4 py-3 text-sm text-gray-700 dark:border-gray-800 dark:bg-gray-950/30 dark:text-gray-100">
-                                                    <div className="text-xs font-semibold uppercase tracking-[0.24em] text-gray-400 dark:text-gray-500">Countdown</div>
-                                                    <div className="mt-2 font-semibold">{race.countdownDays === 0 ? 'Race day' : `D-${race.countdownDays}`}</div>
+                                                <div className="rounded-lg border border-gray-200 bg-gray-50 px-3 py-2 text-xs text-gray-700 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-100">
+                                                    <div className="font-semibold text-gray-400 dark:text-gray-500">Countdown</div>
+                                                    <div className="mt-1 font-semibold">{race.countdownDays === 0 ? 'Race day' : `D-${race.countdownDays}`}</div>
                                                 </div>
                                             ) : null}
                                         </div>
-                                        <div className="mt-4 flex flex-wrap items-center gap-2 text-xs font-medium">
-                                            <span className="rounded-full border border-gray-200 bg-white px-3 py-1 text-gray-600 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-200">{race.familyLabel}</span>
-                                            {race.targetFinishTimeLabel ? <span className="rounded-full border border-gray-200 bg-white px-3 py-1 text-gray-600 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-200">Target {race.targetFinishTimeLabel}</span> : null}
+                                        <div className="mt-3 flex flex-wrap items-center gap-2 text-xs font-medium">
+                                            <span className="ui-pill">{race.familyLabel}</span>
+                                            {race.targetFinishTimeLabel ? <span className="ui-pill">Target {race.targetFinishTimeLabel}</span> : null}
                                         </div>
                                         {race.coverage.linkedTrainingPlan ? (
-                                            <div className="mt-4 rounded-2xl border border-gray-200 bg-white/80 p-4 text-sm leading-7 text-gray-700 dark:border-gray-800 dark:bg-gray-950/25 dark:text-gray-200">
-                                                <div className="text-xs font-semibold uppercase tracking-[0.24em] text-gray-500 dark:text-gray-400">Planner coverage</div>
-                                                <div className="mt-2 font-semibold text-gray-900 dark:text-white">{race.coverage.linkedTrainingPlan.title}</div>
-                                                <div className="mt-1 text-gray-500 dark:text-gray-400">{race.coverage.state === 'linked' ? 'Explicit target race link.' : 'Falls inside the current plan window.'}</div>
+                                            <div className="mt-3 rounded-lg border border-gray-200 bg-gray-50 p-3 text-sm leading-6 text-gray-700 dark:border-gray-800 dark:bg-gray-900/40 dark:text-gray-200">
+                                                <div className="text-[10px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Planner coverage</div>
+                                                <div className="mt-1 font-semibold text-gray-900 dark:text-white">{race.coverage.linkedTrainingPlan.title}</div>
+                                                <div className="mt-1 text-xs text-gray-500 dark:text-gray-400">{race.coverage.state === 'linked' ? 'Explicit target race link.' : 'Falls inside the current plan window.'}</div>
                                             </div>
                                         ) : null}
                                     </button>
@@ -387,214 +357,177 @@ export function RaceEventsPage({bootstrap}: RaceEventsPageProps) {
                         </div>
                     </section>
 
-                    <section className="glass-panel rounded-[32px] p-6 md:p-7">
+                    <section className="ui-section">
                         <div className="flex flex-col gap-3 md:flex-row md:items-start md:justify-between">
                             <div>
-                                <div className="section-kicker">Live write flow</div>
-                                <h2 className="mt-4 text-3xl font-semibold tracking-tight text-gray-900 dark:text-white">
-                                    {selectedRace ? 'Edit the currently selected target race.' : 'Create a new target race for the season.'}
-                                </h2>
-                                <p className="mt-3 max-w-3xl text-sm leading-7 text-gray-600 dark:text-gray-300">
-                                    This form persists through the live Symfony backend and triggers the same planner rebuilds as the legacy modal. React just gives it vastly better elbow room.
+                                <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Race editor</h2>
+                                <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">
+                                    {selectedRace ? 'Update the event your block, taper, and key sessions should build toward.' : 'Add a target event so the planner can start organizing training around a real race goal.'}
                                 </p>
+                                <div className="mt-3 text-xs text-gray-400 dark:text-gray-500">
+                                    Saving here triggers the same monthly stats, race planner, and training plans refresh cycle used elsewhere in the planner.
+                                </div>
                             </div>
                             <div className="flex flex-wrap gap-2">
-                                <button
-                                    type="button"
-                                    onClick={handleNewRace}
-                                    className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-gray-600"
-                                >
+                                <button type="button" onClick={handleNewRace} className="ui-button">
                                     New race
-                                    <span aria-hidden="true">+</span>
                                 </button>
                                 {selectedRace ? (
-                                    <a
-                                        href={buildAppPath(bootstrap.basePath, selectedRace.legacyModalPath)}
-                                        className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-gray-600"
-                                    >
-                                        Open legacy modal
-                                        <span aria-hidden="true">↗</span>
+                                    <a href={buildAppPath(bootstrap.basePath, selectedRace.legacyModalPath)} className="ui-button">
+                                        Open classic modal
                                     </a>
                                 ) : null}
                             </div>
                         </div>
 
                         {flashMessage ? (
-                            <div className={`mt-5 rounded-2xl border p-4 text-sm leading-7 ${saveBannerClasses(flashSuccess)}`}>
+                            <div className={`mt-4 rounded-lg border p-4 text-sm leading-7 ${saveBannerClasses(flashSuccess)}`}>
                                 {flashMessage}
                             </div>
                         ) : null}
 
-                        <form onSubmit={(event) => void handleSubmit(event)} className="mt-6 space-y-5">
-                            <div className="grid gap-4 md:grid-cols-2">
-                                <div>
-                                    <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.24em] text-gray-500 dark:text-gray-400" htmlFor="race-event-day">Day</label>
-                                    <input
-                                        id="race-event-day"
-                                        required
-                                        type="date"
-                                        value={formState?.day ?? ''}
-                                        onChange={(event) => setFormState((current) => current ? {...current, day: event.target.value} : current)}
-                                        className="block w-full rounded-[20px] border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm focus:border-orange-400 focus:outline-none dark:border-gray-700 dark:bg-gray-950 dark:text-white"
-                                    />
+                        <form onSubmit={(event) => void handleSubmit(event)} className="mt-4 space-y-4">
+                            <div className="rounded-lg border border-gray-200 bg-white dark:border-gray-800 dark:bg-gray-950/40">
+                                <div className="border-b border-gray-100 px-4 py-3 dark:border-gray-800">
+                                    <div className="text-[10px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400">Event details</div>
+                                    <div className="mt-0.5 text-[11px] text-gray-400 dark:text-gray-500">Keep target races visible so the calendar can plan around them.</div>
                                 </div>
-                                <div>
-                                    <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.24em] text-gray-500 dark:text-gray-400" htmlFor="race-event-priority">Priority</label>
-                                    <select
-                                        id="race-event-priority"
-                                        value={formState?.priority ?? ''}
-                                        onChange={(event) => setFormState((current) => current ? {...current, priority: event.target.value} : current)}
-                                        className="block w-full rounded-[20px] border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm focus:border-orange-400 focus:outline-none dark:border-gray-700 dark:bg-gray-950 dark:text-white"
-                                    >
-                                        {displayData.options.priorities.map((priority) => (
-                                            <option key={priority.value} value={priority.value}>{priority.label}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.24em] text-gray-500 dark:text-gray-400" htmlFor="race-event-family">Event family</label>
-                                    <select
-                                        id="race-event-family"
-                                        value={formState?.family ?? ''}
-                                        onChange={(event) => handleFamilyChange(event.target.value)}
-                                        className="block w-full rounded-[20px] border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm focus:border-orange-400 focus:outline-none dark:border-gray-700 dark:bg-gray-950 dark:text-white"
-                                    >
-                                        {displayData.options.families.map((family) => (
-                                            <option key={family.value} value={family.value}>{family.label}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.24em] text-gray-500 dark:text-gray-400" htmlFor="race-event-profile">Distance / profile</label>
-                                    <select
-                                        id="race-event-profile"
-                                        value={formState?.profile ?? ''}
-                                        onChange={(event) => setFormState((current) => current ? {...current, profile: event.target.value} : current)}
-                                        className="block w-full rounded-[20px] border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm focus:border-orange-400 focus:outline-none dark:border-gray-700 dark:bg-gray-950 dark:text-white"
-                                    >
-                                        {filteredProfiles.map((profile) => (
-                                            <option key={profile.value} value={profile.value}>{profile.label}</option>
-                                        ))}
-                                    </select>
-                                </div>
-                                <div>
-                                    <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.24em] text-gray-500 dark:text-gray-400" htmlFor="race-event-title">Title</label>
-                                    <input
-                                        id="race-event-title"
-                                        value={formState?.title ?? ''}
-                                        onChange={(event) => setFormState((current) => current ? {...current, title: event.target.value} : current)}
-                                        placeholder="A-race goal"
-                                        className="block w-full rounded-[20px] border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm focus:border-orange-400 focus:outline-none dark:border-gray-700 dark:bg-gray-950 dark:text-white"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.24em] text-gray-500 dark:text-gray-400" htmlFor="race-event-location">Location</label>
-                                    <input
-                                        id="race-event-location"
-                                        value={formState?.location ?? ''}
-                                        onChange={(event) => setFormState((current) => current ? {...current, location: event.target.value} : current)}
-                                        placeholder="Mallorca, Belgium, Kona…"
-                                        className="block w-full rounded-[20px] border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm focus:border-orange-400 focus:outline-none dark:border-gray-700 dark:bg-gray-950 dark:text-white"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.24em] text-gray-500 dark:text-gray-400" htmlFor="race-event-hours">Target finish hours</label>
-                                    <input
-                                        id="race-event-hours"
-                                        type="number"
-                                        min="0"
-                                        value={formState?.targetFinishTimeHours ?? ''}
-                                        onChange={(event) => setFormState((current) => current ? {...current, targetFinishTimeHours: event.target.value} : current)}
-                                        placeholder="4"
-                                        className="block w-full rounded-[20px] border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm focus:border-orange-400 focus:outline-none dark:border-gray-700 dark:bg-gray-950 dark:text-white"
-                                    />
-                                </div>
-                                <div>
-                                    <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.24em] text-gray-500 dark:text-gray-400" htmlFor="race-event-minutes">Target finish minutes</label>
-                                    <input
-                                        id="race-event-minutes"
-                                        type="number"
-                                        min="0"
-                                        max="59"
-                                        value={formState?.targetFinishTimeMinutes ?? ''}
-                                        onChange={(event) => setFormState((current) => current ? {...current, targetFinishTimeMinutes: event.target.value} : current)}
-                                        placeholder="45"
-                                        className="block w-full rounded-[20px] border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm focus:border-orange-400 focus:outline-none dark:border-gray-700 dark:bg-gray-950 dark:text-white"
-                                    />
-                                </div>
-                                <div className="md:col-span-2">
-                                    <label className="mb-2 block text-xs font-semibold uppercase tracking-[0.24em] text-gray-500 dark:text-gray-400" htmlFor="race-event-notes">Notes</label>
-                                    <textarea
-                                        id="race-event-notes"
-                                        rows={5}
-                                        value={formState?.notes ?? ''}
-                                        onChange={(event) => setFormState((current) => current ? {...current, notes: event.target.value} : current)}
-                                        placeholder="Course notes, pacing cues, logistics, or nutrition reminders."
-                                        className="block w-full rounded-[20px] border border-gray-200 bg-white px-4 py-3 text-sm leading-7 text-gray-900 shadow-sm focus:border-orange-400 focus:outline-none dark:border-gray-700 dark:bg-gray-950 dark:text-white"
-                                    />
+                                <div className="px-4 py-4">
+                                    <div className="grid gap-4 md:grid-cols-2">
+                                        <div>
+                                            <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400" htmlFor="race-event-day">Day</label>
+                                            <input
+                                                id="race-event-day"
+                                                required
+                                                type="date"
+                                                value={formState?.day ?? ''}
+                                                onChange={(event) => setFormState((current) => current ? {...current, day: event.target.value} : current)}
+                                                className="ui-input"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400" htmlFor="race-event-priority">Priority</label>
+                                            <select
+                                                id="race-event-priority"
+                                                value={formState?.priority ?? ''}
+                                                onChange={(event) => setFormState((current) => current ? {...current, priority: event.target.value} : current)}
+                                                className="ui-input"
+                                            >
+                                                {displayData.options.priorities.map((priority) => (
+                                                    <option key={priority.value} value={priority.value}>{priority.label}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400" htmlFor="race-event-family">Event family</label>
+                                            <select
+                                                id="race-event-family"
+                                                value={formState?.family ?? ''}
+                                                onChange={(event) => handleFamilyChange(event.target.value)}
+                                                className="ui-input"
+                                            >
+                                                {displayData.options.families.map((family) => (
+                                                    <option key={family.value} value={family.value}>{family.label}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400" htmlFor="race-event-profile">Distance / profile</label>
+                                            <select
+                                                id="race-event-profile"
+                                                value={formState?.profile ?? ''}
+                                                onChange={(event) => setFormState((current) => current ? {...current, profile: event.target.value} : current)}
+                                                className="ui-input"
+                                            >
+                                                {filteredProfiles.map((profile) => (
+                                                    <option key={profile.value} value={profile.value}>{profile.label}</option>
+                                                ))}
+                                            </select>
+                                        </div>
+                                        <div>
+                                            <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400" htmlFor="race-event-title">Title</label>
+                                            <input
+                                                id="race-event-title"
+                                                value={formState?.title ?? ''}
+                                                onChange={(event) => setFormState((current) => current ? {...current, title: event.target.value} : current)}
+                                                placeholder="A-race goal"
+                                                className="ui-input"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400" htmlFor="race-event-location">Location</label>
+                                            <input
+                                                id="race-event-location"
+                                                value={formState?.location ?? ''}
+                                                onChange={(event) => setFormState((current) => current ? {...current, location: event.target.value} : current)}
+                                                placeholder="Mallorca, Belgium, Kona…"
+                                                className="ui-input"
+                                            />
+                                        </div>
+                                        <div>
+                                            <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400" htmlFor="race-event-hours">Target finish</label>
+                                            <div className="grid grid-cols-2 gap-2">
+                                                <input
+                                                    id="race-event-hours"
+                                                    type="number"
+                                                    min="0"
+                                                    value={formState?.targetFinishTimeHours ?? ''}
+                                                    onChange={(event) => setFormState((current) => current ? {...current, targetFinishTimeHours: event.target.value} : current)}
+                                                    placeholder="Hours"
+                                                    className="ui-input"
+                                                />
+                                                <input
+                                                    id="race-event-minutes"
+                                                    type="number"
+                                                    min="0"
+                                                    max="59"
+                                                    value={formState?.targetFinishTimeMinutes ?? ''}
+                                                    onChange={(event) => setFormState((current) => current ? {...current, targetFinishTimeMinutes: event.target.value} : current)}
+                                                    placeholder="Minutes"
+                                                    className="ui-input"
+                                                />
+                                            </div>
+                                        </div>
+                                        <div className="md:col-span-2">
+                                            <label className="mb-1 block text-[10px] font-semibold uppercase tracking-wide text-gray-500 dark:text-gray-400" htmlFor="race-event-notes">Notes</label>
+                                            <textarea
+                                                id="race-event-notes"
+                                                rows={4}
+                                                value={formState?.notes ?? ''}
+                                                onChange={(event) => setFormState((current) => current ? {...current, notes: event.target.value} : current)}
+                                                placeholder="Course notes, pacing cues, logistics, or nutrition reminders."
+                                                className="ui-input min-h-[7rem]"
+                                            />
+                                        </div>
+                                    </div>
                                 </div>
                             </div>
 
-                            <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                                <div className="text-sm leading-7 text-gray-600 dark:text-gray-300">
-                                    Saving here triggers the same monthly-stats, race-planner, and training-plans rebuilds as the live modal flow.
-                                </div>
-                                <div className="flex flex-wrap gap-3">
+                            <div className="flex items-center justify-between gap-3">
+                                <div>
                                     {selectedRace ? (
                                         <button
                                             type="button"
                                             onClick={() => void handleDelete()}
                                             disabled={submitting || deleting}
-                                            className="inline-flex items-center gap-2 rounded-2xl border border-rose-300 bg-white px-4 py-3 text-sm font-semibold text-rose-700 transition hover:bg-rose-50 disabled:cursor-not-allowed disabled:opacity-60 dark:border-rose-800/60 dark:bg-gray-900 dark:text-rose-200 dark:hover:bg-rose-950/20"
+                                            className="ui-button ui-button-danger disabled:cursor-not-allowed disabled:opacity-60"
                                         >
                                             {deleting ? 'Deleting…' : 'Delete race'}
                                         </button>
-                                    ) : null}
-                                    <button
-                                        type="submit"
-                                        disabled={submitting || deleting || !formState}
-                                        className="inline-flex items-center gap-2 rounded-2xl bg-strava-orange px-5 py-3 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-70"
-                                    >
-                                        {submitting ? 'Saving…' : selectedRace ? 'Save changes' : 'Create race'}
-                                        <span aria-hidden="true">→</span>
-                                    </button>
+                                    ) : <span />}
                                 </div>
+                                <button
+                                    type="submit"
+                                    disabled={submitting || deleting || !formState}
+                                    className="ui-button ui-button-primary disabled:cursor-not-allowed disabled:opacity-70"
+                                >
+                                    {submitting ? 'Saving…' : selectedRace ? 'Save changes' : 'Create race'}
+                                </button>
                             </div>
                         </form>
                     </section>
                 </section>
             ) : null}
-
-            <section className="glass-panel rounded-[32px] p-6">
-                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                    <div>
-                        <div className="section-kicker">Migration note</div>
-                        <h2 className="mt-4 text-3xl font-semibold tracking-tight text-gray-900 dark:text-white">A stronger planner foundation, one form seam at a time</h2>
-                    </div>
-                    <button
-                        type="button"
-                        onClick={() => {
-                            setFlashMessage(null);
-                            reload();
-                        }}
-                        className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-gray-600"
-                    >
-                        Refresh race data
-                        <span aria-hidden="true">↻</span>
-                    </button>
-                </div>
-                <div className="mt-5 space-y-3 text-sm leading-7 text-gray-600 dark:text-gray-300">
-                    {[
-                        'This route gives the planner ecosystem a much better control surface: the same race targets now support list scanning, edit context, and plan coverage hints without modal churn.',
-                        'It also reduces risk for the next slices. Training blocks and richer planner edits can now assume race targets are manageable in React already.',
-                        'Most importantly, this is real parity work: the preview route writes to the live backend and updates the existing planner outputs instead of inventing a disconnected shadow flow.',
-                    ].map((item) => (
-                        <div key={item} className="rounded-2xl border border-gray-200 bg-white/80 p-4 dark:border-gray-800 dark:bg-gray-950/30">
-                            {item}
-                        </div>
-                    ))}
-                </div>
-            </section>
         </div>
     );
 }

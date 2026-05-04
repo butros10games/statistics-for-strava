@@ -6,7 +6,6 @@ namespace App\Tests\Controller;
 
 use App\Application\Build\BuildDashboardHtml\BuildDashboardHtml;
 use App\Application\Build\BuildMonthlyStatsHtml\BuildMonthlyStatsHtml;
-use App\Application\Build\BuildRacePlannerHtml\BuildRacePlannerHtml;
 use App\Controller\PlannedSessionRequestHandler;
 use App\Domain\Activity\ActivityId;
 use App\Domain\Activity\ActivityRepository;
@@ -856,12 +855,11 @@ final class PlannedSessionRequestHandlerTest extends ContainerTestCase
     private function expectPlannerRebuilds(int $times = 1): void
     {
         $this->commandBus
-            ->expects(self::exactly($times * 3))
+            ->expects(self::exactly($times * 2))
             ->method('dispatch')
             ->with(self::logicalOr(
                 self::isInstanceOf(BuildDashboardHtml::class),
                 self::isInstanceOf(BuildMonthlyStatsHtml::class),
-                self::isInstanceOf(BuildRacePlannerHtml::class),
             ));
     }
 }

@@ -674,8 +674,8 @@ export function PlannedSessionEditor({
 
     if (loading) {
         return (
-            <section className="glass-panel rounded-[32px] p-6">
-                <div className="section-kicker">Loading</div>
+            <section className="ui-section">
+                <h1 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Loading planned session</h1>
                 <div className="mt-5 grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
                     <div className="animate-pulse space-y-4 rounded-[28px] border border-gray-200 bg-white/90 p-6 dark:border-gray-800 dark:bg-gray-900/60">
                         <div className="h-4 w-32 rounded-full bg-gray-200 dark:bg-gray-800" />
@@ -695,22 +695,21 @@ export function PlannedSessionEditor({
 
     if (loadError) {
         return (
-            <section className="rounded-[32px] border border-rose-200 bg-rose-50/90 p-6 text-sm leading-7 text-rose-800 dark:border-rose-800/60 dark:bg-rose-950/30 dark:text-rose-100">
-                <div className="text-xs font-semibold uppercase tracking-[0.24em]">Could not load planned-session data</div>
+            <section className="rounded-lg border border-rose-200 bg-rose-50/90 p-6 text-sm leading-7 text-rose-800 dark:border-rose-800/60 dark:bg-rose-950/30 dark:text-rose-100">
+                <div className="text-sm font-semibold">Could not load planned-session data</div>
                 <p className="mt-3">{loadError}</p>
                 <div className="mt-5 flex flex-wrap gap-3">
                     <a
                         href={buildAppPath(basePath, bootstrap?.legacyPath ?? `planned-session${query?.plannedSessionId ? `?plannedSessionId=${query.plannedSessionId}` : query?.day ? `?day=${query.day}` : ''}`)}
-                        className="inline-flex items-center gap-2 rounded-2xl bg-gray-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-gray-800 dark:bg-white dark:text-gray-950 dark:hover:bg-gray-200"
+                        className="ui-button"
                     >
-                        Open legacy editor
-                        <span aria-hidden="true">↗</span>
+                        Open classic editor
                     </a>
                     {onCancel ? (
                         <button
                             type="button"
                             onClick={onCancel}
-                            className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-gray-600"
+                            className="ui-button"
                         >
                             Close
                         </button>
@@ -727,53 +726,38 @@ export function PlannedSessionEditor({
     return (
         <div className="space-y-6">
             {mode === 'route' ? (
-                <section className="glass-panel rounded-[36px] p-6 md:p-8">
-                    <div className="grid gap-8 xl:grid-cols-[1.08fr_0.92fr]">
-                        <div>
-                            <div className="section-kicker">Planned session editor</div>
-                            <h1 className="mt-5 max-w-4xl text-4xl font-semibold tracking-tight text-gray-900 dark:text-white md:text-5xl">
-                                {isEditMode ? 'Tune a live planned session without getting trapped in a modal.' : 'Drop a new planned session straight into the React calendar workflow.'}
-                            </h1>
-                            <p className="mt-5 max-w-3xl text-base leading-8 text-gray-600 dark:text-gray-300 md:text-lg">
-                                This route keeps the live Symfony planner logic, but gives the session editor actual breathing room: a richer workout builder, template reuse, recommendation cards, and link management in one place.
-                            </p>
-                            <div className="mt-6 flex flex-wrap gap-3">
-                                <Link
-                                    to={buildMonthPreviewPath(formState.day)}
-                                    className="inline-flex items-center gap-2 rounded-2xl bg-gray-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-gray-800 dark:bg-white dark:text-gray-950 dark:hover:bg-gray-200"
-                                >
-                                    Back to monthly stats
-                                    <span aria-hidden="true">←</span>
-                                </Link>
-                                <Link
-                                    to={buildPlannedSessionEditorPath({day: formState.day})}
-                                    className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-gray-600"
-                                >
-                                    New session on this day
-                                    <span aria-hidden="true">＋</span>
-                                </Link>
-                                <a
-                                    href={buildAppPath(basePath, bootstrap.legacyPath)}
-                                    className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-gray-600"
-                                >
-                                    Compare with legacy editor
-                                    <span aria-hidden="true">↗</span>
-                                </a>
-                            </div>
+                <section className="grid gap-4 xl:grid-cols-[1.08fr_0.92fr]">
+                    <div className="ui-section">
+                        <h1 className="text-xl font-bold tracking-tight text-gray-900 dark:text-white md:text-2xl">
+                            {isEditMode ? 'Planned session editor' : 'Create planned session'}
+                        </h1>
+                        <p className="mt-1 max-w-3xl text-sm text-gray-500 dark:text-gray-400">
+                            Edit the day, activity, load, workout structure, and planner link state in one place.
+                        </p>
+                        <div className="mt-4 flex flex-wrap gap-2">
+                            <Link to={buildMonthPreviewPath(formState.day)} className="ui-button ui-button-primary">
+                                Back to monthly stats
+                            </Link>
+                            <Link to={buildPlannedSessionEditorPath({day: formState.day})} className="ui-button">
+                                New session on this day
+                            </Link>
+                            <a href={buildAppPath(basePath, bootstrap.legacyPath)} className="ui-button">
+                                Open classic editor
+                            </a>
                         </div>
-                        <div className="rounded-[32px] border border-orange-200 bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(255,247,237,0.96))] p-5 shadow-[0_45px_120px_-45px_rgba(15,23,42,0.65)] dark:border-orange-900/40 dark:bg-[linear-gradient(135deg,rgba(17,24,39,0.94),rgba(67,20,7,0.28))]">
-                            <div className="text-xs font-semibold uppercase tracking-[0.24em] text-orange-700 dark:text-orange-200">Why this seam matters</div>
-                            <div className="mt-4 space-y-3 text-sm leading-7 text-gray-700 dark:text-gray-200">
-                                {[
-                                    'Planned sessions are the biggest remaining planner gap, so this route unlocks real day-to-day planning inside the React preview.',
-                                    'The save, delete, confirm-link, and unlink actions still go through the live Symfony handler, which keeps behavior aligned with production.',
-                                    'It turns the monthly calendar from read-only cockpit into an interactive planning surface without needing a full cutover first.',
-                                ].map((item) => (
-                                    <div key={item} className="rounded-2xl border border-white/80 bg-white/80 p-4 dark:border-gray-800 dark:bg-gray-950/40">
-                                        {item}
-                                    </div>
-                                ))}
-                            </div>
+                    </div>
+                    <div className="ui-section">
+                        <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Session notes</h2>
+                        <div className="mt-3 space-y-3 text-sm leading-7 text-gray-600 dark:text-gray-300">
+                            {[
+                                'Save, delete, confirm-link, and unlink actions still use the live backend handlers.',
+                                'Workout steps, template reuse, and recommendation cards stay visible alongside the form instead of being split across modals.',
+                                'The editor drops back into the monthly calendar after save, which keeps the planning loop tight.',
+                            ].map((item) => (
+                                <div key={item} className="rounded-lg border border-gray-200 bg-gray-50 p-4 dark:border-gray-800 dark:bg-gray-900/40">
+                                    {item}
+                                </div>
+                            ))}
                         </div>
                     </div>
                 </section>
@@ -789,8 +773,8 @@ export function PlannedSessionEditor({
             <form className="space-y-6" onSubmit={(event) => void handleSubmit(event)}>
                 <div className="grid gap-6 xl:grid-cols-[1.08fr_0.92fr]">
                     <div className="space-y-6">
-                        <section className="glass-panel rounded-[32px] p-6 md:p-7">
-                            <div className="section-kicker">Foundation</div>
+                        <section className="ui-section">
+                            <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Foundation</h2>
                             <div className="mt-5 grid gap-4 md:grid-cols-2">
                                 <div>
                                     <label className="mb-2 block text-xs font-medium uppercase tracking-[0.24em] text-gray-500 dark:text-gray-400">Day</label>
@@ -826,8 +810,8 @@ export function PlannedSessionEditor({
                             </div>
                         </section>
 
-                        <section className="glass-panel rounded-[32px] p-6 md:p-7">
-                            <div className="section-kicker">Load & duration</div>
+                        <section className="ui-section">
+                            <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Load & duration</h2>
                             <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-3">
                                 <div>
                                     <label className="mb-2 block text-xs font-medium uppercase tracking-[0.24em] text-gray-500 dark:text-gray-400">Target load</label>
@@ -904,28 +888,26 @@ export function PlannedSessionEditor({
                             ) : null}
                         </section>
 
-                        <section className="glass-panel rounded-[32px] p-6 md:p-7">
+                        <section className="ui-section">
                             <div className="flex flex-wrap items-center justify-between gap-3">
                                 <div>
-                                    <div className="section-kicker">Workout builder</div>
-                                    <h2 className="mt-4 text-3xl font-semibold tracking-tight text-gray-900 dark:text-white">Structured steps with nested repeat blocks</h2>
+                                    <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Workout builder</h2>
+                                    <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Structured steps with nested repeat blocks.</p>
                                 </div>
                                 <div className="flex flex-wrap gap-2">
                                     <button
                                         type="button"
                                         onClick={() => addWorkoutStep(null, 'steady')}
-                                        className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-gray-600"
+                                        className="ui-button"
                                     >
                                         Add step
-                                        <span aria-hidden="true">＋</span>
                                     </button>
                                     <button
                                         type="button"
                                         onClick={() => addWorkoutStep(null, 'repeatBlock')}
-                                        className="inline-flex items-center gap-2 rounded-2xl border border-violet-200 bg-white px-4 py-3 text-sm font-semibold text-violet-700 transition hover:bg-violet-50 dark:border-violet-800/60 dark:bg-gray-900 dark:text-violet-100"
+                                        className="ui-button"
                                     >
                                         Add repeat block
-                                        <span aria-hidden="true">⟲</span>
                                     </button>
                                 </div>
                             </div>
@@ -934,8 +916,8 @@ export function PlannedSessionEditor({
                             </div>
                         </section>
 
-                        <section className="glass-panel rounded-[32px] p-6 md:p-7">
-                            <div className="section-kicker">Notes</div>
+                        <section className="ui-section">
+                            <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Notes</h2>
                             <textarea
                                 value={formState.notes}
                                 onChange={(event) => updateField('notes', event.target.value)}
@@ -981,11 +963,11 @@ export function PlannedSessionEditor({
                         ) : null}
 
                         {bootstrap.options.templateActivities.length > 0 ? (
-                            <section className="glass-panel rounded-[32px] p-6 md:p-7">
+                            <section className="ui-section">
                                 <div className="flex items-center justify-between gap-3">
                                     <div>
-                                        <div className="section-kicker">Recent template activities</div>
-                                        <h2 className="mt-4 text-3xl font-semibold tracking-tight text-gray-900 dark:text-white">Reuse a familiar session shape</h2>
+                                        <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Recent template activities</h2>
+                                        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Reuse a familiar session shape.</p>
                                     </div>
                                     <div className="rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100">
                                         {bootstrap.options.templateActivities.length} ideas
@@ -1020,11 +1002,11 @@ export function PlannedSessionEditor({
                             </section>
                         ) : null}
 
-                        <section className="glass-panel rounded-[32px] p-6 md:p-7">
+                            <section className="ui-section">
                             <div className="flex items-center justify-between gap-3">
                                 <div>
-                                    <div className="section-kicker">Recommended sessions</div>
-                                    <h2 className="mt-4 text-3xl font-semibold tracking-tight text-gray-900 dark:text-white">Planner memory, in card form</h2>
+                                        <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Recommended sessions</h2>
+                                        <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Planner memory, in card form.</p>
                                 </div>
                                 <div className="rounded-full border border-gray-200 bg-white px-3 py-1 text-xs font-semibold uppercase tracking-[0.24em] text-gray-700 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100">
                                     {Object.values(recommendationGroups).reduce((sum, group) => sum + group.length, 0)} options
@@ -1078,9 +1060,9 @@ export function PlannedSessionEditor({
                             </div>
                         </section>
 
-                        <section className="glass-panel rounded-[32px] p-6 md:p-7">
-                            <div className="section-kicker">Planner outlook</div>
-                            <h2 className="mt-4 text-3xl font-semibold tracking-tight text-gray-900 dark:text-white">Projected load across the next {bootstrap.plannerOutlook.horizon} days</h2>
+                        <section className="ui-section">
+                            <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Planner outlook</h2>
+                            <p className="mt-1 text-sm text-gray-500 dark:text-gray-400">Projected load across the next {bootstrap.plannerOutlook.horizon} days.</p>
                             <div className="mt-5 grid gap-4 md:grid-cols-2 xl:grid-cols-1">
                                 <div className="rounded-[24px] border border-gray-200 bg-white/85 p-4 dark:border-gray-800 dark:bg-gray-950/40">
                                     <div className="text-xs font-semibold uppercase tracking-[0.24em] text-gray-500 dark:text-gray-400">Current day projected load</div>
@@ -1119,14 +1101,14 @@ export function PlannedSessionEditor({
                 </div>
 
                 <div className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-200 pt-6 dark:border-gray-800">
-                    <div className="text-xs uppercase tracking-[0.24em] text-gray-500 dark:text-gray-400">Live planner save path · route-sized React editor</div>
+                    <div className="text-xs uppercase tracking-[0.24em] text-gray-500 dark:text-gray-400">Live planner save path</div>
                     <div className="flex flex-wrap gap-3">
                         {onCancel ? (
                             <button
                                 type="button"
                                 onClick={onCancel}
                                 disabled={isBusy}
-                                className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-gray-600"
+                                className="ui-button"
                             >
                                 Cancel
                             </button>

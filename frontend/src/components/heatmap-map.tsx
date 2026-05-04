@@ -119,7 +119,7 @@ export function HeatmapMap({config, routes, selectedRouteIds, onSelectRoutes}: H
         }
 
         if (!L) {
-            setMapError('Leaflet preview assets are unavailable for this route.');
+            setMapError('Map assets are unavailable for this route.');
 
             return;
         }

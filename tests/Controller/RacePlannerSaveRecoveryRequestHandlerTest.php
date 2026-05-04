@@ -6,7 +6,6 @@ namespace App\Tests\Controller;
 
 use App\Application\Build\BuildDashboardHtml\BuildDashboardHtml;
 use App\Application\Build\BuildMonthlyStatsHtml\BuildMonthlyStatsHtml;
-use App\Application\Build\BuildRacePlannerHtml\BuildRacePlannerHtml;
 use App\Controller\RacePlannerSaveRecoveryRequestHandler;
 use App\Domain\TrainingPlanner\PlannedSessionRepository;
 use App\Domain\TrainingPlanner\RaceEvent;
@@ -52,12 +51,11 @@ final class RacePlannerSaveRecoveryRequestHandlerTest extends ContainerTestCase
         $this->raceEventRepository->upsert($targetRace);
 
         $this->commandBus
-            ->expects(self::exactly(3))
+            ->expects(self::exactly(2))
             ->method('dispatch')
             ->with(self::logicalOr(
                 self::isInstanceOf(BuildDashboardHtml::class),
                 self::isInstanceOf(BuildMonthlyStatsHtml::class),
-                self::isInstanceOf(BuildRacePlannerHtml::class),
             ));
 
         $response = $this->requestHandler->handle(new Request(

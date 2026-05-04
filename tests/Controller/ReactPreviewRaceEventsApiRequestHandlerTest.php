@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace App\Tests\Controller;
 
 use App\Application\Build\BuildMonthlyStatsHtml\BuildMonthlyStatsHtml;
-use App\Application\Build\BuildRacePlannerHtml\BuildRacePlannerHtml;
-use App\Application\Build\BuildTrainingPlansHtml\BuildTrainingPlansHtml;
 use App\Controller\ReactPreviewRaceEventsApiRequestHandler;
 use App\Domain\Auth\AppUser;
 use App\Domain\Auth\AppUserId;
@@ -170,12 +168,8 @@ final class ReactPreviewRaceEventsApiRequestHandlerTest extends ContainerTestCas
     private function expectPlannerRebuilds(int $times = 1): void
     {
         $this->commandBus
-            ->expects(self::exactly($times * 3))
+            ->expects(self::exactly($times))
             ->method('dispatch')
-            ->with(self::logicalOr(
-                self::isInstanceOf(BuildMonthlyStatsHtml::class),
-                self::isInstanceOf(BuildRacePlannerHtml::class),
-                self::isInstanceOf(BuildTrainingPlansHtml::class),
-            ));
+            ->with(self::isInstanceOf(BuildMonthlyStatsHtml::class));
     }
 }

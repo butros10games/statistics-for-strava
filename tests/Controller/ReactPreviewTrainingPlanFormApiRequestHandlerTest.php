@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Tests\Controller;
 
-use App\Application\Build\BuildRacePlannerHtml\BuildRacePlannerHtml;
-use App\Application\Build\BuildTrainingPlansHtml\BuildTrainingPlansHtml;
 use App\Controller\ReactPreviewTrainingPlanFormApiRequestHandler;
 use App\Controller\ReactPreviewTrainingPlansApiRequestHandler;
 use App\Controller\TrainingPlanRequestHandler;
@@ -156,13 +154,7 @@ final class ReactPreviewTrainingPlanFormApiRequestHandlerTest extends ContainerT
     public function testCreateDelegatesToTrainingPlanHandlerAndReturnsUpdatedPreviewPayload(): void
     {
         $commandBus = $this->createMock(CommandBus::class);
-        $commandBus
-            ->expects(self::exactly(2))
-            ->method('dispatch')
-            ->with(self::logicalOr(
-                self::isInstanceOf(BuildTrainingPlansHtml::class),
-                self::isInstanceOf(BuildRacePlannerHtml::class),
-            ));
+        $commandBus->expects(self::never())->method('dispatch');
 
         $plansRequestHandler = new ReactPreviewTrainingPlansApiRequestHandler(
             currentAppUser: $this->buildCurrentAppUser(),
@@ -239,13 +231,7 @@ final class ReactPreviewTrainingPlanFormApiRequestHandlerTest extends ContainerT
         $this->repository->upsert($existingPlan);
 
         $commandBus = $this->createMock(CommandBus::class);
-        $commandBus
-            ->expects(self::exactly(2))
-            ->method('dispatch')
-            ->with(self::logicalOr(
-                self::isInstanceOf(BuildTrainingPlansHtml::class),
-                self::isInstanceOf(BuildRacePlannerHtml::class),
-            ));
+        $commandBus->expects(self::never())->method('dispatch');
 
         $plansRequestHandler = new ReactPreviewTrainingPlansApiRequestHandler(
             currentAppUser: $this->buildCurrentAppUser(),
@@ -325,13 +311,7 @@ final class ReactPreviewTrainingPlanFormApiRequestHandlerTest extends ContainerT
         $this->repository->upsert($existingPlan);
 
         $commandBus = $this->createMock(CommandBus::class);
-        $commandBus
-            ->expects(self::exactly(2))
-            ->method('dispatch')
-            ->with(self::logicalOr(
-                self::isInstanceOf(BuildTrainingPlansHtml::class),
-                self::isInstanceOf(BuildRacePlannerHtml::class),
-            ));
+        $commandBus->expects(self::never())->method('dispatch');
 
         $plansRequestHandler = new ReactPreviewTrainingPlansApiRequestHandler(
             currentAppUser: $this->buildCurrentAppUser(),

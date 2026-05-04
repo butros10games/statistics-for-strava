@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Tests\Controller;
 
-use App\Application\Build\BuildRacePlannerHtml\BuildRacePlannerHtml;
-use App\Application\Build\BuildTrainingPlansHtml\BuildTrainingPlansHtml;
 use App\Controller\RacePlannerSetupPlanRequestHandler;
 use App\Domain\TrainingPlanner\PlannedSessionRepository;
 use App\Domain\TrainingPlanner\RaceEvent;
@@ -70,13 +68,7 @@ final class RacePlannerSetupPlanRequestHandlerTest extends ContainerTestCase
             updatedAt: SerializableDateTime::fromString('2026-01-01 08:00:00'),
         ));
 
-        $dispatchedCommands = [];
-        $this->commandBus
-            ->expects(self::exactly(2))
-            ->method('dispatch')
-            ->willReturnCallback(static function ($command) use (&$dispatchedCommands): void {
-                $dispatchedCommands[] = $command;
-            });
+        $this->commandBus->expects(self::never())->method('dispatch');
 
         $response = $this->requestHandler->handle(new Request(
             request: [
@@ -96,8 +88,6 @@ final class RacePlannerSetupPlanRequestHandlerTest extends ContainerTestCase
         self::assertSame('2026-02-02', $trainingPlan->getStartDay()->format('Y-m-d'));
         self::assertSame('2026-07-05', $trainingPlan->getEndDay()->format('Y-m-d'));
         self::assertSame((string) $targetRace->getId(), (string) $trainingPlan->getTargetRaceEventId());
-        self::assertContainsOnlyInstancesOf(BuildTrainingPlansHtml::class, array_filter($dispatchedCommands, static fn ($command): bool => $command instanceof BuildTrainingPlansHtml));
-        self::assertContainsOnlyInstancesOf(BuildRacePlannerHtml::class, array_filter($dispatchedCommands, static fn ($command): bool => $command instanceof BuildRacePlannerHtml));
     }
 
     public function testHandlePreservesExistingRichPlanMetadataWhenSyncing(): void
@@ -146,7 +136,7 @@ final class RacePlannerSetupPlanRequestHandlerTest extends ContainerTestCase
             updatedAt: SerializableDateTime::fromString('2026-01-01 08:00:00'),
         ));
 
-        $this->commandBus->expects(self::exactly(2))->method('dispatch');
+        $this->commandBus->expects(self::never())->method('dispatch');
 
         $this->requestHandler->handle(new Request(
             request: [

@@ -4,8 +4,6 @@ declare(strict_types=1);
 
 namespace App\Tests\Controller;
 
-use App\Application\Build\BuildRacePlannerHtml\BuildRacePlannerHtml;
-use App\Application\Build\BuildTrainingPlansHtml\BuildTrainingPlansHtml;
 use App\Application\Build\BuildDashboardHtml\BuildDashboardHtml;
 use App\Application\Build\BuildMonthlyStatsHtml\BuildMonthlyStatsHtml;
 use App\Controller\TrainingPlanRequestHandler;
@@ -179,13 +177,7 @@ final class TrainingPlanRequestHandlerTest extends ContainerTestCase
 
     public function testHandlePostPersistsTrainingPlanAndRebuildsManagementPage(): void
     {
-        $this->commandBus
-            ->expects(self::exactly(2))
-            ->method('dispatch')
-            ->with(self::logicalOr(
-                self::isInstanceOf(BuildTrainingPlansHtml::class),
-                self::isInstanceOf(BuildRacePlannerHtml::class),
-            ));
+        $this->commandBus->expects(self::never())->method('dispatch');
 
         $response = $this->requestHandler->handle(new Request(
             request: [
@@ -224,13 +216,7 @@ final class TrainingPlanRequestHandlerTest extends ContainerTestCase
 
     public function testHandlePostPersistsTrainingBlockTargetDistanceAndFocus(): void
     {
-        $this->commandBus
-            ->expects(self::exactly(2))
-            ->method('dispatch')
-            ->with(self::logicalOr(
-                self::isInstanceOf(BuildTrainingPlansHtml::class),
-                self::isInstanceOf(BuildRacePlannerHtml::class),
-            ));
+        $this->commandBus->expects(self::never())->method('dispatch');
 
         $response = $this->requestHandler->handle(new Request(
             request: [
@@ -273,13 +259,7 @@ final class TrainingPlanRequestHandlerTest extends ContainerTestCase
 
     public function testHandlePostAllowsRunningTrainingBlockWithoutTrainingFocus(): void
     {
-        $this->commandBus
-            ->expects(self::exactly(2))
-            ->method('dispatch')
-            ->with(self::logicalOr(
-                self::isInstanceOf(BuildTrainingPlansHtml::class),
-                self::isInstanceOf(BuildRacePlannerHtml::class),
-            ));
+        $this->commandBus->expects(self::never())->method('dispatch');
 
         $response = $this->requestHandler->handle(new Request(
             request: [
@@ -372,7 +352,7 @@ final class TrainingPlanRequestHandlerTest extends ContainerTestCase
 
         $dispatchedCommands = [];
         $this->commandBus
-            ->expects(self::exactly(4))
+            ->expects(self::exactly(2))
             ->method('dispatch')
             ->willReturnCallback(static function ($command) use (&$dispatchedCommands): void {
                 $dispatchedCommands[] = $command;
@@ -419,10 +399,8 @@ final class TrainingPlanRequestHandlerTest extends ContainerTestCase
 
         self::assertNotContains((string) $staleUpcomingSession->getId(), $sessionIds);
         self::assertNotEmpty($newUpcomingUnlinkedSessions);
-        self::assertContainsOnlyInstancesOf(BuildTrainingPlansHtml::class, array_filter($dispatchedCommands, static fn ($command): bool => $command instanceof BuildTrainingPlansHtml));
         self::assertContainsOnlyInstancesOf(BuildDashboardHtml::class, array_filter($dispatchedCommands, static fn ($command): bool => $command instanceof BuildDashboardHtml));
         self::assertContainsOnlyInstancesOf(BuildMonthlyStatsHtml::class, array_filter($dispatchedCommands, static fn ($command): bool => $command instanceof BuildMonthlyStatsHtml));
-        self::assertContainsOnlyInstancesOf(BuildRacePlannerHtml::class, array_filter($dispatchedCommands, static fn ($command): bool => $command instanceof BuildRacePlannerHtml));
     }
 
     public function testDeleteRemovesLinkedPlanSessionsAndRebuildsDependentViews(): void
@@ -500,7 +478,7 @@ final class TrainingPlanRequestHandlerTest extends ContainerTestCase
 
         $dispatchedCommands = [];
         $this->commandBus
-            ->expects(self::exactly(4))
+            ->expects(self::exactly(2))
             ->method('dispatch')
             ->willReturnCallback(static function ($command) use (&$dispatchedCommands): void {
                 $dispatchedCommands[] = $command;
@@ -525,10 +503,8 @@ final class TrainingPlanRequestHandlerTest extends ContainerTestCase
 
         self::assertNotContains((string) $replaceableUpcomingSession->getId(), $sessionIds);
         self::assertContains((string) $linkedUpcomingSession->getId(), $sessionIds);
-        self::assertContainsOnlyInstancesOf(BuildTrainingPlansHtml::class, array_filter($dispatchedCommands, static fn ($command): bool => $command instanceof BuildTrainingPlansHtml));
         self::assertContainsOnlyInstancesOf(BuildDashboardHtml::class, array_filter($dispatchedCommands, static fn ($command): bool => $command instanceof BuildDashboardHtml));
         self::assertContainsOnlyInstancesOf(BuildMonthlyStatsHtml::class, array_filter($dispatchedCommands, static fn ($command): bool => $command instanceof BuildMonthlyStatsHtml));
-        self::assertContainsOnlyInstancesOf(BuildRacePlannerHtml::class, array_filter($dispatchedCommands, static fn ($command): bool => $command instanceof BuildRacePlannerHtml));
     }
 
     #[\Override]

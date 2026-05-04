@@ -5,7 +5,6 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Application\Build\BuildMonthlyStatsHtml\BuildMonthlyStatsHtml;
-use App\Application\Build\BuildRacePlannerHtml\BuildRacePlannerHtml;
 use App\Application\Build\BuildDashboardHtml\BuildDashboardHtml;
 use App\Domain\Activity\Activity;
 use App\Domain\Activity\DbalActivityRepository;
@@ -182,7 +181,6 @@ final readonly class PlannedSessionRequestHandler
 
         $this->commandBus->dispatch(new BuildDashboardHtml());
         $this->commandBus->dispatch(new BuildMonthlyStatsHtml($now));
-        $this->commandBus->dispatch(new BuildRacePlannerHtml($now));
     }
 
     private function createRedirectResponse(Request $request): RedirectResponse

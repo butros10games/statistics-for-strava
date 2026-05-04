@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Tests\Controller;
 
-use App\Application\Build\BuildRacePlannerHtml\BuildRacePlannerHtml;
 use App\Controller\RacePlannerStartDateRequestHandler;
 use App\Domain\TrainingPlanner\RacePlannerConfiguration;
 use App\Infrastructure\CQRS\Command\Bus\CommandBus;
@@ -24,10 +23,7 @@ final class RacePlannerStartDateRequestHandlerTest extends ContainerTestCase
 
     public function testHandlePersistsRequestedPlanStartDay(): void
     {
-        $this->commandBus
-            ->expects(self::once())
-            ->method('dispatch')
-            ->with(self::isInstanceOf(BuildRacePlannerHtml::class));
+        $this->commandBus->expects(self::never())->method('dispatch');
 
         $response = $this->requestHandler->handle(new Request(
             request: [
@@ -47,10 +43,7 @@ final class RacePlannerStartDateRequestHandlerTest extends ContainerTestCase
     public function testHandleClearsConfiguredPlanStartDayWhenResetRequested(): void
     {
         $this->racePlannerConfiguration->savePlanStartDay(SerializableDateTime::fromString('2026-04-21 00:00:00'));
-        $this->commandBus
-            ->expects(self::once())
-            ->method('dispatch')
-            ->with(self::isInstanceOf(BuildRacePlannerHtml::class));
+        $this->commandBus->expects(self::never())->method('dispatch');
 
         $response = $this->requestHandler->handle(new Request(
             request: [

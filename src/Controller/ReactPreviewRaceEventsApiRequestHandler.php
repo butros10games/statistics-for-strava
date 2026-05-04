@@ -5,8 +5,6 @@ declare(strict_types=1);
 namespace App\Controller;
 
 use App\Application\Build\BuildMonthlyStatsHtml\BuildMonthlyStatsHtml;
-use App\Application\Build\BuildRacePlannerHtml\BuildRacePlannerHtml;
-use App\Application\Build\BuildTrainingPlansHtml\BuildTrainingPlansHtml;
 use App\Domain\TrainingPlanner\DbalRaceEventRepository;
 use App\Domain\TrainingPlanner\RaceEvent;
 use App\Domain\TrainingPlanner\RaceEventFamily;
@@ -355,8 +353,6 @@ final readonly class ReactPreviewRaceEventsApiRequestHandler
         $now ??= $this->clock->getCurrentDateTimeImmutable();
 
         $this->commandBus->dispatch(new BuildMonthlyStatsHtml($now));
-        $this->commandBus->dispatch(new BuildRacePlannerHtml($now));
-        $this->commandBus->dispatch(new BuildTrainingPlansHtml($now));
     }
 
     /**

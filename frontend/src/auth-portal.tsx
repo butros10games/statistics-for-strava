@@ -2,12 +2,12 @@ import {buildPortalPath, getReactPortalBootstrap, type ForgotPasswordPortalBoots
 
 function Notice({tone = 'neutral', children}: {tone?: 'neutral' | 'success' | 'error'; children: React.ReactNode}) {
     const toneClass = tone === 'success'
-        ? 'border-emerald-200 bg-emerald-50/95 text-emerald-800 dark:border-emerald-800/60 dark:bg-emerald-950/30 dark:text-emerald-100'
+        ? 'border-emerald-200 bg-emerald-50 text-emerald-800 dark:border-emerald-800/60 dark:bg-emerald-950/30 dark:text-emerald-100'
         : tone === 'error'
-            ? 'border-rose-200 bg-rose-50/95 text-rose-800 dark:border-rose-800/60 dark:bg-rose-950/30 dark:text-rose-100'
-            : 'border-white/70 bg-white/70 text-gray-700 dark:border-gray-800 dark:bg-gray-950/40 dark:text-gray-200';
+            ? 'border-rose-200 bg-rose-50 text-rose-800 dark:border-rose-800/60 dark:bg-rose-950/30 dark:text-rose-100'
+            : 'border-gray-200 bg-white text-gray-700 dark:border-gray-800 dark:bg-gray-950 dark:text-gray-200';
 
-    return <div className={`rounded-[22px] border px-4 py-3 text-sm leading-7 ${toneClass}`}>{children}</div>;
+    return <div className={`rounded-lg border px-4 py-3 text-sm leading-7 ${toneClass}`}>{children}</div>;
 }
 
 function Field({label, id, ...props}: {label: string; id: string} & React.InputHTMLAttributes<HTMLInputElement>) {
@@ -17,7 +17,7 @@ function Field({label, id, ...props}: {label: string; id: string} & React.InputH
             <input
                 id={id}
                 {...props}
-                className="block w-full rounded-[20px] border border-gray-200 bg-white/95 px-4 py-3 text-sm text-gray-900 shadow-[0_20px_50px_-40px_rgba(15,23,42,0.75)] outline-none transition placeholder:text-gray-400 focus:border-orange-300 focus:ring-4 focus:ring-orange-100 dark:border-gray-700 dark:bg-gray-950/70 dark:text-white dark:placeholder:text-gray-500 dark:focus:border-orange-500 dark:focus:ring-orange-950/40"
+                className="block w-full rounded-lg border border-gray-300 bg-gray-50 px-3 py-2.5 text-sm text-gray-900 outline-none transition placeholder:text-gray-400 focus:border-orange-400 focus:bg-white focus:ring-2 focus:ring-orange-100 dark:border-gray-700 dark:bg-gray-950 dark:text-white dark:placeholder:text-gray-500 dark:focus:ring-orange-950/40"
             />
         </label>
     );
@@ -27,7 +27,7 @@ function PrimaryButton({children}: {children: React.ReactNode}) {
     return (
         <button
             type="submit"
-            className="inline-flex w-full items-center justify-center rounded-[20px] bg-strava-orange px-4 py-3.5 text-sm font-semibold text-white shadow-[0_30px_60px_-30px_rgba(242,103,34,0.85)] transition hover:translate-y-[-1px] hover:bg-orange-600 focus:outline-none focus:ring-4 focus:ring-orange-200 dark:focus:ring-orange-950/40"
+            className="inline-flex w-full items-center justify-center rounded-lg bg-strava-orange px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-600 focus:outline-none focus:ring-2 focus:ring-orange-200 dark:focus:ring-orange-950/40"
         >
             {children}
         </button>
@@ -42,7 +42,21 @@ function SecondaryLink({href, children}: {href: string; children: React.ReactNod
     );
 }
 
-function PortalFrame({eyebrow, title, subtitle, sideTitle, sideBody, children}: {
+function IntroList({items}: {items: Array<{title: string; body: string}>}) {
+    return (
+        <div className="mt-6 space-y-3">
+            {items.map((item) => (
+                <div key={item.title} className="rounded-lg border border-gray-200 bg-gray-50 px-4 py-3 dark:border-gray-800 dark:bg-gray-900">
+                    <div className="text-sm font-semibold text-gray-900 dark:text-white">{item.title}</div>
+                    <div className="mt-1 text-sm leading-6 text-gray-600 dark:text-gray-300">{item.body}</div>
+                </div>
+            ))}
+        </div>
+    );
+}
+
+function PortalFrame({basePath, eyebrow, title, subtitle, sideTitle, sideBody, children}: {
+    basePath: string;
     eyebrow: string;
     title: string;
     subtitle: string;
@@ -51,47 +65,42 @@ function PortalFrame({eyebrow, title, subtitle, sideTitle, sideBody, children}: 
     children: React.ReactNode;
 }) {
     return (
-        <div className="relative min-h-screen overflow-hidden bg-[radial-gradient(circle_at_top_left,rgba(242,103,34,0.24),transparent_30%),radial-gradient(circle_at_85%_15%,rgba(15,23,42,0.14),transparent_35%),linear-gradient(135deg,#fff7ed_0%,#fff 40%,#fffbeb 100%)] dark:bg-[radial-gradient(circle_at_top_left,rgba(242,103,34,0.22),transparent_30%),radial-gradient(circle_at_85%_15%,rgba(56,189,248,0.08),transparent_35%),linear-gradient(135deg,#020617_0%,#111827 40%,#1f2937 100%)]">
-            <div className="pointer-events-none absolute inset-0 opacity-[0.07] [background-image:radial-gradient(circle_at_1px_1px,rgba(15,23,42,0.45)_1px,transparent_0)] [background-size:22px_22px] dark:opacity-[0.11]" />
-            <div className="relative mx-auto flex min-h-screen max-w-7xl flex-col justify-center px-4 py-10 sm:px-6 lg:px-8">
-                <div className="grid gap-8 xl:grid-cols-[minmax(0,1.04fr)_minmax(360px,0.96fr)] xl:items-stretch">
-                    <section className="glass-panel rounded-[38px] p-6 md:p-8 xl:p-10">
+        <div className="min-h-screen bg-gray-50 dark:bg-gray-950">
+            <div className="mx-auto flex min-h-screen max-w-6xl flex-col justify-center px-4 py-10 sm:px-6 lg:px-8">
+                <div className="mb-6 flex items-center gap-3 text-gray-900 dark:text-white">
+                    <img src={buildPortalPath(basePath, 'assets/images/logo.svg')} alt="Statistics for Strava" className="h-10 w-10 rounded-full bg-white p-1 shadow-sm" />
+                    <div>
+                        <div className="text-lg font-semibold">Statistics for Strava</div>
+                        <div className="text-sm text-gray-500 dark:text-gray-400">Your Strava statistics dashboard</div>
+                    </div>
+                </div>
+                <div className="grid gap-6 lg:grid-cols-[minmax(0,1.08fr)_400px] lg:items-start">
+                    <section className="rounded-xl border border-gray-200 bg-white p-6 shadow-xs md:p-8">
                         <div className="section-kicker">{eyebrow}</div>
-                        <h1 className="mt-5 max-w-3xl text-4xl font-semibold tracking-tight text-gray-900 dark:text-white md:text-5xl">
+                        <h1 className="mt-4 max-w-3xl text-3xl font-semibold tracking-tight text-gray-900 dark:text-white">
                             {title}
                         </h1>
-                        <p className="mt-5 max-w-2xl text-base leading-8 text-gray-600 dark:text-gray-300 md:text-lg">
+                        <p className="mt-4 max-w-2xl text-base leading-7 text-gray-600 dark:text-gray-300">
                             {subtitle}
                         </p>
-                        <div className="mt-8 grid gap-4 sm:grid-cols-2">
-                            {[
-                                {
-                                    title: 'Training calendar',
-                                    body: 'Plan the coming weeks with route-sized month and session editing instead of modal gymnastics.',
-                                },
-                                {
-                                    title: 'Race planning',
-                                    body: 'Build and regenerate periodized plans while Symfony keeps the calculation engine firmly bolted down.',
-                                },
-                                {
-                                    title: 'Performance trends',
-                                    body: 'Review best efforts, Eddington progress, milestones, and year rewinds in the same navigation system.',
-                                },
-                                {
-                                    title: 'Connected account tools',
-                                    body: 'Keep manual Strava and Garmin sync actions, service status, and account controls close at hand.',
-                                },
-                            ].map((item) => (
-                                <div key={item.title} className="rounded-[28px] border border-white/75 bg-white/80 p-5 shadow-[0_30px_80px_-55px_rgba(15,23,42,0.55)] dark:border-gray-800 dark:bg-gray-950/45 dark:shadow-none">
-                                    <div className="text-sm font-semibold text-gray-900 dark:text-white">{item.title}</div>
-                                    <div className="mt-2 text-sm leading-7 text-gray-600 dark:text-gray-300">{item.body}</div>
-                                </div>
-                            ))}
-                        </div>
+                        <IntroList items={[
+                            {
+                                title: 'Dashboard and widgets',
+                                body: 'Open the same activity summaries, charts, and widgets you already know from the app.',
+                            },
+                            {
+                                title: 'Training calendar and planner',
+                                body: 'Review monthly stats, training blocks, race events, and plan details from one navigation flow.',
+                            },
+                            {
+                                title: 'Connected services',
+                                body: 'Keep account settings, Strava sync, and Garmin wellness tools close to the routes that use them.',
+                            },
+                        ]} />
                     </section>
 
-                    <aside className="rounded-[38px] border border-white/70 bg-white/85 p-6 shadow-[0_45px_120px_-55px_rgba(15,23,42,0.65)] backdrop-blur-xl dark:border-gray-800 dark:bg-gray-950/82 dark:shadow-none md:p-8">
-                        <div className="text-xs font-semibold uppercase tracking-[0.28em] text-orange-700 dark:text-orange-300">{sideTitle}</div>
+                    <aside className="rounded-xl border border-gray-200 bg-white p-6 shadow-xs dark:border-gray-800 dark:bg-gray-950 md:p-8 lg:sticky lg:top-8">
+                        <div className="text-xs font-semibold uppercase tracking-wider text-gray-500 dark:text-gray-400">{sideTitle}</div>
                         <div className="mt-4 space-y-4">{sideBody}</div>
                         <div className="mt-8">{children}</div>
                     </aside>
@@ -108,9 +117,10 @@ function LoginPortal({bootstrap}: {bootstrap: LoginPortalBootstrap}) {
 
     return (
         <PortalFrame
+            basePath={bootstrap.basePath}
             eyebrow="Sign in"
             title="Step back into your training cockpit."
-            subtitle="The frontend may be graduating to React, but the mission stays the same: get you back to the dashboard, calendar, and planner with as little fuss as possible."
+            subtitle="Sign in and get back to the dashboard, calendar, and planner with as little fuss as possible."
             sideTitle="Welcome back"
             sideBody={
                 <>
@@ -118,7 +128,7 @@ function LoginPortal({bootstrap}: {bootstrap: LoginPortalBootstrap}) {
                     {bootstrap.notices.passwordReset ? <Notice tone="success">Your password was updated. Sign in with the new one.</Notice> : null}
                     {bootstrap.error ? <Notice tone="error">{bootstrap.error}</Notice> : null}
                     <Notice>
-                        This sign-in flow still uses Symfony session auth under the hood, so you keep the established security behavior while the UI catches up.
+                        This sign-in flow uses Symfony session auth under the hood, so the established security behavior stays intact.
                     </Notice>
                 </>
             }
@@ -143,15 +153,16 @@ function RegisterPortal({bootstrap}: {bootstrap: RegisterPortalBootstrap}) {
 
     return (
         <PortalFrame
+            basePath={bootstrap.basePath}
             eyebrow="Create account"
             title="Claim your training data before your future self gets smug about consistency."
-            subtitle="Registration stays server-backed, but the entry experience now matches the newer route-sized React direction and points directly toward connected, accountable planning."
+            subtitle="Registration stays server-backed and points directly toward connected, accountable planning."
             sideTitle="What happens next"
             sideBody={
                 <>
                     {bootstrap.error ? <Notice tone="error">{bootstrap.error}</Notice> : null}
                     <Notice>
-                        The first registered user can still inherit legacy single-user data automatically, so this migration does not strand existing installs in a half-converted limbo.
+                        The first registered user can still inherit existing single-user data automatically, so current installs keep their history intact.
                     </Notice>
                 </>
             }
@@ -177,9 +188,10 @@ function ForgotPasswordPortal({bootstrap}: {bootstrap: ForgotPasswordPortalBoots
 
     return (
         <PortalFrame
+            basePath={bootstrap.basePath}
             eyebrow="Password recovery"
             title="Reset the password, keep the momentum."
-            subtitle="This page keeps the current no-email short-circuit behavior for local installs while giving the flow a proper first-class React surface."
+            subtitle="This page keeps the current no-email short-circuit behavior for local installs while giving the flow a proper first-class home in the app."
             sideTitle="Recovery details"
             sideBody={
                 <>
@@ -216,9 +228,10 @@ function ResetPasswordPortal({bootstrap}: {bootstrap: ResetPasswordPortalBootstr
 
     return (
         <PortalFrame
+            basePath={bootstrap.basePath}
             eyebrow="Set a new password"
             title="Give the account a fresh lock and keep going."
-            subtitle="Reset links still expire and validate on the server, but the UI now speaks the same design language as the rest of the migration work."
+            subtitle="Reset links still expire and validate on the server, while the UI stays aligned with the rest of the app."
             sideTitle="Link status"
             sideBody={
                 <>
@@ -256,9 +269,10 @@ function SetupPortal({bootstrap}: {bootstrap: SetupPortalBootstrap}) {
 
     return (
         <PortalFrame
+            basePath={bootstrap.basePath}
             eyebrow="Account setup"
             title="One last bridge before the dashboard opens up."
-            subtitle="The account exists, but there is no athlete profile yet. Connect Strava and the React app can immediately start feeding the calendar, dashboard, and planning routes with real data."
+            subtitle="The account exists, but there is no athlete profile yet. Connect Strava and the app can immediately start feeding the calendar, dashboard, and planning routes with real data."
             sideTitle="Current state"
             sideBody={
                 <>
@@ -271,24 +285,24 @@ function SetupPortal({bootstrap}: {bootstrap: SetupPortalBootstrap}) {
                 </>
             }
         >
-            <div className="rounded-[28px] border border-orange-200 bg-orange-50/90 p-5 dark:border-orange-800/60 dark:bg-orange-950/30">
+            <div className="rounded-lg border border-orange-200 bg-orange-50 p-5 dark:border-orange-800/60 dark:bg-orange-950/30">
                 <div className="text-sm font-semibold text-gray-900 dark:text-white">Connect Strava</div>
                 <p className="mt-2 text-sm leading-7 text-gray-700 dark:text-gray-200">
-                    This links the returned athlete and refresh token to the authenticated account instead of relying on the old global copy-paste token flow.
+                    This links the returned athlete and refresh token directly to the authenticated account.
                 </p>
                 <a
                     href={connectStravaPath}
-                    className="mt-4 inline-flex items-center gap-2 rounded-[18px] bg-strava-orange px-4 py-3 text-sm font-semibold text-white shadow-[0_24px_40px_-24px_rgba(242,103,34,0.9)] transition hover:translate-y-[-1px] hover:bg-orange-600"
+                    className="mt-4 inline-flex items-center gap-2 rounded-lg bg-strava-orange px-4 py-3 text-sm font-semibold text-white shadow-sm transition hover:bg-orange-600"
                 >
                     Connect Strava
                     <span aria-hidden="true">→</span>
                 </a>
             </div>
             <div className="mt-5 flex flex-wrap gap-3">
-                <a href={accountSettingsPath} className="inline-flex items-center gap-2 rounded-[18px] border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-950/70 dark:text-gray-100 dark:hover:border-gray-600">
+                <a href={accountSettingsPath} className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100 dark:hover:border-gray-600">
                     Account settings
                 </a>
-                <a href={logoutPath} className="inline-flex items-center gap-2 rounded-[18px] border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-950/70 dark:text-gray-100 dark:hover:border-gray-600">
+                <a href={logoutPath} className="inline-flex items-center gap-2 rounded-lg border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-950 dark:text-gray-100 dark:hover:border-gray-600">
                     Log out
                 </a>
             </div>
@@ -318,6 +332,7 @@ export function AuthPortalApp() {
 function UnsupportedPortal({bootstrap}: {bootstrap: ReactPortalBootstrap}) {
     return (
         <PortalFrame
+            basePath=""
             eyebrow="Portal"
             title="This screen has not been wired yet."
             subtitle="The bootstrap payload did not match a known auth/setup screen, so the safest move is to stop here rather than render the wrong form."

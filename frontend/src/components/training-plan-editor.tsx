@@ -55,6 +55,13 @@ const isoDayOptions = [
     {value: 7, label: 'Sun'},
 ];
 
+const sectionClass = 'ui-section';
+const inputClass = 'ui-input';
+const secondaryButtonClass = 'ui-button';
+const primaryButtonClass = 'ui-button-primary';
+const dangerButtonClass = 'ui-button-danger';
+const labelClass = 'mb-1 block text-xs font-medium text-gray-600 dark:text-gray-400';
+
 function formatLabel(value: string | null): string | null {
     if (!value) {
         return null;
@@ -177,7 +184,7 @@ function DayPicker({
 }) {
     return (
         <div>
-            <label className="mb-2 block text-xs font-medium uppercase tracking-[0.24em] text-gray-500 dark:text-gray-400">{label}</label>
+            <label className={labelClass}>{label}</label>
             <div className="flex flex-wrap gap-2">
                 {isoDayOptions.map((day) => {
                     const active = values.includes(day.value);
@@ -187,7 +194,7 @@ function DayPicker({
                             key={day.value}
                             type="button"
                             onClick={() => onToggle(day.value)}
-                            className={`inline-flex h-10 min-w-10 items-center justify-center rounded-2xl border px-3 text-xs font-semibold transition ${active
+                            className={`inline-flex h-9 min-w-9 items-center justify-center rounded-lg border px-3 text-xs font-semibold transition ${active
                                 ? 'border-orange-500 bg-strava-orange text-white shadow-sm'
                                 : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:border-gray-600'
                             }`}
@@ -366,19 +373,19 @@ export function TrainingPlanEditor({
 
     if (loading) {
         return (
-            <section className="glass-panel rounded-[32px] p-6">
+            <section className={sectionClass}>
                 <div className="section-kicker">Loading</div>
                 <div className="mt-5 grid gap-4 xl:grid-cols-[1.05fr_0.95fr]">
-                    <div className="animate-pulse space-y-4 rounded-[28px] border border-gray-200 bg-white/90 p-6 dark:border-gray-800 dark:bg-gray-900/60">
+                    <div className="animate-pulse space-y-4 rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
                         <div className="h-4 w-32 rounded-full bg-gray-200 dark:bg-gray-800" />
                         <div className="h-10 w-2/3 rounded-full bg-gray-200 dark:bg-gray-800" />
-                        <div className="h-24 rounded-[24px] bg-gray-100 dark:bg-gray-800" />
+                        <div className="h-24 rounded-lg bg-gray-100 dark:bg-gray-800" />
                     </div>
-                    <div className="animate-pulse space-y-4 rounded-[28px] border border-gray-200 bg-white/90 p-6 dark:border-gray-800 dark:bg-gray-900/60">
+                    <div className="animate-pulse space-y-4 rounded-lg border border-gray-200 bg-white p-6 dark:border-gray-800 dark:bg-gray-900">
                         <div className="h-4 w-24 rounded-full bg-gray-200 dark:bg-gray-800" />
-                        <div className="h-12 rounded-[20px] bg-gray-100 dark:bg-gray-800" />
-                        <div className="h-12 rounded-[20px] bg-gray-100 dark:bg-gray-800" />
-                        <div className="h-12 rounded-[20px] bg-gray-100 dark:bg-gray-800" />
+                        <div className="h-12 rounded-lg bg-gray-100 dark:bg-gray-800" />
+                        <div className="h-12 rounded-lg bg-gray-100 dark:bg-gray-800" />
+                        <div className="h-12 rounded-lg bg-gray-100 dark:bg-gray-800" />
                     </div>
                 </div>
             </section>
@@ -387,8 +394,8 @@ export function TrainingPlanEditor({
 
     if (loadError) {
         return (
-            <section className="rounded-[32px] border border-rose-200 bg-rose-50/90 p-6 text-sm leading-7 text-rose-800 dark:border-rose-800/60 dark:bg-rose-950/30 dark:text-rose-100">
-                <div className="text-xs font-semibold uppercase tracking-[0.24em]">Could not load plan editor data</div>
+            <section className="rounded-lg border border-rose-200 bg-rose-50 p-6 text-sm leading-7 text-rose-800 dark:border-rose-800/60 dark:bg-rose-950/30 dark:text-rose-100">
+                <div className="text-xs font-semibold uppercase tracking-wider">Could not load plan editor data</div>
                 <p className="mt-3">{loadError}</p>
                 <div className="mt-5 flex flex-wrap gap-3">
                     <a
@@ -397,16 +404,15 @@ export function TrainingPlanEditor({
                             : query?.targetRaceEventId
                                 ? `?targetRaceEventId=${query.targetRaceEventId}`
                                 : ''}`)}
-                        className="inline-flex items-center gap-2 rounded-2xl bg-gray-900 px-4 py-3 text-sm font-semibold text-white transition hover:bg-gray-800 dark:bg-white dark:text-gray-950 dark:hover:bg-gray-200"
+                        className={primaryButtonClass}
                     >
-                        Open legacy modal route
-                        <span aria-hidden="true">↗</span>
+                        Open classic editor
                     </a>
                     {onCancel ? (
                         <button
                             type="button"
                             onClick={onCancel}
-                            className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-gray-600"
+                            className={secondaryButtonClass}
                         >
                             Close
                         </button>
@@ -423,53 +429,20 @@ export function TrainingPlanEditor({
     return (
         <div className="space-y-6">
             {mode === 'route' ? (
-                <section className="glass-panel rounded-[36px] p-6 md:p-8">
-                    <div className="grid gap-8 xl:grid-cols-[1.08fr_0.92fr]">
-                        <div>
-                            <div className="section-kicker">Plan editor route</div>
-                            <h1 className="mt-5 max-w-4xl text-4xl font-semibold tracking-tight text-gray-900 dark:text-white md:text-5xl">
-                                {isEditMode ? 'Edit a live training plan in a real React workspace.' : 'Create a live training plan without hiding the workflow in a modal.'}
+                <section className={sectionClass}>
+                    <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
+                        <div className="min-w-0">
+                            <h1 className="text-xl font-bold tracking-tight text-gray-900 dark:text-white md:text-2xl">
+                                {isEditMode ? 'Edit training plan' : 'New training plan'}
                             </h1>
-                            <p className="mt-5 max-w-3xl text-base leading-8 text-gray-600 dark:text-gray-300 md:text-lg">
-                                The backend logic is unchanged, but the form now has route-sized breathing room: better context, cleaner navigation, and far less modal gymnastics when planning a season.
+                            <p className="mt-1 max-w-3xl text-sm leading-7 text-gray-500 dark:text-gray-400">
+                                Update the live training-plan form in a full page instead of a modal, while keeping the same backend save and delete flow.
                             </p>
-                            <div className="mt-6 flex flex-wrap gap-3">
-                                <Link
-                                    to="/training-plans"
-                                    className="inline-flex items-center gap-2 rounded-2xl bg-gray-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-gray-800 dark:bg-white dark:text-gray-950 dark:hover:bg-gray-200"
-                                >
-                                    Back to training plans
-                                    <span aria-hidden="true">←</span>
-                                </Link>
-                                <Link
-                                    to="/race-events"
-                                    className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-gray-600"
-                                >
-                                    Manage race events
-                                    <span aria-hidden="true">→</span>
-                                </Link>
-                                <Link
-                                    to="/training-blocks"
-                                    className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-gray-600"
-                                >
-                                    Manage training blocks
-                                    <span aria-hidden="true">→</span>
-                                </Link>
-                            </div>
                         </div>
-                        <div className="rounded-[32px] border border-orange-200 bg-[linear-gradient(135deg,rgba(255,255,255,0.96),rgba(255,247,237,0.96))] p-5 shadow-[0_45px_120px_-45px_rgba(15,23,42,0.65)] dark:border-orange-900/40 dark:bg-[linear-gradient(135deg,rgba(17,24,39,0.94),rgba(67,20,7,0.28))]">
-                            <div className="text-xs font-semibold uppercase tracking-[0.24em] text-orange-700 dark:text-orange-200">Why this seam works</div>
-                            <div className="mt-4 space-y-3 text-sm leading-7 text-gray-700 dark:text-gray-200">
-                                {[
-                                    'The JSON bootstrap and save/delete API already exist, so the route can reuse proven backend behavior instead of inventing a new contract.',
-                                    'It upgrades an existing React-managed modal into a shareable route-sized workspace, which is exactly the kind of migration leverage we want.',
-                                    'It directly helps the race planner and training plans surfaces, because both already depend on this editor flow today.',
-                                ].map((item) => (
-                                    <div key={item} className="rounded-2xl border border-white/80 bg-white/80 p-4 dark:border-gray-800 dark:bg-gray-950/40">
-                                        {item}
-                                    </div>
-                                ))}
-                            </div>
+                        <div className="flex flex-wrap items-center gap-2">
+                            <Link to="/training-plans" className={primaryButtonClass}>Back to training plans</Link>
+                            <Link to="/race-events" className={secondaryButtonClass}>Manage race events</Link>
+                            <Link to="/training-blocks" className={secondaryButtonClass}>Manage training blocks</Link>
                         </div>
                     </div>
                 </section>
@@ -486,38 +459,38 @@ export function TrainingPlanEditor({
                 <div className="grid gap-6 xl:grid-cols-[1.08fr_0.92fr]">
                     <div className="space-y-6">
                         {isEditMode && bootstrap.context.trainingPlan ? (
-                            <div className="rounded-[28px] border border-sky-200 bg-sky-50/90 p-5 text-sm leading-7 text-sky-900 dark:border-sky-800/60 dark:bg-sky-950/30 dark:text-sky-100">
-                                <div className="text-xs font-semibold uppercase tracking-[0.24em] text-sky-700 dark:text-sky-300">Editing live plan</div>
+                            <div className="rounded-lg border border-sky-200 bg-sky-50 p-5 text-sm leading-7 text-sky-900 dark:border-sky-800/60 dark:bg-sky-950/30 dark:text-sky-100">
+                                <div className="text-xs font-semibold uppercase tracking-wider text-sky-700 dark:text-sky-300">Editing live plan</div>
                                 <div className="mt-3 font-semibold">{bootstrap.context.trainingPlan.title ?? formatLabel(bootstrap.context.trainingPlan.type)}</div>
                                 <div className="mt-1 text-sky-800/80 dark:text-sky-100/80">{bootstrap.context.trainingPlan.startDay} → {bootstrap.context.trainingPlan.endDay}</div>
                             </div>
                         ) : null}
 
                         {!isEditMode && bootstrap.context.afterTrainingPlan ? (
-                            <div className="rounded-[28px] border border-emerald-200 bg-emerald-50/90 p-5 text-sm leading-7 text-emerald-900 dark:border-emerald-800/60 dark:bg-emerald-950/30 dark:text-emerald-100">
-                                <div className="text-xs font-semibold uppercase tracking-[0.24em] text-emerald-700 dark:text-emerald-300">Sequential handoff</div>
+                            <div className="rounded-lg border border-emerald-200 bg-emerald-50 p-5 text-sm leading-7 text-emerald-900 dark:border-emerald-800/60 dark:bg-emerald-950/30 dark:text-emerald-100">
+                                <div className="text-xs font-semibold uppercase tracking-wider text-emerald-700 dark:text-emerald-300">Sequential handoff</div>
                                 <div className="mt-3 font-semibold">This plan starts right after {bootstrap.context.afterTrainingPlan.title ?? formatLabel(bootstrap.context.afterTrainingPlan.type)} ends.</div>
                                 <div className="mt-1 text-emerald-800/80 dark:text-emerald-100/80">Last plan ended on {bootstrap.context.afterTrainingPlan.endDay}.</div>
                             </div>
                         ) : null}
 
                         {!isEditMode && bootstrap.context.suggestedRaceEvent ? (
-                            <div className="rounded-[28px] border border-amber-200 bg-amber-50/90 p-5 text-sm leading-7 text-amber-900 dark:border-amber-800/60 dark:bg-amber-950/30 dark:text-amber-100">
-                                <div className="text-xs font-semibold uppercase tracking-[0.24em] text-amber-700 dark:text-amber-300">Suggested anchor</div>
+                            <div className="rounded-lg border border-amber-200 bg-amber-50 p-5 text-sm leading-7 text-amber-900 dark:border-amber-800/60 dark:bg-amber-950/30 dark:text-amber-100">
+                                <div className="text-xs font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-300">Suggested anchor</div>
                                 <div className="mt-3 font-semibold">{bootstrap.context.suggestedRaceEvent.title}</div>
                                 <div className="mt-1 text-amber-800/80 dark:text-amber-100/80">{bootstrap.context.suggestedRaceEvent.day} · {formatLabel(bootstrap.context.suggestedRaceEvent.profile)}</div>
                             </div>
                         ) : null}
 
-                        <section className="glass-panel rounded-[32px] p-6 md:p-7">
+                        <section className={sectionClass}>
                             <div className="section-kicker">Foundation</div>
                             <div className="mt-5 grid gap-4 md:grid-cols-2">
                                 <div>
-                                    <label className="mb-2 block text-xs font-medium uppercase tracking-[0.24em] text-gray-500 dark:text-gray-400">Plan type</label>
+                                    <label className={labelClass}>Plan type</label>
                                     <select
                                         value={formState.type}
                                         onChange={(event) => updateField('type', event.target.value as TrainingPlanTypeValue)}
-                                        className="block w-full rounded-[20px] border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm focus:border-orange-400 focus:outline-none dark:border-gray-700 dark:bg-gray-950 dark:text-white"
+                                        className={inputClass}
                                     >
                                         {bootstrap.options.types.map((type) => (
                                             <option key={type.value} value={type.value}>{formatLabel(type.value)}</option>
@@ -525,11 +498,11 @@ export function TrainingPlanEditor({
                                     </select>
                                 </div>
                                 <div>
-                                    <label className="mb-2 block text-xs font-medium uppercase tracking-[0.24em] text-gray-500 dark:text-gray-400">Discipline</label>
+                                    <label className={labelClass}>Discipline</label>
                                     <select
                                         value={formState.discipline}
                                         onChange={(event) => updateField('discipline', event.target.value)}
-                                        className="block w-full rounded-[20px] border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm focus:border-orange-400 focus:outline-none dark:border-gray-700 dark:bg-gray-950 dark:text-white"
+                                        className={inputClass}
                                     >
                                         <option value="">Choose a discipline</option>
                                         {bootstrap.options.disciplines.map((disciplineOption) => (
@@ -538,48 +511,48 @@ export function TrainingPlanEditor({
                                     </select>
                                 </div>
                                 <div className="md:col-span-2">
-                                    <label className="mb-2 block text-xs font-medium uppercase tracking-[0.24em] text-gray-500 dark:text-gray-400">Title</label>
+                                    <label className={labelClass}>Title</label>
                                     <input
                                         value={formState.title}
                                         onChange={(event) => updateField('title', event.target.value)}
                                         placeholder="Early season build, marathon bridge, 70.3 prep..."
-                                        className="block w-full rounded-[20px] border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm focus:border-orange-400 focus:outline-none dark:border-gray-700 dark:bg-gray-950 dark:text-white"
+                                        className={inputClass}
                                     />
                                 </div>
                                 <div>
-                                    <label className="mb-2 block text-xs font-medium uppercase tracking-[0.24em] text-gray-500 dark:text-gray-400">Start day</label>
+                                    <label className={labelClass}>Start day</label>
                                     <input
                                         required
                                         type="date"
                                         value={formState.startDay}
                                         onChange={(event) => updateField('startDay', event.target.value)}
-                                        className="block w-full rounded-[20px] border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm focus:border-orange-400 focus:outline-none dark:border-gray-700 dark:bg-gray-950 dark:text-white"
+                                        className={inputClass}
                                     />
                                 </div>
                                 <div>
-                                    <label className="mb-2 block text-xs font-medium uppercase tracking-[0.24em] text-gray-500 dark:text-gray-400">End day</label>
+                                    <label className={labelClass}>End day</label>
                                     <input
                                         required
                                         type="date"
                                         min={formState.startDay}
                                         value={formState.endDay}
                                         onChange={(event) => updateField('endDay', event.target.value)}
-                                        className="block w-full rounded-[20px] border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm focus:border-orange-400 focus:outline-none dark:border-gray-700 dark:bg-gray-950 dark:text-white"
+                                        className={inputClass}
                                     />
                                 </div>
                             </div>
                         </section>
 
-                        <section className="glass-panel rounded-[32px] p-6 md:p-7">
+                        <section className={sectionClass}>
                             <div className="section-kicker">Intent</div>
                             <div className="mt-5 grid gap-4 md:grid-cols-2">
                                 {isRacePlan ? (
                                     <div>
-                                        <label className="mb-2 block text-xs font-medium uppercase tracking-[0.24em] text-gray-500 dark:text-gray-400">Linked race</label>
+                                        <label className={labelClass}>Linked race</label>
                                         <select
                                             value={formState.targetRaceEventId}
                                             onChange={(event) => updateField('targetRaceEventId', event.target.value)}
-                                            className="block w-full rounded-[20px] border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm focus:border-orange-400 focus:outline-none dark:border-gray-700 dark:bg-gray-950 dark:text-white"
+                                            className={inputClass}
                                         >
                                             <option value="">No linked race</option>
                                             {bootstrap.options.raceEvents.map((raceEvent) => (
@@ -589,11 +562,11 @@ export function TrainingPlanEditor({
                                     </div>
                                 ) : null}
                                 <div>
-                                    <label className="mb-2 block text-xs font-medium uppercase tracking-[0.24em] text-gray-500 dark:text-gray-400">Target distance</label>
+                                    <label className={labelClass}>Target distance</label>
                                     <select
                                         value={formState.targetRaceProfile}
                                         onChange={(event) => updateField('targetRaceProfile', event.target.value)}
-                                        className="block w-full rounded-[20px] border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm focus:border-orange-400 focus:outline-none dark:border-gray-700 dark:bg-gray-950 dark:text-white"
+                                        className={inputClass}
                                     >
                                         <option value="">Choose a distance</option>
                                         {raceProfileOptions.map((group) => (
@@ -607,11 +580,11 @@ export function TrainingPlanEditor({
                                 </div>
                                 {isTrainingPlan ? (
                                     <div>
-                                        <label className="mb-2 block text-xs font-medium uppercase tracking-[0.24em] text-gray-500 dark:text-gray-400">Training block style</label>
+                                        <label className={labelClass}>Training block style</label>
                                         <select
                                             value={formState.trainingBlockStyle}
                                             onChange={(event) => updateField('trainingBlockStyle', event.target.value)}
-                                            className="block w-full rounded-[20px] border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm focus:border-orange-400 focus:outline-none dark:border-gray-700 dark:bg-gray-950 dark:text-white"
+                                            className={inputClass}
                                         >
                                             {bootstrap.options.trainingBlockStyles.map((style) => (
                                                 <option key={style.value} value={style.value}>{formatLabel(style.value)}</option>
@@ -621,11 +594,11 @@ export function TrainingPlanEditor({
                                 ) : null}
                                 {showTriathlonFocus ? (
                                     <div>
-                                        <label className="mb-2 block text-xs font-medium uppercase tracking-[0.24em] text-gray-500 dark:text-gray-400">Training focus</label>
+                                        <label className={labelClass}>Training focus</label>
                                         <select
                                             value={formState.trainingFocus}
                                             onChange={(event) => updateField('trainingFocus', event.target.value)}
-                                            className="block w-full rounded-[20px] border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm focus:border-orange-400 focus:outline-none dark:border-gray-700 dark:bg-gray-950 dark:text-white"
+                                            className={inputClass}
                                         >
                                             <option value="">Balanced focus</option>
                                             {bootstrap.options.trainingFocuses.map((focus) => (
@@ -637,7 +610,7 @@ export function TrainingPlanEditor({
                             </div>
                         </section>
 
-                        <section className="glass-panel rounded-[32px] p-6 md:p-7">
+                        <section className={sectionClass}>
                             <div className="section-kicker">Weekly structure</div>
                             <div className="mt-5 grid gap-5 md:grid-cols-2">
                                 {showTriathlonSchedule ? (
@@ -669,73 +642,73 @@ export function TrainingPlanEditor({
                     </div>
 
                     <div className="space-y-6">
-                        <section className="glass-panel rounded-[32px] p-6 md:p-7">
+                        <section className={sectionClass}>
                             <div className="section-kicker">Performance anchors</div>
                             <div className="mt-5 space-y-4">
                                 {showCyclingMetrics ? (
                                     <div>
-                                        <label className="mb-2 block text-xs font-medium uppercase tracking-[0.24em] text-gray-500 dark:text-gray-400">Cycling FTP</label>
+                                        <label className={labelClass}>Cycling FTP</label>
                                         <div className="flex items-center gap-2">
-                                            <input value={formState.performanceMetrics.cyclingFtp} onChange={(event) => updateMetricField('cyclingFtp', event.target.value)} type="number" min="50" max="500" step="1" className="block w-full rounded-[20px] border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm focus:border-orange-400 focus:outline-none dark:border-gray-700 dark:bg-gray-950 dark:text-white" />
-                                            <span className="text-xs font-semibold uppercase tracking-[0.24em] text-gray-400">W</span>
+                                            <input value={formState.performanceMetrics.cyclingFtp} onChange={(event) => updateMetricField('cyclingFtp', event.target.value)} type="number" min="50" max="500" step="1" className={inputClass} />
+                                            <span className="text-xs font-medium text-gray-400">W</span>
                                         </div>
                                     </div>
                                 ) : null}
                                 {showRunningMetrics ? (
                                     <div>
-                                        <label className="mb-2 block text-xs font-medium uppercase tracking-[0.24em] text-gray-500 dark:text-gray-400">Threshold pace</label>
+                                        <label className={labelClass}>Threshold pace</label>
                                         <div className="flex items-center gap-2">
-                                            <input value={formState.performanceMetrics.runningThresholdPaceDisplay} onChange={(event) => updateMetricField('runningThresholdPaceDisplay', event.target.value)} placeholder="4:30" pattern="[0-9]{1,2}:[0-5][0-9]" className="block w-full rounded-[20px] border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm focus:border-orange-400 focus:outline-none dark:border-gray-700 dark:bg-gray-950 dark:text-white" />
-                                            <span className="text-xs font-semibold uppercase tracking-[0.24em] text-gray-400">/km</span>
+                                            <input value={formState.performanceMetrics.runningThresholdPaceDisplay} onChange={(event) => updateMetricField('runningThresholdPaceDisplay', event.target.value)} placeholder="4:30" pattern="[0-9]{1,2}:[0-5][0-9]" className={inputClass} />
+                                            <span className="text-xs font-medium text-gray-400">/km</span>
                                         </div>
                                     </div>
                                 ) : null}
                                 {showSwimmingMetrics ? (
                                     <div>
-                                        <label className="mb-2 block text-xs font-medium uppercase tracking-[0.24em] text-gray-500 dark:text-gray-400">Swim CSS</label>
+                                        <label className={labelClass}>Swim CSS</label>
                                         <div className="flex items-center gap-2">
-                                            <input value={formState.performanceMetrics.swimmingCssDisplay} onChange={(event) => updateMetricField('swimmingCssDisplay', event.target.value)} placeholder="1:35" pattern="[0-9]{1,2}:[0-5][0-9]" className="block w-full rounded-[20px] border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm focus:border-orange-400 focus:outline-none dark:border-gray-700 dark:bg-gray-950 dark:text-white" />
-                                            <span className="text-xs font-semibold uppercase tracking-[0.24em] text-gray-400">/100m</span>
+                                            <input value={formState.performanceMetrics.swimmingCssDisplay} onChange={(event) => updateMetricField('swimmingCssDisplay', event.target.value)} placeholder="1:35" pattern="[0-9]{1,2}:[0-5][0-9]" className={inputClass} />
+                                            <span className="text-xs font-medium text-gray-400">/100m</span>
                                         </div>
                                     </div>
                                 ) : null}
                                 {showRunningMetrics ? (
                                     <div>
-                                        <label className="mb-2 block text-xs font-medium uppercase tracking-[0.24em] text-gray-500 dark:text-gray-400">Running volume</label>
+                                        <label className={labelClass}>Running volume</label>
                                         <div className="flex items-center gap-2">
-                                            <input value={formState.performanceMetrics.weeklyRunningVolume} onChange={(event) => updateMetricField('weeklyRunningVolume', event.target.value)} type="number" min="0" max="300" step="0.1" className="block w-full rounded-[20px] border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm focus:border-orange-400 focus:outline-none dark:border-gray-700 dark:bg-gray-950 dark:text-white" />
-                                            <span className="text-xs font-semibold uppercase tracking-[0.24em] text-gray-400">km/wk</span>
+                                            <input value={formState.performanceMetrics.weeklyRunningVolume} onChange={(event) => updateMetricField('weeklyRunningVolume', event.target.value)} type="number" min="0" max="300" step="0.1" className={inputClass} />
+                                            <span className="text-xs font-medium text-gray-400">km/wk</span>
                                         </div>
                                     </div>
                                 ) : null}
                                 {showCyclingMetrics ? (
                                     <div>
-                                        <label className="mb-2 block text-xs font-medium uppercase tracking-[0.24em] text-gray-500 dark:text-gray-400">Biking volume</label>
+                                        <label className={labelClass}>Biking volume</label>
                                         <div className="flex items-center gap-2">
-                                            <input value={formState.performanceMetrics.weeklyBikingVolume} onChange={(event) => updateMetricField('weeklyBikingVolume', event.target.value)} type="number" min="0" max="40" step="0.1" className="block w-full rounded-[20px] border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm focus:border-orange-400 focus:outline-none dark:border-gray-700 dark:bg-gray-950 dark:text-white" />
-                                            <span className="text-xs font-semibold uppercase tracking-[0.24em] text-gray-400">hrs/wk</span>
+                                            <input value={formState.performanceMetrics.weeklyBikingVolume} onChange={(event) => updateMetricField('weeklyBikingVolume', event.target.value)} type="number" min="0" max="40" step="0.1" className={inputClass} />
+                                            <span className="text-xs font-medium text-gray-400">hrs/wk</span>
                                         </div>
                                     </div>
                                 ) : null}
                                 {showRunningControls ? (
                                     <>
                                         <div>
-                                            <label className="mb-2 block text-xs font-medium uppercase tracking-[0.24em] text-gray-500 dark:text-gray-400">Running workout default</label>
+                                            <label className={labelClass}>Running workout default</label>
                                             <select
                                                 value={formState.runningWorkoutTargetMode}
                                                 onChange={(event) => updateField('runningWorkoutTargetMode', event.target.value)}
-                                                className="block w-full rounded-[20px] border border-gray-200 bg-white px-4 py-3 text-sm text-gray-900 shadow-sm focus:border-orange-400 focus:outline-none dark:border-gray-700 dark:bg-gray-950 dark:text-white"
+                                                className={inputClass}
                                             >
                                                 {bootstrap.options.runningWorkoutTargetModes.map((modeOption) => (
                                                     <option key={modeOption.value} value={modeOption.value}>{formatLabel(modeOption.value)}</option>
                                                 ))}
                                             </select>
                                         </div>
-                                        <label className="flex items-start gap-3 rounded-[24px] border border-gray-200 bg-gray-50 px-4 py-4 text-sm leading-7 text-gray-700 dark:border-gray-800 dark:bg-gray-900/70 dark:text-gray-200">
+                                        <label className="flex items-start gap-3 rounded-lg border border-gray-200 bg-gray-50 px-4 py-4 text-sm leading-7 text-gray-700 dark:border-gray-800 dark:bg-gray-900 dark:text-gray-200">
                                             <input type="checkbox" checked={formState.runHillSessionsEnabled} onChange={(event) => updateField('runHillSessionsEnabled', event.target.checked)} className="mt-1 h-4 w-4 rounded border-gray-300 text-strava-orange focus:ring-orange-400" />
                                             <span>
                                                 <span className="block font-semibold text-gray-900 dark:text-white">Include hill sessions when terrain allows</span>
-                                                <span className="mt-1 block text-xs uppercase tracking-[0.2em] text-gray-500 dark:text-gray-400">Flat-road athletes can leave this off.</span>
+                                                <span className="mt-1 block text-xs tracking-wider text-gray-500 dark:text-gray-400">Flat-road athletes can leave this off.</span>
                                             </span>
                                         </label>
                                     </>
@@ -743,32 +716,32 @@ export function TrainingPlanEditor({
                             </div>
                         </section>
 
-                        <section className="glass-panel rounded-[32px] p-6 md:p-7">
+                        <section className={sectionClass}>
                             <div className="section-kicker">Notes</div>
                             <textarea
                                 value={formState.notes}
                                 onChange={(event) => updateField('notes', event.target.value)}
                                 rows={8}
                                 placeholder="What should this plan protect, sharpen, or prepare for?"
-                                className="mt-5 block w-full rounded-[24px] border border-gray-200 bg-white px-4 py-4 text-sm leading-7 text-gray-900 shadow-sm focus:border-orange-400 focus:outline-none dark:border-gray-700 dark:bg-gray-950 dark:text-white"
+                                className={`${inputClass} mt-5 min-h-40 leading-7`}
                             />
                         </section>
 
                         {submitMessage ? (
-                            <div className="rounded-[24px] border border-emerald-200 bg-emerald-50/90 px-4 py-4 text-sm leading-7 text-emerald-800 dark:border-emerald-800/60 dark:bg-emerald-950/30 dark:text-emerald-100">
+                            <div className="rounded-lg border border-emerald-200 bg-emerald-50 px-4 py-4 text-sm leading-7 text-emerald-800 dark:border-emerald-800/60 dark:bg-emerald-950/30 dark:text-emerald-100">
                                 {submitMessage}
                             </div>
                         ) : null}
 
                         {submitError ? (
-                            <div className="rounded-[24px] border border-rose-200 bg-rose-50/90 px-4 py-4 text-sm leading-7 text-rose-800 dark:border-rose-800/60 dark:bg-rose-950/30 dark:text-rose-100">
+                            <div className="rounded-lg border border-rose-200 bg-rose-50 px-4 py-4 text-sm leading-7 text-rose-800 dark:border-rose-800/60 dark:bg-rose-950/30 dark:text-rose-100">
                                 {submitError}
                             </div>
                         ) : null}
 
                         {selectedRace ? (
-                            <div className="rounded-[24px] border border-amber-200 bg-amber-50/90 px-4 py-4 text-sm leading-7 text-amber-900 dark:border-amber-800/60 dark:bg-amber-950/30 dark:text-amber-100">
-                                <div className="text-xs font-semibold uppercase tracking-[0.24em] text-amber-700 dark:text-amber-300">Current race link</div>
+                            <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-4 text-sm leading-7 text-amber-900 dark:border-amber-800/60 dark:bg-amber-950/30 dark:text-amber-100">
+                                <div className="text-xs font-semibold uppercase tracking-wider text-amber-700 dark:text-amber-300">Current race link</div>
                                 <div className="mt-2 font-semibold">{selectedRace.title}</div>
                                 <div className="mt-1 text-amber-800/80 dark:text-amber-100/80">{formatDate(selectedRace.day)} · {formatLabel(selectedRace.profile)}</div>
                             </div>
@@ -777,14 +750,14 @@ export function TrainingPlanEditor({
                 </div>
 
                 <div className="flex flex-wrap items-center justify-between gap-3 border-t border-gray-200 pt-6 dark:border-gray-800">
-                    <div className="text-xs uppercase tracking-[0.24em] text-gray-500 dark:text-gray-400">Backed by preview JSON · saved through live Symfony logic</div>
+                    <div className="text-xs uppercase tracking-wider text-gray-500 dark:text-gray-400">Backed by preview JSON · saved through live Symfony logic</div>
                     <div className="flex flex-wrap gap-3">
                         {onCancel ? (
                             <button
                                 type="button"
                                 onClick={onCancel}
                                 disabled={isBusy}
-                                className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:text-gray-900 disabled:cursor-not-allowed disabled:opacity-60 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-gray-600"
+                                className={`${secondaryButtonClass} disabled:cursor-not-allowed disabled:opacity-60`}
                             >
                                 Cancel
                             </button>
@@ -794,7 +767,7 @@ export function TrainingPlanEditor({
                                 type="button"
                                 onClick={() => void handleDelete()}
                                 disabled={isBusy}
-                                className="inline-flex items-center gap-2 rounded-2xl border border-rose-200 bg-rose-50 px-5 py-3 text-sm font-semibold text-rose-800 transition hover:bg-rose-100 disabled:cursor-not-allowed disabled:opacity-60 dark:border-rose-800/60 dark:bg-rose-950/30 dark:text-rose-100"
+                                className={`${dangerButtonClass} disabled:cursor-not-allowed disabled:opacity-60`}
                             >
                                 {deleting ? 'Deleting plan…' : 'Delete plan'}
                             </button>
@@ -802,7 +775,7 @@ export function TrainingPlanEditor({
                         <button
                             type="submit"
                             disabled={isBusy}
-                            className="inline-flex items-center gap-2 rounded-2xl bg-strava-orange px-5 py-3 text-sm font-semibold text-white transition hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60"
+                            className={`${primaryButtonClass} disabled:cursor-not-allowed disabled:opacity-60`}
                         >
                             {submitting ? 'Saving plan…' : isEditMode ? 'Save changes' : 'Create plan'}
                             <span aria-hidden="true">→</span>

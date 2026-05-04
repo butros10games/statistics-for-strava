@@ -49,10 +49,10 @@ final class AccountSettingsRequestHandlerTest extends WebTestCase
         $this->client->request('GET', '/account/settings');
 
         self::assertResponseIsSuccessful();
-        self::assertStringContainsString('css/dist/tailwind.min.css', (string) $this->client->getResponse()->getContent());
-        self::assertStringContainsString('id="js-loaded-content"', (string) $this->client->getResponse()->getContent());
-        self::assertStringContainsString('js/dist/app.min.js', (string) $this->client->getResponse()->getContent());
         self::assertStringContainsString('<!DOCTYPE html>', (string) $this->client->getResponse()->getContent());
+        self::assertStringContainsString('css/dist/tailwind.min.css', (string) $this->client->getResponse()->getContent());
+        self::assertStringContainsString('data-manual-sync-root', (string) $this->client->getResponse()->getContent());
+        self::assertStringContainsString('/strava-oauth', (string) $this->client->getResponse()->getContent());
     }
 
     public function testFragmentHeaderRendersContentOnly(): void

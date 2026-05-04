@@ -1,5 +1,4 @@
 import {useCallback, useEffect, useMemo, useState} from 'react';
-import {Link} from 'react-router-dom';
 import {EChartPanel} from '../components/echart-panel';
 import {StatCard} from '../components/stat-card';
 import {type ReactPreviewBootstrap, buildAppPath} from '../lib/bootstrap';
@@ -72,15 +71,15 @@ function BestEffortHistoryPanel({
 }) {
     if (loading && !history) {
         return (
-            <div className="glass-panel rounded-[32px] p-6 text-sm text-gray-600 dark:text-gray-300">
-                Loading history panel… chasing old records without forcing you to re-run the workout. A humane compromise.
+            <div className="ui-section text-sm text-gray-600 dark:text-gray-300">
+                Loading history panel.
             </div>
         );
     }
 
     if (error) {
         return (
-            <div className="rounded-[32px] border border-rose-200 bg-rose-50/90 p-6 text-sm text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-100">
+            <div className="rounded-lg border border-rose-200 bg-rose-50 p-6 text-sm text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-100">
                 {error}
             </div>
         );
@@ -88,23 +87,23 @@ function BestEffortHistoryPanel({
 
     if (!history) {
         return (
-            <div className="glass-panel rounded-[32px] p-6 text-sm text-gray-600 dark:text-gray-300">
+            <div className="ui-section text-sm text-gray-600 dark:text-gray-300">
                 Select a distance row to inspect the all-time top ten history across the sport types that support it.
             </div>
         );
     }
 
     return (
-        <div className="rounded-[32px] border border-gray-200 bg-white/92 p-5 shadow-sm dark:border-gray-800 dark:bg-gray-950/40">
+        <div className="ui-section">
             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                 <div>
-                    <div className="section-kicker">Distance history</div>
-                    <h3 className="mt-4 text-2xl font-semibold tracking-tight text-gray-900 dark:text-white">{history.distance.label}</h3>
-                    <p className="mt-2 text-sm leading-7 text-gray-600 dark:text-gray-300">
+                    <h3 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Distance history</h3>
+                    <div className="mt-1 text-base font-semibold text-gray-900 dark:text-white">{history.distance.label}</div>
+                    <p className="mt-2 text-sm leading-7 text-gray-500 dark:text-gray-400">
                         All-time leaderboard for {history.activityType.label.toLowerCase()} best efforts, grouped by sport type.
                     </p>
                 </div>
-                <div className="text-sm text-gray-500 dark:text-gray-400">
+                <div className="text-xs text-gray-500 dark:text-gray-400">
                     {history.sportTypes.length} sport types · refreshed {formatRequestedAt(history.requestedAt)}
                 </div>
             </div>
@@ -112,7 +111,7 @@ function BestEffortHistoryPanel({
             <div className="mt-5 overflow-x-auto">
                 <table className="min-w-full divide-y divide-gray-200 text-left text-sm dark:divide-gray-800">
                     <thead>
-                        <tr className="text-xs uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
+                        <tr className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
                             <th className="px-3 py-3 font-semibold">#</th>
                             {history.sportTypes.map((sportType) => (
                                 <th key={sportType.value} className="px-3 py-3 font-semibold">{sportType.label}</th>
@@ -269,51 +268,29 @@ export function BestEffortsPage({bootstrap}: BestEffortsPageProps) {
     }, [currentActivityType, currentPeriod, data?.activityTypes.length]);
 
     return (
-        <div className="space-y-8 pb-8">
-            <section className="glass-panel overflow-hidden rounded-[36px] p-6 md:p-8">
-                <div className="grid gap-8 xl:grid-cols-[1.2fr_0.8fr]">
-                    <div>
-                        <div className="section-kicker">Best efforts preview</div>
-                        <h1 className="mt-5 max-w-3xl text-4xl font-semibold tracking-tight text-gray-900 dark:text-white md:text-5xl">
-                            A React take on the records matrix, with faster pivots between activity types, periods, and distance history.
-                        </h1>
-                        <p className="mt-5 max-w-2xl text-base leading-8 text-gray-600 dark:text-gray-300 md:text-lg">
-                            The legacy page packs charts, tabs, and modal drill-downs into one dense screen. This preview keeps the same backend calculations but gives the route cleaner state, more readable table scanning, and an inline history panel.
+        <div className="space-y-6 pb-6">
+            <section className="ui-section">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="min-w-0">
+                        <h1 className="text-xl font-bold tracking-tight text-gray-900 dark:text-white md:text-2xl">Best efforts</h1>
+                        <p className="mt-1 max-w-3xl text-sm leading-7 text-gray-500 dark:text-gray-400">
+                            Records matrix with fast pivots between activity type, period, and distance history.
                         </p>
-                        <div className="mt-6 flex flex-wrap gap-3">
-                            <a
-                                href={buildAppPath(bootstrap.basePath, 'best-efforts')}
-                                className="inline-flex items-center gap-2 rounded-2xl bg-gray-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-gray-800 dark:bg-white dark:text-gray-950 dark:hover:bg-gray-200"
-                            >
-                                Open the current best efforts page
-                                <span aria-hidden="true">↗</span>
-                            </a>
-                            <button
-                                type="button"
-                                onClick={() => {
-                                    reload();
-                                    reloadHistory();
-                                }}
-                                className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-gray-600"
-                            >
-                                Refresh preview data
-                                <span aria-hidden="true">↻</span>
-                            </button>
-                        </div>
                     </div>
-                    <div className="rounded-[32px] border border-sky-200 bg-[linear-gradient(135deg,rgba(255,255,255,0.95),rgba(240,249,255,0.96))] p-5 shadow-[0_45px_120px_-45px_rgba(15,23,42,0.65)] dark:border-sky-900/40 dark:bg-[linear-gradient(135deg,rgba(17,24,39,0.94),rgba(8,47,73,0.88))]">
-                        <div className="text-xs font-semibold uppercase tracking-[0.24em] text-sky-700 dark:text-sky-300">What this proves</div>
-                        <div className="mt-4 space-y-3 text-sm leading-7 text-gray-700 dark:text-gray-200">
-                            {[
-                                'The preview shell can handle matrix-style analytics, not only single-chart dashboards.',
-                                'Split APIs work nicely here: one payload for charts and summary tables, another for the all-time history drill-down.',
-                                'This pattern should transfer cleanly to more leaderboard-style routes such as peak powers or photos metadata views.',
-                            ].map((item) => (
-                                <div key={item} className="rounded-2xl border border-white/80 bg-white/80 p-4 dark:border-gray-800 dark:bg-gray-950/40">
-                                    {item}
-                                </div>
-                            ))}
-                        </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                        <a href={buildAppPath(bootstrap.basePath, 'best-efforts')} className="ui-button">
+                            Open classic best efforts page
+                        </a>
+                        <button
+                            type="button"
+                            onClick={() => {
+                                reload();
+                                reloadHistory();
+                            }}
+                            className="ui-button"
+                        >
+                            Refresh data
+                        </button>
                     </div>
                 </div>
             </section>
@@ -325,16 +302,16 @@ export function BestEffortsPage({bootstrap}: BestEffortsPageProps) {
                 <StatCard label="Distances" value={formatNumber(summary.distanceCount)} hint="Configured best-effort distances for the active view." tone="slate" />
             </section>
 
-            <section className="glass-panel rounded-[32px] p-6">
+            <section className="ui-section">
                 <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
                     <div>
-                        <div className="section-kicker">Route state</div>
-                        <p className="mt-4 max-w-2xl text-sm leading-7 text-gray-600 dark:text-gray-300">
-                            Each activity type keeps its own selected period and distance, so swapping between running and cycling no longer feels like juggling modal state with oven mitts on.
+                        <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Activity types</h2>
+                        <p className="mt-1 max-w-2xl text-sm leading-7 text-gray-500 dark:text-gray-400">
+                            Each activity type keeps its own selected period and distance.
                         </p>
                     </div>
                     <div className="text-sm text-gray-500 dark:text-gray-400">
-                        {data ? `Preview data refreshed ${formatRequestedAt(data.requestedAt)}.` : 'Waiting for preview data.'}
+                        {data ? `Data refreshed ${formatRequestedAt(data.requestedAt)}.` : 'Waiting for best-efforts data.'}
                     </div>
                 </div>
 
@@ -347,8 +324,8 @@ export function BestEffortsPage({bootstrap}: BestEffortsPageProps) {
                                 key={activityType.value}
                                 type="button"
                                 onClick={() => setActiveActivityType(activityType.value)}
-                                className={`rounded-full border px-4 py-2 text-sm font-medium transition ${isActive
-                                    ? 'border-strava-orange bg-orange-50 text-orange-700 dark:border-orange-400 dark:bg-orange-950/40 dark:text-orange-200'
+                                className={`rounded-lg border px-4 py-2 text-sm font-medium transition ${isActive
+                                    ? 'border-orange-300 bg-orange-50 text-orange-700 dark:border-orange-400 dark:bg-orange-950/40 dark:text-orange-200'
                                     : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:border-gray-600 dark:hover:text-white'}`}
                             >
                                 {activityType.label}
@@ -358,7 +335,7 @@ export function BestEffortsPage({bootstrap}: BestEffortsPageProps) {
                 </div>
 
                 {currentActivityType && currentActivityType.periods.length > 1 ? (
-                    <div className="mt-6 inline-flex rounded-2xl border border-gray-200 bg-gray-100 p-1 dark:border-gray-700 dark:bg-gray-900">
+                    <div className="mt-6 inline-flex rounded-lg border border-gray-200 bg-gray-100 p-1 dark:border-gray-700 dark:bg-gray-900">
                         {currentActivityType.periods.map((period) => {
                             const isActive = currentPeriod?.value === period.value;
 
@@ -370,7 +347,7 @@ export function BestEffortsPage({bootstrap}: BestEffortsPageProps) {
                                         ...current,
                                         [currentActivityType.value]: period.value,
                                     }))}
-                                    className={`rounded-[18px] px-4 py-2 text-sm font-medium transition ${isActive
+                                    className={`rounded-md px-4 py-2 text-sm font-medium transition ${isActive
                                         ? 'bg-white text-gray-900 shadow-sm dark:bg-gray-800 dark:text-white'
                                         : 'text-gray-500 dark:text-gray-400'}`}
                                 >
@@ -383,19 +360,19 @@ export function BestEffortsPage({bootstrap}: BestEffortsPageProps) {
             </section>
 
             {loading && !data ? (
-                <section className="glass-panel rounded-[32px] p-6 text-sm text-gray-600 dark:text-gray-300">
-                    Loading best efforts preview… timing your old heroics with great respect and zero lactic acid.
+                <section className="ui-section text-sm text-gray-600 dark:text-gray-300">
+                    Loading best efforts.
                 </section>
             ) : null}
 
             {error ? (
-                <section className="rounded-[32px] border border-rose-200 bg-rose-50/90 p-6 text-sm text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-100">
+                <section className="rounded-lg border border-rose-200 bg-rose-50 p-6 text-sm text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-100">
                     {error}
                 </section>
             ) : null}
 
             {!loading && !error && !currentActivityType ? (
-                <section className="glass-panel rounded-[32px] p-6 text-sm text-gray-600 dark:text-gray-300">
+                <section className="ui-section text-sm text-gray-600 dark:text-gray-300">
                     No best-efforts data is available yet.
                 </section>
             ) : null}
@@ -406,18 +383,18 @@ export function BestEffortsPage({bootstrap}: BestEffortsPageProps) {
                         <EChartPanel title={`${currentActivityType?.label ?? 'Selected'} best efforts`} options={currentPeriod.chartOptions} heightClassName="h-96" />
                     </section>
 
-                    <section className="grid gap-6 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
-                        <div className="rounded-[32px] border border-gray-200 bg-white/92 p-5 shadow-sm dark:border-gray-800 dark:bg-gray-950/40">
+                    <section className="grid gap-4 xl:grid-cols-[minmax(0,1.05fr)_minmax(0,0.95fr)]">
+                        <div className="ui-section">
                             <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
                                 <div>
-                                    <div className="section-kicker">Matrix view</div>
-                                    <h2 className="mt-4 text-2xl font-semibold tracking-tight text-gray-900 dark:text-white">Distance records</h2>
-                                    <p className="mt-2 text-sm leading-7 text-gray-600 dark:text-gray-300">
+                                    <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Details</h2>
+                                    <div className="mt-1 text-base font-semibold text-gray-900 dark:text-white">Distance records</div>
+                                    <p className="mt-2 text-sm leading-7 text-gray-500 dark:text-gray-400">
                                         Pick any distance to open the all-time history panel. The active row stays pinned to the selected activity type.
                                     </p>
                                 </div>
                                 {selectedDistance ? (
-                                    <div className="rounded-2xl border border-orange-200 bg-orange-50 px-4 py-3 text-sm font-semibold text-orange-700 dark:border-orange-900/50 dark:bg-orange-950/40 dark:text-orange-200">
+                                    <div className="rounded-lg border border-orange-200 bg-orange-50 px-3 py-2 text-sm font-semibold text-orange-700 dark:border-orange-900/50 dark:bg-orange-950/40 dark:text-orange-200">
                                         Selected: {selectedDistance.distance.label}
                                     </div>
                                 ) : null}
@@ -426,7 +403,7 @@ export function BestEffortsPage({bootstrap}: BestEffortsPageProps) {
                             <div className="mt-5 overflow-x-auto">
                                 <table className="min-w-[1750px] divide-y divide-gray-200 text-left text-sm dark:divide-gray-800">
                                     <thead>
-                                        <tr className="text-xs uppercase tracking-[0.18em] text-gray-500 dark:text-gray-400">
+                                        <tr className="text-xs uppercase tracking-wide text-gray-500 dark:text-gray-400">
                                             <th className="px-3 py-3 font-semibold">Distance</th>
                                             {currentPeriod.sportTypes.map((sportType) => (
                                                 <th key={sportType.value} className="px-3 py-3 font-semibold">{sportType.label}</th>
@@ -446,8 +423,8 @@ export function BestEffortsPage({bootstrap}: BestEffortsPageProps) {
                                                                 ...current,
                                                                 [currentActivityType!.value]: row.distance.key,
                                                             }))}
-                                                            className={`rounded-2xl border px-4 py-3 text-left transition ${isActive
-                                                                ? 'border-strava-orange bg-orange-50 text-orange-700 dark:border-orange-400 dark:bg-orange-950/40 dark:text-orange-200'
+                                                            className={`rounded-lg border px-4 py-3 text-left transition ${isActive
+                                                                ? 'border-orange-300 bg-orange-50 text-orange-700 dark:border-orange-400 dark:bg-orange-950/40 dark:text-orange-200'
                                                                 : 'border-gray-200 bg-white text-gray-700 hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-200 dark:hover:border-gray-600 dark:hover:text-white'}`}
                                                         >
                                                             <div className="font-semibold">{row.distance.label}</div>
@@ -471,22 +448,6 @@ export function BestEffortsPage({bootstrap}: BestEffortsPageProps) {
                     </section>
                 </>
             ) : null}
-
-            <section className="glass-panel rounded-[32px] p-6">
-                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                    <div>
-                        <div className="section-kicker">Where this leads</div>
-                        <h2 className="mt-4 text-3xl font-semibold tracking-tight text-gray-900 dark:text-white">Another dense analytics route, now broken into clearer UI states</h2>
-                    </div>
-                    <Link
-                        to="/roadmap"
-                        className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-gray-600"
-                    >
-                        Open the migration roadmap
-                        <span aria-hidden="true">→</span>
-                    </Link>
-                </div>
-            </section>
         </div>
     );
 }

@@ -1,7 +1,5 @@
 import {useEffect, useMemo, useState} from 'react';
-import {Link} from 'react-router-dom';
 import {EChartPanel} from '../components/echart-panel';
-import {StatCard} from '../components/stat-card';
 import {type ReactPreviewBootstrap, buildAppPath} from '../lib/bootstrap';
 import {
     fetchEddingtonPreview,
@@ -99,82 +97,49 @@ export function EddingtonPage({bootstrap}: EddingtonPageProps) {
     }, [currentUnitSystem]);
 
     return (
-        <div className="space-y-8 pb-8">
-            <section className="glass-panel overflow-hidden rounded-[36px] p-6 md:p-8">
-                <div className="grid gap-8 xl:grid-cols-[1.2fr_0.8fr]">
-                    <div>
-                        <div className="section-kicker">Eddington preview</div>
-                        <h1 className="mt-5 max-w-3xl text-4xl font-semibold tracking-tight text-gray-900 dark:text-white md:text-5xl">
-                            A React preview for one of the app’s nerdiest badges of honour.
-                        </h1>
-                        <p className="mt-5 max-w-2xl text-base leading-8 text-gray-600 dark:text-gray-300 md:text-lg">
-                            The Eddington number tracks the maximum number <span className="font-semibold">E</span> such that you have covered at least <span className="font-semibold">E</span> {currentUnitSystem?.distanceSymbol ?? window.statisticsForStrava.unitSystem.distanceSymbol} on at least <span className="font-semibold">E</span> days.
+        <div className="space-y-6 pb-6">
+            <section className="ui-section">
+                <div className="flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
+                    <div className="min-w-0">
+                        <h1 className="text-xl font-bold tracking-tight text-gray-900 dark:text-white md:text-2xl">Eddington</h1>
+                        <p className="mt-1 max-w-3xl text-sm leading-7 text-gray-500 dark:text-gray-400">
+                            The maximum number $E$ such that you have covered at least $E$ {currentUnitSystem?.distanceSymbol ?? 'km'} on at least $E$ days.
                         </p>
-                        <p className="mt-4 max-w-2xl text-sm leading-7 text-gray-500 dark:text-gray-400">
-                            It gets harder in a delightfully rude way: moving from 70 to 75 rarely means five more sessions—it means five more sessions that are all at least 75 long.
+                        <p className="mt-2 max-w-3xl text-sm leading-7 text-gray-500 dark:text-gray-400">
+                            Moving from 70 to 75 usually means more than five new long workouts, because every day has to clear the new threshold.
                         </p>
-                        <div className="mt-6 flex flex-wrap gap-3">
-                            <a
-                                href={buildAppPath(bootstrap.basePath, 'eddington')}
-                                className="inline-flex items-center gap-2 rounded-2xl bg-gray-900 px-5 py-3 text-sm font-semibold text-white transition hover:bg-gray-800 dark:bg-white dark:text-gray-950 dark:hover:bg-gray-200"
-                            >
-                                Open the current Eddington page
-                                <span aria-hidden="true">↗</span>
-                            </a>
-                            <button
-                                type="button"
-                                onClick={reload}
-                                className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-5 py-3 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-gray-600"
-                            >
-                                Refresh preview data
-                                <span aria-hidden="true">↻</span>
-                            </button>
-                        </div>
                     </div>
-                    <div className="rounded-[32px] border border-amber-200 bg-[linear-gradient(135deg,rgba(255,255,255,0.95),rgba(255,251,235,0.96))] p-5 shadow-[0_45px_120px_-45px_rgba(15,23,42,0.65)] dark:border-amber-900/40 dark:bg-[linear-gradient(135deg,rgba(17,24,39,0.94),rgba(69,39,0,0.78))]">
-                        <div className="text-xs font-semibold uppercase tracking-[0.24em] text-amber-700 dark:text-amber-300">What this proves</div>
-                        <div className="mt-4 space-y-3 text-sm leading-7 text-gray-700 dark:text-gray-200">
-                            {[
-                                'The preview shell can render chart-heavy read-side pages, not just forms and tables.',
-                                'Symfony still owns the domain math, while React owns route composition, tabs, and empty/loading states.',
-                                'This gives us a reusable chart wrapper for the routes that follow—hello, more graphs.',
-                            ].map((item) => (
-                                <div key={item} className="rounded-2xl border border-white/80 bg-white/80 p-4 dark:border-gray-800 dark:bg-gray-950/40">
-                                    {item}
-                                </div>
-                            ))}
-                        </div>
+                    <div className="flex flex-wrap items-center gap-2">
+                        <a href={buildAppPath(bootstrap.basePath, 'eddington')} className="ui-button">
+                            Open classic Eddington page
+                        </a>
+                        <button type="button" onClick={reload} className="ui-button">
+                            Refresh data
+                        </button>
                     </div>
                 </div>
             </section>
 
-            <section className="grid gap-4 md:grid-cols-2 xl:grid-cols-4">
-                <StatCard label="Tracked variants" value={formatNumber(unitSummary.totalNumbers)} hint="Distinct Eddington tracks available in the selected unit system." tone="orange" />
-                <StatCard label="Highest E-number" value={formatNumber(unitSummary.highestNumber)} hint="Best current Eddington score in the active tab." tone="emerald" />
-                <StatCard label="Fastest next unlock" value={unitSummary.nextDays === null ? '—' : `${formatNumber(unitSummary.nextDays)} days`} hint="Fewest days needed to push any visible track to its next number." tone="blue" />
-                <StatCard label="Selected distance cap" value={activeEddington ? `${formatNumber(activeEddington.longestDistanceInADay)} ${unitSummary.currentDistanceSymbol}` : '—'} hint="Longest single-day distance contributing to the selected Eddington." tone="slate" />
-            </section>
-
-            <section className="glass-panel rounded-[32px] p-6">
+            <section className="ui-section">
                 <div className="flex flex-col gap-4 xl:flex-row xl:items-center xl:justify-between">
                     <div>
-                        <div className="section-kicker">Unit systems</div>
-                        <p className="mt-4 max-w-2xl text-sm leading-7 text-gray-600 dark:text-gray-300">
-                            The legacy page renders metric and imperial side-by-side. The preview keeps both, but in a calmer route-level layout with explicit state.
+                        <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Unit systems</h2>
+                        <p className="mt-1 max-w-2xl text-sm leading-7 text-gray-500 dark:text-gray-400">
+                            Switch between metric and imperial, then choose the track you want to inspect.
                         </p>
                     </div>
                     <div className="text-sm text-gray-500 dark:text-gray-400">
-                        {data ? `Preview data refreshed ${formatRequestedAt(data.requestedAt)}.` : 'Waiting for preview data.'}
+                        {data ? `Refreshed ${formatRequestedAt(data.requestedAt)}.` : 'Waiting for data.'}
                     </div>
                 </div>
 
-                <div className="mt-6 inline-flex rounded-2xl border border-gray-200 bg-gray-100 p-1 dark:border-gray-700 dark:bg-gray-900">
+                <div className="mt-4 inline-flex rounded-lg border border-gray-200 bg-gray-100 p-1 dark:border-gray-700 dark:bg-gray-900">
                     {(data?.unitSystems ?? []).map((unitSystem) => (
                         <button
                             key={unitSystem.value}
                             type="button"
                             onClick={() => setActiveUnitSystem(unitSystem.value)}
-                            className={`rounded-[18px] px-4 py-2 text-sm font-medium transition ${activeUnitSystem === unitSystem.value
+                            className={`rounded-md px-4 py-2 text-sm font-medium transition ${activeUnitSystem === unitSystem.value
                                 ? 'bg-white text-gray-900 shadow-sm dark:bg-gray-800 dark:text-white'
                                 : 'text-gray-500 dark:text-gray-400'}`}
                         >
@@ -196,8 +161,8 @@ export function EddingtonPage({bootstrap}: EddingtonPageProps) {
                                         ...current,
                                         [currentUnitSystem.value]: eddington.id,
                                     }))}
-                                    className={`rounded-full border px-4 py-2 text-sm font-medium transition ${isActive
-                                        ? 'border-strava-orange bg-orange-50 text-orange-700 dark:border-orange-400 dark:bg-orange-950/40 dark:text-orange-200'
+                                    className={`rounded-lg border px-4 py-2 text-sm font-medium transition ${isActive
+                                        ? 'border-orange-300 bg-orange-50 text-orange-700 dark:border-orange-400 dark:bg-orange-950/40 dark:text-orange-200'
                                         : 'border-gray-200 bg-white text-gray-600 hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-300 dark:hover:border-gray-600 dark:hover:text-white'}`}
                                 >
                                     {eddington.label} ({eddington.number})
@@ -209,79 +174,49 @@ export function EddingtonPage({bootstrap}: EddingtonPageProps) {
             </section>
 
             {loading && !data ? (
-                <section className="glass-panel rounded-[32px] p-6 text-sm text-gray-600 dark:text-gray-300">
-                    Loading Eddington preview… counting long days with suspicious enthusiasm.
+                <section className="ui-section text-sm text-gray-600 dark:text-gray-300">
+                    Loading Eddington data.
                 </section>
             ) : null}
 
             {error ? (
-                <section className="rounded-[32px] border border-rose-200 bg-rose-50/90 p-6 text-sm text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-100">
+                <section className="rounded-lg border border-rose-200 bg-rose-50 p-6 text-sm text-rose-800 dark:border-rose-900/50 dark:bg-rose-950/40 dark:text-rose-100">
                     {error}
                 </section>
             ) : null}
 
             {!loading && !error && currentUnitSystem && currentUnitSystem.eddingtons.length === 0 ? (
-                <section className="glass-panel rounded-[32px] p-6 text-sm text-gray-600 dark:text-gray-300">
+                <section className="ui-section text-sm text-gray-600 dark:text-gray-300">
                     No Eddington tracks are available for this unit system yet.
                 </section>
             ) : null}
 
             {activeEddington ? (
                 <>
-                    <section className="glass-panel rounded-[32px] p-6">
-                        <div className="flex flex-col gap-6 lg:flex-row lg:items-end lg:justify-between">
+                    <section className="ui-section">
+                        <div className="flex flex-col gap-4 lg:flex-row lg:items-start lg:justify-between">
                             <div>
-                                <div className="section-kicker">Selected track</div>
-                                <h2 className="mt-4 text-3xl font-semibold tracking-tight text-gray-900 dark:text-white">
-                                    {activeEddington.label}
-                                </h2>
-                                <p className="mt-3 text-sm leading-7 text-gray-600 dark:text-gray-300">
+                                <h2 className="text-sm font-semibold text-gray-700 dark:text-gray-200">Selected track</h2>
+                                <div className="mt-1 text-base font-semibold text-gray-900 dark:text-white">{activeEddington.label}</div>
+                                <p className="mt-2 text-sm leading-7 text-gray-500 dark:text-gray-400">
                                     Current Eddington: <span className="font-semibold text-gray-900 dark:text-white">{formatNumber(activeEddington.number)}</span>. Next target: <span className="font-semibold text-gray-900 dark:text-white">{formatNumber(activeEddington.nextNumber)}</span> {unitSummary.currentDistanceSymbol} on <span className="font-semibold text-gray-900 dark:text-white">{formatNumber(activeEddington.nextNumber)}</span> days.
                                 </p>
                             </div>
-                            <div className="grid gap-3 sm:grid-cols-3">
-                                <div className="rounded-2xl border border-gray-200 bg-white/85 p-4 text-sm dark:border-gray-800 dark:bg-gray-900/60">
-                                    <div className="text-gray-500 dark:text-gray-400">Days to next</div>
-                                    <div className="mt-2 text-2xl font-semibold text-gray-900 dark:text-white">
-                                        {activeEddington.daysToNextNumber === null ? '—' : formatNumber(activeEddington.daysToNextNumber)}
-                                    </div>
-                                </div>
-                                <div className="rounded-2xl border border-gray-200 bg-white/85 p-4 text-sm dark:border-gray-800 dark:bg-gray-900/60">
-                                    <div className="text-gray-500 dark:text-gray-400">History points</div>
-                                    <div className="mt-2 text-2xl font-semibold text-gray-900 dark:text-white">{formatNumber(activeEddington.historyLength)}</div>
-                                </div>
-                                <div className="rounded-2xl border border-gray-200 bg-white/85 p-4 text-sm dark:border-gray-800 dark:bg-gray-900/60">
-                                    <div className="text-gray-500 dark:text-gray-400">Longest day</div>
-                                    <div className="mt-2 text-2xl font-semibold text-gray-900 dark:text-white">
-                                        {formatNumber(activeEddington.longestDistanceInADay)} {unitSummary.currentDistanceSymbol}
-                                    </div>
-                                </div>
+                            <div className="flex flex-wrap gap-2 text-sm">
+                                <div className="ui-pill">{unitSummary.totalNumbers} variants</div>
+                                <div className="ui-pill">Highest E {formatNumber(unitSummary.highestNumber)}</div>
+                                <div className="ui-pill">{activeEddington.daysToNextNumber === null ? 'No next step' : `${formatNumber(activeEddington.daysToNextNumber)} days to next`}</div>
+                                <div className="ui-pill">Longest day {formatNumber(activeEddington.longestDistanceInADay)} {unitSummary.currentDistanceSymbol}</div>
                             </div>
                         </div>
                     </section>
 
-                    <section className="grid gap-6 xl:grid-cols-2">
+                    <section className="grid gap-4 xl:grid-cols-2">
                         <EChartPanel title="Eddington ladder" options={activeEddington.chartOptions} heightClassName="h-80" />
                         <EChartPanel title="History" options={activeEddington.historyChartOptions} heightClassName="h-80" />
                     </section>
                 </>
             ) : null}
-
-            <section className="glass-panel rounded-[32px] p-6">
-                <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
-                    <div>
-                        <div className="section-kicker">Where this leads</div>
-                        <h2 className="mt-4 text-3xl font-semibold tracking-tight text-gray-900 dark:text-white">Another chart-heavy route, now inside the preview shell</h2>
-                    </div>
-                    <Link
-                        to="/roadmap"
-                        className="inline-flex items-center gap-2 rounded-2xl border border-gray-200 bg-white px-4 py-3 text-sm font-semibold text-gray-700 transition hover:border-gray-300 hover:text-gray-900 dark:border-gray-700 dark:bg-gray-900 dark:text-gray-100 dark:hover:border-gray-600"
-                    >
-                        Open the migration roadmap
-                        <span aria-hidden="true">→</span>
-                    </Link>
-                </div>
-            </section>
         </div>
     );
 }

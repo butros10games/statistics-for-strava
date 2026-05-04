@@ -34,7 +34,7 @@ export function RewindActivityMap({
         const mapNode = mapNodeRef.current;
 
         if (!mapNode || !L) {
-            setMapError('Leaflet preview assets are unavailable for this rewind card.');
+            setMapError('Map assets are unavailable for this rewind card.');
 
             return;
         }
