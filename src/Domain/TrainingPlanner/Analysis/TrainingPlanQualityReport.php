@@ -8,8 +8,8 @@ final readonly class TrainingPlanQualityReport
 {
     /**
      * @param list<TrainingPlanAnalysisIssue> $issues
-     * @param array<string, mixed> $metrics
-     * @param list<array<string, mixed>> $weekRows
+     * @param array<string, mixed>            $metrics
+     * @param list<array<string, mixed>>      $weekRows
      */
     private function __construct(
         private TrainingPlanAnalysisScenario $scenario,
@@ -22,8 +22,8 @@ final readonly class TrainingPlanQualityReport
 
     /**
      * @param list<TrainingPlanAnalysisIssue> $issues
-     * @param array<string, mixed> $metrics
-     * @param list<array<string, mixed>> $weekRows
+     * @param array<string, mixed>            $metrics
+     * @param list<array<string, mixed>>      $weekRows
      */
     public static function create(
         TrainingPlanAnalysisScenario $scenario,

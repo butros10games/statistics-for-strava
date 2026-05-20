@@ -121,7 +121,7 @@ final readonly class TrainingLoadAnalyticsContext
      */
     public function getLastRows(int $days): array
     {
-        return array_values(array_slice($this->rows, -$days));
+        return array_slice($this->rows, -$days);
     }
 
     /**
@@ -145,7 +145,7 @@ final readonly class TrainingLoadAnalyticsContext
             $rows = array_slice($rows, 0, max(0, count($rows) - $skipLatestDays));
         }
 
-        return array_values(array_slice($rows, -$days));
+        return array_slice($rows, -$days);
     }
 
     /**

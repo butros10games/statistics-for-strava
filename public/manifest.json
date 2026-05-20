@@ -1,6 +1,6 @@
 {
-  "id": "https://strava.butrosgroot.com/",
-  "name": "Tempo | Butros Groot",
+  "id": "[APP_HOST]",
+  "name": "[APP_NAME]",
   "short_name": "Tempo",
   "description": "Tempo is a self-hosted web app for training insights, planning, and stats.",
   "categories": [
@@ -9,7 +9,7 @@
     "utilities"
   ],
   "start_url": "/",
-  "scope": "https://strava.butrosgroot.com/",
+  "scope": "[APP_HOST]",
   "display": "standalone",
   "display_override": [
     "fullscreen",
@@ -20,7 +20,7 @@
   "background_color": "#f9fafb",
   "icons": [
     {
-      "src": "/assets/images/manifest/icon-192.png",
+      "src": "[APP_BASE_PATH]/assets/images/manifest/icon-192.png",
       "sizes": "192x192",
       "type": "image/png"
     },

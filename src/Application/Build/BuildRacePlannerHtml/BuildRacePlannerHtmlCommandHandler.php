@@ -11,28 +11,30 @@ use App\Domain\TrainingPlanner\PlanGenerator\PlanAdaptationRecommendationType;
 use App\Domain\TrainingPlanner\PlanGenerator\PlanAdaptationRecommender;
 use App\Domain\TrainingPlanner\PlanGenerator\PlanAdaptationWarningSeverity;
 use App\Domain\TrainingPlanner\PlanGenerator\RaceProfileTrainingRules;
+use App\Domain\TrainingPlanner\PlanGenerator\TrainingPlanGenerator;
+use App\Domain\TrainingPlanner\PlannedSessionEstimatedLoadMapBuilder;
+use App\Domain\TrainingPlanner\PlannedSessionRepository;
 use App\Domain\TrainingPlanner\Prediction\RunningPlanPerformancePrediction;
 use App\Domain\TrainingPlanner\Prediction\RunningPlanPerformancePredictor;
-use App\Domain\TrainingPlanner\PlanGenerator\TrainingPlanGenerator;
 use App\Domain\TrainingPlanner\Prediction\RunningRaceBenchmarkPrediction;
-use App\Domain\TrainingPlanner\PlannedSessionLoadEstimator;
-use App\Domain\TrainingPlanner\PlannedSessionRepository;
 use App\Domain\TrainingPlanner\RaceEvent;
+use App\Domain\TrainingPlanner\RaceEventsByIdMapBuilder;
 use App\Domain\TrainingPlanner\RaceEventFamily;
 use App\Domain\TrainingPlanner\RaceEventPriority;
 use App\Domain\TrainingPlanner\RaceEventProfile;
-use App\Domain\TrainingPlanner\RaceEventType;
-use App\Domain\TrainingPlanner\RacePlannerExistingBlockSelector;
-use App\Domain\TrainingPlanner\RacePlannerConfiguration;
-use App\Domain\TrainingPlanner\RacePlannerRecoveryManager;
 use App\Domain\TrainingPlanner\RaceEventRepository;
-use App\Domain\TrainingPlanner\TrainingFocus;
-use App\Domain\TrainingPlanner\TrainingPlan;
-use App\Domain\TrainingPlanner\TrainingPlanRepository;
-use App\Domain\TrainingPlanner\TrainingPlanDiscipline;
-use App\Domain\TrainingPlanner\TrainingPlanType;
+use App\Domain\TrainingPlanner\RaceEventType;
+use App\Domain\TrainingPlanner\RacePlannerConfiguration;
+use App\Domain\TrainingPlanner\RacePlannerExistingBlockSelector;
+use App\Domain\TrainingPlanner\RacePlannerRecoveryManager;
 use App\Domain\TrainingPlanner\TrainingBlock;
 use App\Domain\TrainingPlanner\TrainingBlockRepository;
+use App\Domain\TrainingPlanner\TrainingFocus;
+use App\Domain\TrainingPlanner\TrainingPlan;
+use App\Domain\TrainingPlanner\TrainingPlanDiscipline;
+use App\Domain\TrainingPlanner\TrainingPlanRepository;
+use App\Domain\TrainingPlanner\TrainingPlanType;
+use App\Domain\Calendar\Week;
 use App\Infrastructure\CQRS\Command\Command;
 use App\Infrastructure\CQRS\Command\CommandHandler;
 use App\Infrastructure\Serialization\Json;
@@ -49,7 +51,8 @@ final readonly class BuildRacePlannerHtmlCommandHandler implements CommandHandle
         private RaceEventRepository $raceEventRepository,
         private TrainingBlockRepository $trainingBlockRepository,
         private PlannedSessionRepository $plannedSessionRepository,
-        private PlannedSessionLoadEstimator $plannedSessionLoadEstimator,
+        private PlannedSessionEstimatedLoadMapBuilder $plannedSessionEstimatedLoadMapBuilder,
+        private RaceEventsByIdMapBuilder $raceEventsByIdMapBuilder,
         private AdaptivePlanningContextBuilder $adaptivePlanningContextBuilder,
         private TrainingPlanGenerator $planGenerator,
         private RunningPlanPerformancePredictor $runningPlanPerformancePredictor,
@@ -99,7 +102,7 @@ final readonly class BuildRacePlannerHtmlCommandHandler implements CommandHandle
 
         $targetRace = $this->findTargetARace($upcomingRaces);
         $linkedTrainingPlan = $this->trainingPlanRepository->findByTargetRaceEventId($targetRace->getId());
-        $raceEventsById = $this->buildRaceEventsById($upcomingRaces);
+        $raceEventsById = $this->raceEventsByIdMapBuilder->build($upcomingRaces);
         $raceEventCountdownDaysById = $this->buildRaceEventCountdownDaysById($upcomingRaces, $now);
         $rules = RaceProfileTrainingRules::forProfile($linkedTrainingPlan?->getTargetRaceProfile() ?? $targetRace->getProfile());
         $configuredPlanStartDay = $this->racePlannerConfiguration->findPlanStartDay();
@@ -134,9 +137,9 @@ final readonly class BuildRacePlannerHtmlCommandHandler implements CommandHandle
                 $planningEndDay,
             ))
             : $existingSessions;
-        $plannedSessionEstimatesById = $this->buildPlannedSessionEstimatesById($existingSessions);
+        $plannedSessionEstimatesById = $this->plannedSessionEstimatedLoadMapBuilder->build($existingSessions);
         $currentWeekSessions = $this->findSessionsInCurrentWeek($existingSessions, $now);
-        $currentWeekSessionEstimatesById = $this->buildPlannedSessionEstimatesById($currentWeekSessions);
+        $currentWeekSessionEstimatesById = $this->plannedSessionEstimatedLoadMapBuilder->build($currentWeekSessions);
         $adaptivePlanningContext = $this->adaptivePlanningContextBuilder->build(
             referenceDate: $now,
             plannedSessions: $existingSessions,
@@ -240,7 +243,7 @@ final readonly class BuildRacePlannerHtmlCommandHandler implements CommandHandle
     {
         $plannerRoute = sprintf('/race-planner/plan-%s', $plan->getId());
         $planRaces = $this->loadRacesForPlan($plan);
-        $raceEventsById = $this->buildRaceEventsById($planRaces);
+        $raceEventsById = $this->raceEventsByIdMapBuilder->build($planRaces);
         $linkedRace = null === $plan->getTargetRaceEventId()
             ? null
             : $this->raceEventRepository->findById($plan->getTargetRaceEventId());
@@ -262,9 +265,9 @@ final readonly class BuildRacePlannerHtmlCommandHandler implements CommandHandle
         );
         $existingBlocks = $this->trainingBlockRepository->findByDateRange($planDateRange);
         $existingSessions = $this->plannedSessionRepository->findByDateRange($planDateRange);
-        $plannedSessionEstimatesById = $this->buildPlannedSessionEstimatesById($existingSessions);
+        $plannedSessionEstimatesById = $this->plannedSessionEstimatedLoadMapBuilder->build($existingSessions);
         $currentWeekSessions = $this->findSessionsInCurrentWeek($existingSessions, $now);
-        $currentWeekSessionEstimatesById = $this->buildPlannedSessionEstimatesById($currentWeekSessions);
+        $currentWeekSessionEstimatesById = $this->plannedSessionEstimatedLoadMapBuilder->build($currentWeekSessions);
         $adaptivePlanningContext = $this->adaptivePlanningContextBuilder->build(
             referenceDate: $now,
             plannedSessions: $existingSessions,
@@ -617,6 +620,8 @@ final readonly class BuildRacePlannerHtmlCommandHandler implements CommandHandle
     }
 
     /**
+        * @param list<TrainingBlock> $existingBlocks
+        *
      * @return list<PlanAdaptationRecommendation>
      */
     private function buildDevelopmentPlanPreviewRecommendations(TrainingPlan $plan, array $existingBlocks): array
@@ -639,17 +644,16 @@ final readonly class BuildRacePlannerHtmlCommandHandler implements CommandHandle
     }
 
     /**
-    * @param list<\App\Domain\TrainingPlanner\PlannedSession> $existingSessions
-    *
-    * @return null|array{confidenceLabel: string, currentThresholdPace: string, trajectoryThresholdPace: ?string, trajectoryGainLabel: ?string, trajectoryStatusLabel: ?string, projectedThresholdPace: string, projectedGainLabel: string, benchmarkPredictions: list<array{label: string, currentFinishTimeInSeconds: int, projectedFinishTimeInSeconds: int}>, projectedThresholdPacesByWeekStartDate: array<string, string>, basisRows: list<array{label: string, value: string}>, basisNote: string}
+     * @param list<\App\Domain\TrainingPlanner\PlannedSession> $existingSessions
+     *
+     * @return array{confidenceLabel: string, currentThresholdPace: string, trajectoryThresholdPace: ?string, trajectoryGainLabel: ?string, trajectoryStatusLabel: ?string, projectedThresholdPace: string, projectedGainLabel: string, benchmarkPredictions: list<array{label: string, currentFinishTimeInSeconds: int, projectedFinishTimeInSeconds: int}>, projectedThresholdPacesByWeekStartDate: array<string, string>, basisRows: list<array{label: string, value: string}>, basisNote: string}|null
      */
     private function buildRunningPerformancePredictionViewModel(
         ?TrainingPlan $trainingPlan,
         \App\Domain\TrainingPlanner\PlanGenerator\TrainingPlanProposal $proposal,
         array $existingSessions,
         SerializableDateTime $referenceDate,
-    ): ?array
-    {
+    ): ?array {
         if (null === $trainingPlan) {
             return null;
         }
@@ -781,7 +785,7 @@ final readonly class BuildRacePlannerHtmlCommandHandler implements CommandHandle
 
         usort($races, static fn (RaceEvent $left, RaceEvent $right): int => $left->getDay() <=> $right->getDay());
 
-        return array_values($races);
+        return $races;
     }
 
     /**
@@ -800,7 +804,7 @@ final readonly class BuildRacePlannerHtmlCommandHandler implements CommandHandle
                 RaceEventPriority::C->value => 2,
             ];
 
-            $priorityComparison = ($priorityRank[$left->getPriority()->value] ?? 9) <=> ($priorityRank[$right->getPriority()->value] ?? 9);
+            $priorityComparison = $priorityRank[$left->getPriority()->value] <=> $priorityRank[$right->getPriority()->value];
             if (0 !== $priorityComparison) {
                 return $priorityComparison;
             }
@@ -897,22 +901,6 @@ final readonly class BuildRacePlannerHtmlCommandHandler implements CommandHandle
     /**
      * @param list<RaceEvent> $raceEvents
      *
-     * @return array<string, RaceEvent>
-     */
-    private function buildRaceEventsById(array $raceEvents): array
-    {
-        $indexed = [];
-
-        foreach ($raceEvents as $raceEvent) {
-            $indexed[(string) $raceEvent->getId()] = $raceEvent;
-        }
-
-        return $indexed;
-    }
-
-    /**
-     * @param list<RaceEvent> $raceEvents
-     *
      * @return array<string, int>
      */
     private function buildRaceEventCountdownDaysById(array $raceEvents, SerializableDateTime $now): array
@@ -925,23 +913,6 @@ final readonly class BuildRacePlannerHtmlCommandHandler implements CommandHandle
         }
 
         return $countdowns;
-    }
-
-    /**
-     * @param list<\App\Domain\TrainingPlanner\PlannedSession> $plannedSessions
-     *
-     * @return array<string, null|float>
-     */
-    private function buildPlannedSessionEstimatesById(array $plannedSessions): array
-    {
-        $estimates = [];
-
-        foreach ($plannedSessions as $session) {
-            $estimates[(string) $session->getId()] = $this->plannedSessionLoadEstimator
-                ->estimate($session)?->getEstimatedLoad();
-        }
-
-        return $estimates;
     }
 
     private function resolveEffectivePlanStartDay(
@@ -1067,64 +1038,17 @@ final readonly class BuildRacePlannerHtmlCommandHandler implements CommandHandle
     }
 
     /**
-     * @param list<TrainingBlock> $blocks
-     */
-    private function findCurrentBlock(array $blocks, SerializableDateTime $now): ?TrainingBlock
-    {
-        foreach ($blocks as $block) {
-            if ($block->containsDay($now)) {
-                return $block;
-            }
-        }
-
-        return null;
-    }
-
-    /**
      * @param list<\App\Domain\TrainingPlanner\PlannedSession> $plannedSessions
      *
      * @return list<\App\Domain\TrainingPlanner\PlannedSession>
      */
     private function findSessionsInCurrentWeek(array $plannedSessions, SerializableDateTime $now): array
     {
-        $weekStart = $now->modify('Monday this week')->setTime(0, 0);
-        $weekEnd = $weekStart->modify('+6 days')->setTime(23, 59, 59);
+        $week = Week::fromDate($now);
 
         return array_values(array_filter(
             $plannedSessions,
-            static fn (\App\Domain\TrainingPlanner\PlannedSession $session): bool => $session->getDay() >= $weekStart && $session->getDay() <= $weekEnd,
-        ));
-    }
-
-    /**
-     * @param list<RaceEvent> $raceEvents
-     *
-     * @return list<RaceEvent>
-     */
-    private function findRacesInCurrentWeek(array $raceEvents, SerializableDateTime $now): array
-    {
-        $weekStart = $now->modify('Monday this week')->setTime(0, 0);
-        $weekEnd = $weekStart->modify('+6 days')->setTime(23, 59, 59);
-
-        return array_values(array_filter(
-            $raceEvents,
-            static fn (RaceEvent $event): bool => $event->getDay() >= $weekStart && $event->getDay() <= $weekEnd,
-        ));
-    }
-
-    /**
-     * @param list<TrainingBlock> $blocks
-     *
-     * @return list<TrainingBlock>
-     */
-    private function findBlocksInCurrentWeek(array $blocks, SerializableDateTime $now): array
-    {
-        $weekStart = $now->modify('Monday this week')->setTime(0, 0);
-        $weekEnd = $weekStart->modify('+6 days')->setTime(23, 59, 59);
-
-        return array_values(array_filter(
-            $blocks,
-            static fn (TrainingBlock $block): bool => $block->getEndDay() >= $weekStart && $block->getStartDay() <= $weekEnd,
+            static fn (\App\Domain\TrainingPlanner\PlannedSession $session): bool => $session->getDay() >= $week->getFrom() && $session->getDay() <= $week->getTo(),
         ));
     }
 }

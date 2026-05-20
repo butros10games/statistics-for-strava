@@ -9,7 +9,6 @@ use App\Domain\Dashboard\Widget\WidgetConfiguration;
 use App\Domain\Wellness\DailyWellness;
 use App\Domain\Wellness\DailyWellnessRepository;
 use App\Domain\Wellness\WellnessSource;
-use App\Infrastructure\Serialization\Json;
 use App\Infrastructure\ValueObject\Time\SerializableDateTime;
 use App\Tests\ContainerTestCase;
 use Spatie\Snapshots\MatchesSnapshots;

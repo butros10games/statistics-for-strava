@@ -7,6 +7,7 @@ namespace App\Domain\TrainingPlanner;
 use App\Domain\Activity\Activity;
 use App\Domain\Activity\ActivityRepository;
 use App\Domain\Activity\ActivityType;
+use App\Domain\Calendar\Week;
 use App\Domain\Dashboard\Widget\TrainingLoad\IntegratedDailyLoadCalculator;
 use App\Domain\Dashboard\Widget\TrainingLoad\TrainingLoadForecastProjection;
 use App\Domain\Dashboard\Widget\TrainingLoad\TrainingMetrics;
@@ -32,7 +33,9 @@ final readonly class AdaptivePlanningContextBuilder
         private IntegratedDailyLoadCalculator $integratedDailyLoadCalculator,
         private QueryBus $queryBus,
         private WellnessReadinessCalculator $wellnessReadinessCalculator,
-        private PlannedSessionLoadEstimator $plannedSessionLoadEstimator,
+        private CurrentTrainingBlockResolver $currentTrainingBlockResolver,
+        private PlannedSessionEstimatedLoadMapBuilder $plannedSessionEstimatedLoadMapBuilder,
+        private RaceEventsByIdMapBuilder $raceEventsByIdMapBuilder,
         private PlannedSessionForecastBuilder $plannedSessionForecastBuilder,
         private RaceReadinessContextBuilder $raceReadinessContextBuilder,
     ) {
@@ -40,8 +43,8 @@ final readonly class AdaptivePlanningContextBuilder
 
     /**
      * @param list<PlannedSession> $plannedSessions
-     * @param list<RaceEvent> $raceEvents
-     * @param list<TrainingBlock> $trainingBlocks
+     * @param list<RaceEvent>      $raceEvents
+     * @param list<TrainingBlock>  $trainingBlocks
      */
     public function build(
         SerializableDateTime $referenceDate,
@@ -50,6 +53,7 @@ final readonly class AdaptivePlanningContextBuilder
         array $trainingBlocks,
     ): AdaptivePlanningContext {
         $today = $referenceDate->setTime(0, 0);
+        $activityIndex = TrainingPlannerActivityIndex::fromActivities($this->activityRepository->findAll());
         $trainingMetrics = $this->buildTrainingMetrics($referenceDate);
         $wellnessMetrics = $this->buildWellnessMetrics($today);
         $recoveryCheckIns = $this->buildRecoveryCheckIns($today);
@@ -73,14 +77,14 @@ final readonly class AdaptivePlanningContextBuilder
                 plannedSessions: $this->findSessionsInCurrentWeek($plannedSessions, $referenceDate),
                 raceEvents: $this->findRacesInCurrentWeek($raceEvents, $referenceDate),
                 trainingBlocks: $this->findBlocksInCurrentWeek($trainingBlocks, $referenceDate),
-                currentTrainingBlock: $this->findCurrentTrainingBlock($trainingBlocks, $referenceDate),
-                raceEventsById: $this->buildRaceEventsById($raceEvents),
-                plannedSessionEstimatesById: $this->buildPlannedSessionEstimatesById($this->findSessionsInCurrentWeek($plannedSessions, $referenceDate)),
+                currentTrainingBlock: $this->currentTrainingBlockResolver->findCurrent($trainingBlocks, $referenceDate),
+                raceEventsById: $this->raceEventsByIdMapBuilder->build($raceEvents),
+                plannedSessionEstimatesById: $this->plannedSessionEstimatedLoadMapBuilder->build($this->findSessionsInCurrentWeek($plannedSessions, $referenceDate)),
                 readinessScore: $readinessAssessment?->getScore(),
                 forecastProjection: $forecastProjection,
             ),
-            historicalWeeklyRunningVolume: $this->buildHistoricalWeeklyVolume($today, ActivityType::RUN),
-            historicalWeeklyBikingVolume: $this->buildHistoricalWeeklyVolume($today, ActivityType::RIDE),
+            historicalWeeklyRunningVolume: $this->buildHistoricalWeeklyVolume($activityIndex, $today, ActivityType::RUN),
+            historicalWeeklyBikingVolume: $this->buildHistoricalWeeklyVolume($activityIndex, $today, ActivityType::RIDE),
         );
     }
 
@@ -96,6 +100,7 @@ final readonly class AdaptivePlanningContextBuilder
 
     private function buildWellnessMetrics(SerializableDateTime $today): FindWellnessMetricsResponse
     {
+        /** @var FindWellnessMetricsResponse $response */
         $response = $this->queryBus->ask(new FindWellnessMetrics(
             dateRange: DateRange::fromDates(
                 $today->modify(sprintf('-%d days', self::RECENT_WELLNESS_DAYS - 1)),
@@ -103,69 +108,21 @@ final readonly class AdaptivePlanningContextBuilder
             ),
             source: WellnessSource::GARMIN,
         ));
-        assert($response instanceof FindWellnessMetricsResponse);
 
         return $response;
     }
 
     private function buildRecoveryCheckIns(SerializableDateTime $today): FindDailyRecoveryCheckInsResponse
     {
+        /** @var FindDailyRecoveryCheckInsResponse $response */
         $response = $this->queryBus->ask(new FindDailyRecoveryCheckIns(
             dateRange: DateRange::fromDates(
                 $today->modify(sprintf('-%d days', self::RECENT_WELLNESS_DAYS - 1)),
                 $today->setTime(23, 59, 59),
             ),
         ));
-        assert($response instanceof FindDailyRecoveryCheckInsResponse);
 
         return $response;
-    }
-
-    /**
-     * @param list<PlannedSession> $plannedSessions
-     *
-     * @return array<string, null|float>
-     */
-    private function buildPlannedSessionEstimatesById(array $plannedSessions): array
-    {
-        $estimatesById = [];
-
-        foreach ($plannedSessions as $plannedSession) {
-            $estimate = $this->plannedSessionLoadEstimator->estimate($plannedSession);
-            $estimatesById[(string) $plannedSession->getId()] = $estimate?->getEstimatedLoad();
-        }
-
-        return $estimatesById;
-    }
-
-    /**
-     * @param list<RaceEvent> $raceEvents
-     *
-     * @return array<string, RaceEvent>
-     */
-    private function buildRaceEventsById(array $raceEvents): array
-    {
-        $raceEventsById = [];
-
-        foreach ($raceEvents as $raceEvent) {
-            $raceEventsById[(string) $raceEvent->getId()] = $raceEvent;
-        }
-
-        return $raceEventsById;
-    }
-
-    /**
-     * @param list<TrainingBlock> $trainingBlocks
-     */
-    private function findCurrentTrainingBlock(array $trainingBlocks, SerializableDateTime $referenceDate): ?TrainingBlock
-    {
-        foreach ($trainingBlocks as $trainingBlock) {
-            if ($trainingBlock->containsDay($referenceDate)) {
-                return $trainingBlock;
-            }
-        }
-
-        return null;
     }
 
     /**
@@ -175,11 +132,11 @@ final readonly class AdaptivePlanningContextBuilder
      */
     private function findSessionsInCurrentWeek(array $plannedSessions, SerializableDateTime $referenceDate): array
     {
-        [$weekStart, $weekEnd] = $this->resolveCurrentWeekWindow($referenceDate);
+        $week = Week::fromDate($referenceDate);
 
         return array_values(array_filter(
             $plannedSessions,
-            static fn (PlannedSession $plannedSession): bool => $plannedSession->getDay() >= $weekStart && $plannedSession->getDay() <= $weekEnd,
+            static fn (PlannedSession $plannedSession): bool => $plannedSession->getDay() >= $week->getFrom() && $plannedSession->getDay() <= $week->getTo(),
         ));
     }
 
@@ -190,11 +147,11 @@ final readonly class AdaptivePlanningContextBuilder
      */
     private function findBlocksInCurrentWeek(array $trainingBlocks, SerializableDateTime $referenceDate): array
     {
-        [$weekStart, $weekEnd] = $this->resolveCurrentWeekWindow($referenceDate);
+        $week = Week::fromDate($referenceDate);
 
         return array_values(array_filter(
             $trainingBlocks,
-            static fn (TrainingBlock $trainingBlock): bool => $trainingBlock->getStartDay() <= $weekEnd && $trainingBlock->getEndDay() >= $weekStart,
+            static fn (TrainingBlock $trainingBlock): bool => $trainingBlock->getStartDay() <= $week->getTo() && $trainingBlock->getEndDay() >= $week->getFrom(),
         ));
     }
 
@@ -205,42 +162,23 @@ final readonly class AdaptivePlanningContextBuilder
      */
     private function findRacesInCurrentWeek(array $raceEvents, SerializableDateTime $referenceDate): array
     {
-        [$weekStart, $weekEnd] = $this->resolveCurrentWeekWindow($referenceDate);
+        $week = Week::fromDate($referenceDate);
 
         return array_values(array_filter(
             $raceEvents,
-            static fn (RaceEvent $raceEvent): bool => $raceEvent->getDay() >= $weekStart && $raceEvent->getDay() <= $weekEnd,
+            static fn (RaceEvent $raceEvent): bool => $raceEvent->getDay() >= $week->getFrom() && $raceEvent->getDay() <= $week->getTo(),
         ));
     }
 
-    /**
-     * @return array{0: SerializableDateTime, 1: SerializableDateTime}
-     */
-    private function resolveCurrentWeekWindow(SerializableDateTime $referenceDate): array
+    private function buildHistoricalWeeklyVolume(TrainingPlannerActivityIndex $activityIndex, SerializableDateTime $today, ActivityType $activityType): ?float
     {
-        return [
-            SerializableDateTime::fromString($referenceDate->modify('monday this week')->format('Y-m-d 00:00:00')),
-            SerializableDateTime::fromString($referenceDate->modify('sunday this week')->format('Y-m-d 23:59:59')),
-        ];
-    }
-
-    private function buildHistoricalWeeklyVolume(SerializableDateTime $today, ActivityType $activityType): ?float
-    {
-        $rangeStart = $today->modify(sprintf('-%d days', self::RECENT_ACTIVITY_DAYS - 1))->setTime(0, 0);
-        $rangeEnd = $today->setTime(23, 59, 59);
+        $dateRange = DateRange::fromDates(
+            $today->modify(sprintf('-%d days', self::RECENT_ACTIVITY_DAYS - 1))->setTime(0, 0),
+            $today->setTime(23, 59, 59),
+        );
         $volume = 0.0;
 
-        foreach ($this->activityRepository->findAll() as $activity) {
-            assert($activity instanceof Activity);
-
-            if ($activity->getStartDate() < $rangeStart || $activity->getStartDate() > $rangeEnd) {
-                continue;
-            }
-
-            if ($activity->getSportType()->getActivityType() !== $activityType) {
-                continue;
-            }
-
+        foreach ($activityIndex->byDateRangeAndActivityType($dateRange, $activityType) as $activity) {
             $volume += match ($activityType) {
                 ActivityType::RUN => $activity->getDistance()->toFloat(),
                 ActivityType::RIDE => $activity->getMovingTimeInSeconds() / 3600,
@@ -267,7 +205,7 @@ final readonly class AdaptivePlanningContextBuilder
             return null;
         }
 
-        return ($latestRecoveryCheckIn['day'] ?? null) === $today->format('Y-m-d')
+        return $latestRecoveryCheckIn['day'] === $today->format('Y-m-d')
             ? $latestRecoveryCheckIn
             : null;
     }

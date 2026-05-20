@@ -4,6 +4,8 @@ declare(strict_types=1);
 
 namespace App\Tests\Controller;
 
+use App\Domain\Athlete\Athlete;
+use App\Domain\Athlete\AthleteRepository;
 use App\Domain\Auth\AppUser;
 use App\Domain\Auth\AppUserId;
 use App\Domain\Auth\AppUserRepository;
@@ -42,9 +44,25 @@ final class AccountSettingsRequestHandlerTest extends WebTestCase
         parent::tearDown();
     }
 
-    public function testDirectAccountSettingsRouteRendersStyledPage(): void
+    public function testDirectAccountSettingsRouteWithoutAthleteRendersStandaloneStyledPage(): void
     {
         $this->createAndLoginUser();
+
+        $this->client->request('GET', '/account/settings');
+
+        self::assertResponseIsSuccessful();
+        self::assertStringContainsString('css/dist/tailwind.min.css', (string) $this->client->getResponse()->getContent());
+        self::assertStringContainsString('data-manual-sync-root', (string) $this->client->getResponse()->getContent());
+        self::assertStringContainsString('Manage your account and connected services', (string) $this->client->getResponse()->getContent());
+        self::assertStringNotContainsString('id="js-loaded-content"', (string) $this->client->getResponse()->getContent());
+        self::assertStringNotContainsString('js/dist/app.min.js', (string) $this->client->getResponse()->getContent());
+        self::assertStringContainsString('<!DOCTYPE html>', (string) $this->client->getResponse()->getContent());
+    }
+
+    public function testDirectAccountSettingsRouteWithAthleteRendersAppShell(): void
+    {
+        $this->createAndLoginUser();
+        $this->seedAthlete();
 
         $this->client->request('GET', '/account/settings');
 
@@ -87,5 +105,18 @@ final class AccountSettingsRequestHandlerTest extends WebTestCase
         $this->client->loginUser($user);
 
         return $user;
+    }
+
+    private function seedAthlete(): void
+    {
+        $athleteRepository = $this->client->getContainer()->get(AthleteRepository::class);
+        assert($athleteRepository instanceof AthleteRepository);
+
+        $athleteRepository->save(Athlete::create([
+            'id' => 100,
+            'birthDate' => '1989-08-14',
+            'firstname' => 'Robin',
+            'lastname' => 'Ingelbrecht',
+        ]));
     }
 }

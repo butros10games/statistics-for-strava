@@ -13,13 +13,13 @@ use App\Domain\Wellness\WellnessImportConfig;
 use App\Domain\Wellness\WellnessSource;
 use App\Infrastructure\Exception\EntityNotFound;
 use App\Infrastructure\Time\Clock\Clock;
-use Symfony\Component\HttpFoundation\Request;
 use App\Infrastructure\User\CurrentAppUser;
+use Ramsey\Uuid\Uuid;
+use Symfony\Component\HttpFoundation\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Symfony\Component\HttpKernel\Attribute\AsController;
 use Symfony\Component\Routing\Attribute\Route;
 use Twig\Environment;
-use Ramsey\Uuid\Uuid;
 
 #[AsController]
 final readonly class AccountSettingsRequestHandler

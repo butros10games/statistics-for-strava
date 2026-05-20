@@ -14,7 +14,7 @@ final class Version20260209083118 extends AbstractMigration
 {
     public function getDescription(): string
     {
-        return '';
+        return 'Store combined activity stream data as binary payloads and add a max y-axis value column';
     }
 
     public function up(Schema $schema): void

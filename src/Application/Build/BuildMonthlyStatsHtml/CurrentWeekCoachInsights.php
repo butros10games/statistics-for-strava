@@ -8,10 +8,10 @@ final readonly class CurrentWeekCoachInsights
 {
     /**
      * @param list<array{activityType: \App\Domain\Activity\ActivityType, count: int}> $activityTypeSummaries
-     * @param array<string, true> $keySessionIds
-     * @param array<string, true> $brickSessionIds
-     * @param null|array{label: string, tone: string, title: string, body: string} $raceIntent
-     * @param list<array{tone: string, title: string, body: string}> $coachCues
+     * @param array<string, true>                                                      $keySessionIds
+     * @param array<string, true>                                                      $brickSessionIds
+     * @param array{label: string, tone: string, title: string, body: string}|null     $raceIntent
+     * @param list<array{tone: string, title: string, body: string}>                   $coachCues
      */
     public function __construct(
         private float $estimatedLoad,
@@ -53,7 +53,7 @@ final readonly class CurrentWeekCoachInsights
     }
 
     /**
-     * @return null|array{label: string, tone: string, title: string, body: string}
+     * @return array{label: string, tone: string, title: string, body: string}|null
      */
     public function getRaceIntent(): ?array
     {

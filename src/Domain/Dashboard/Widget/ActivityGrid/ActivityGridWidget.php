@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Domain\Dashboard\Widget\ActivityGrid;
 
 use App\Domain\Dashboard\InvalidDashboardLayout;
-use App\Domain\Dashboard\Widget\TrainingLoad\IntegratedDailyLoadCalculator;
 use App\Domain\Dashboard\Widget\ActivityGrid\FindCaloriesBurnedPerDay\FindCaloriesBurnedPerDay;
+use App\Domain\Dashboard\Widget\TrainingLoad\IntegratedDailyLoadCalculator;
 use App\Domain\Dashboard\Widget\Widget;
 use App\Domain\Dashboard\Widget\WidgetConfiguration;
 use App\Domain\Rewind\FindMovingTimePerDay\FindMovingTimePerDay;

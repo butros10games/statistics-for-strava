@@ -29,7 +29,7 @@ final class WellnessLoadContributionCalculator
     }
 
     /**
-     * @param array{day: string, stepsCount: ?int, sleepDurationInSeconds: ?int, sleepScore: ?int, hrv: ?float} $record
+     * @param array{day: string, stepsCount: ?int, sleepDurationInSeconds: ?int, sleepScore: ?int, hrv: ?float}       $record
      * @param list<array{day: string, stepsCount: ?int, sleepDurationInSeconds: ?int, sleepScore: ?int, hrv: ?float}> $historicalRecords
      */
     public function calculateForRecord(array $record, array $historicalRecords = []): int
@@ -44,7 +44,7 @@ final class WellnessLoadContributionCalculator
     }
 
     /**
-     * @param array{day: string, stepsCount: ?int, sleepDurationInSeconds: ?int, sleepScore: ?int, hrv: ?float} $record
+     * @param array{day: string, stepsCount: ?int, sleepDurationInSeconds: ?int, sleepScore: ?int, hrv: ?float}       $record
      * @param list<array{day: string, stepsCount: ?int, sleepDurationInSeconds: ?int, sleepScore: ?int, hrv: ?float}> $historicalRecords
      */
     private function calculateStepsContribution(array $record, array $historicalRecords): float
@@ -66,7 +66,7 @@ final class WellnessLoadContributionCalculator
     }
 
     /**
-     * @param array{day: string, stepsCount: ?int, sleepDurationInSeconds: ?int, sleepScore: ?int, hrv: ?float} $record
+     * @param array{day: string, stepsCount: ?int, sleepDurationInSeconds: ?int, sleepScore: ?int, hrv: ?float}       $record
      * @param list<array{day: string, stepsCount: ?int, sleepDurationInSeconds: ?int, sleepScore: ?int, hrv: ?float}> $historicalRecords
      */
     private function calculateSleepContribution(array $record, array $historicalRecords): float
@@ -99,7 +99,7 @@ final class WellnessLoadContributionCalculator
     }
 
     /**
-     * @param array{day: string, stepsCount: ?int, sleepDurationInSeconds: ?int, sleepScore: ?int, hrv: ?float} $record
+     * @param array{day: string, stepsCount: ?int, sleepDurationInSeconds: ?int, sleepScore: ?int, hrv: ?float}       $record
      * @param list<array{day: string, stepsCount: ?int, sleepDurationInSeconds: ?int, sleepScore: ?int, hrv: ?float}> $historicalRecords
      */
     private function calculateSleepScoreContribution(array $record, array $historicalRecords): float
@@ -121,7 +121,7 @@ final class WellnessLoadContributionCalculator
     }
 
     /**
-     * @param array{day: string, stepsCount: ?int, sleepDurationInSeconds: ?int, sleepScore: ?int, hrv: ?float} $record
+     * @param array{day: string, stepsCount: ?int, sleepDurationInSeconds: ?int, sleepScore: ?int, hrv: ?float}       $record
      * @param list<array{day: string, stepsCount: ?int, sleepDurationInSeconds: ?int, sleepScore: ?int, hrv: ?float}> $historicalRecords
      */
     private function calculateHrvContribution(array $record, array $historicalRecords): float
@@ -165,32 +165,29 @@ final class WellnessLoadContributionCalculator
 
     /**
      * @param list<array{day: string, stepsCount: ?int, sleepDurationInSeconds: ?int, sleepScore: ?int, hrv: ?float}> $records
-     */
-    private function average(array $records, string $field): ?float
-    {
-        $values = array_values(array_filter(
-            array_map(static fn (array $record): int|float|null => $record[$field], $records),
-            static fn (int|float|null $value): bool => null !== $value,
-        ));
-
-        if ([] === $values) {
-            return null;
-        }
-
-        return array_sum($values) / count($values);
-    }
-
-    /**
-     * @param list<array{day: string, stepsCount: ?int, sleepDurationInSeconds: ?int, sleepScore: ?int, hrv: ?float}> $records
      *
      * @return list<int|float>
      */
     private function values(array $records, string $field): array
     {
         return array_values(array_filter(
-            array_map(static fn (array $record): int|float|null => $record[$field], $records),
+            array_map(fn (array $record): int|float|null => $this->extractNumericWellnessValue($record, $field), $records),
             static fn (int|float|null $value): bool => null !== $value,
         ));
+    }
+
+    /**
+     * @param array{day: string, stepsCount: ?int, sleepDurationInSeconds: ?int, sleepScore: ?int, hrv: ?float} $record
+     */
+    private function extractNumericWellnessValue(array $record, string $field): int|float|null
+    {
+        return match ($field) {
+            'stepsCount' => $record['stepsCount'],
+            'sleepDurationInSeconds' => $record['sleepDurationInSeconds'],
+            'sleepScore' => $record['sleepScore'],
+            'hrv' => $record['hrv'],
+            default => null,
+        };
     }
 
     /**

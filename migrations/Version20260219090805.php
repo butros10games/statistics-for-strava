@@ -14,7 +14,7 @@ final class Version20260219090805 extends AbstractMigration
 {
     public function getDescription(): string
     {
-        return '';
+        return 'Move derived activity stream metrics into a dedicated ActivityStreamMetric table';
     }
 
     public function up(Schema $schema): void

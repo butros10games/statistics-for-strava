@@ -5,12 +5,12 @@ declare(strict_types=1);
 namespace App\Domain\TrainingPlanner\Prediction;
 
 use App\Domain\Activity\ActivityType;
+use App\Domain\TrainingPlanner\PlanGenerator\ProposedSession;
+use App\Domain\TrainingPlanner\PlanGenerator\ProposedWeekSkeleton;
+use App\Domain\TrainingPlanner\PlanGenerator\TrainingPlanProposal;
 use App\Domain\TrainingPlanner\PlannedSession;
 use App\Domain\TrainingPlanner\PlannedSessionIntensity;
 use App\Domain\TrainingPlanner\PlannedSessionLinkStatus;
-use App\Domain\TrainingPlanner\PlanGenerator\TrainingPlanProposal;
-use App\Domain\TrainingPlanner\PlanGenerator\ProposedSession;
-use App\Domain\TrainingPlanner\PlanGenerator\ProposedWeekSkeleton;
 use App\Domain\TrainingPlanner\RaceEventProfile;
 use App\Domain\TrainingPlanner\TrainingBlockPhase;
 use App\Domain\TrainingPlanner\TrainingFocus;
@@ -28,8 +28,7 @@ final class RunningPlanPerformancePredictor
         TrainingPlanProposal $proposal,
         array $existingSessions = [],
         ?SerializableDateTime $referenceDate = null,
-    ): ?RunningPlanPerformancePrediction
-    {
+    ): ?RunningPlanPerformancePrediction {
         $currentThresholdPaceInSeconds = $this->resolveCurrentThresholdPaceInSeconds($trainingPlan);
         if (null === $currentThresholdPaceInSeconds) {
             return null;
@@ -114,8 +113,7 @@ final class RunningPlanPerformancePredictor
         TrainingPlan $trainingPlan,
         TrainingPlanProposal $proposal,
         int $currentThresholdPaceInSeconds,
-    ): float
-    {
+    ): float {
         $performanceMetrics = $trainingPlan->getPerformanceMetrics();
         $weeklyRunningVolume = is_array($performanceMetrics)
             && isset($performanceMetrics['weeklyRunningVolume'])
@@ -150,13 +148,13 @@ final class RunningPlanPerformancePredictor
         return min(0.05, max(0.008, $projectedImprovementRatio));
     }
 
-    private function resolveDisciplineFactor(TrainingPlanDiscipline $discipline): float
+    private function resolveDisciplineFactor(?TrainingPlanDiscipline $discipline): float
     {
         return match ($discipline) {
             TrainingPlanDiscipline::RUNNING => 1.0,
             TrainingPlanDiscipline::TRIATHLON => 0.84,
             TrainingPlanDiscipline::CYCLING => 0.45,
-            default => 0.75,
+            null => 0.75,
         };
     }
 
@@ -283,10 +281,6 @@ final class RunningPlanPerformancePredictor
         $completedRunningMinutes = 0;
 
         foreach ($existingSessions as $plannedSession) {
-            if (!$plannedSession instanceof PlannedSession) {
-                continue;
-            }
-
             if (ActivityType::RUN !== $plannedSession->getActivityType()) {
                 continue;
             }

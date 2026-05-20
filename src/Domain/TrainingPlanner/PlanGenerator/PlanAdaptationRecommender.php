@@ -6,7 +6,7 @@ namespace App\Domain\TrainingPlanner\PlanGenerator;
 
 use App\Domain\Dashboard\Widget\TrainingLoad\ReadinessStatus;
 use App\Domain\TrainingPlanner\PlannedSession;
-use App\Domain\TrainingPlanner\PlannedSessionIntensity;
+use App\Domain\TrainingPlanner\PlannedSessionDemandClassifier;
 use App\Domain\TrainingPlanner\RaceEvent;
 use App\Domain\TrainingPlanner\RaceEventPriority;
 use App\Domain\TrainingPlanner\RaceReadinessContext;
@@ -17,10 +17,12 @@ use App\Infrastructure\ValueObject\Time\SerializableDateTime;
 final readonly class PlanAdaptationRecommender
 {
     /**
-     * @param list<TrainingBlock> $existingBlocks
-     * @param list<PlannedSession> $existingSessions
-     * @param list<RaceEvent> $upcomingRaces
-     * @param array<string, null|float> $plannedSessionEstimatesById
+     * @param list<TrainingBlock>       $existingBlocks
+     * @param list<PlannedSession>      $existingSessions
+     * @param list<RaceEvent>           $upcomingRaces
+     * @param array<string, float|null> $plannedSessionEstimatesById
+      * @param list<PlannedSession>      $planWindowSessions
+      * @param array<string, float|null> $planWindowSessionEstimatesById
      *
      * @return list<PlanAdaptationRecommendation>
      */
@@ -153,7 +155,7 @@ final readonly class PlanAdaptationRecommender
 
     /**
      * @param list<TrainingBlock> $existingBlocks
-     * @param list<RaceEvent> $upcomingRaces
+     * @param list<RaceEvent>     $upcomingRaces
      *
      * @return list<PlanAdaptationRecommendation>
      */
@@ -227,8 +229,8 @@ final readonly class PlanAdaptationRecommender
     }
 
     /**
-     * @param list<PlannedSession> $existingSessions
-     * @param array<string, null|float> $plannedSessionEstimatesById
+     * @param list<PlannedSession>      $existingSessions
+     * @param array<string, float|null> $plannedSessionEstimatesById
      *
      * @return list<PlanAdaptationRecommendation>
      */
@@ -364,9 +366,9 @@ final readonly class PlanAdaptationRecommender
     }
 
     /**
-     * @param list<TrainingBlock> $blocks
-     * @param list<PlannedSession> $plannedSessions
-     * @param array<string, null|float> $plannedSessionEstimatesById
+     * @param list<TrainingBlock>       $blocks
+     * @param list<PlannedSession>      $plannedSessions
+     * @param array<string, float|null> $plannedSessionEstimatesById
      *
      * @return list<PlanAdaptationRecommendation>
      */
@@ -380,6 +382,11 @@ final readonly class PlanAdaptationRecommender
         $recommendations = [];
         $today = $now->setTime(0, 0);
         $reviewedUpcomingWeeks = 0;
+
+        usort(
+            $blocks,
+            static fn (TrainingBlock $left, TrainingBlock $right): int => $left->getStartDay()->getTimestamp() <=> $right->getStartDay()->getTimestamp(),
+        );
 
         foreach ($blocks as $block) {
             if ($block->getEndDay() < $today) {
@@ -404,7 +411,7 @@ final readonly class PlanAdaptationRecommender
                 $hardSessionCount = 0;
 
                 foreach ($sessionsForWeek as $session) {
-                    if ($this->isHardSession($session, $plannedSessionEstimatesById)) {
+                    if (PlannedSessionDemandClassifier::isHard($session, $plannedSessionEstimatesById)) {
                         ++$hardSessionCount;
                     }
                 }
@@ -425,13 +432,12 @@ final readonly class PlanAdaptationRecommender
                         type: PlanAdaptationRecommendationType::INCREASE_LOAD,
                         title: sprintf('Light %s week ahead', $block->getPhase()->value),
                         body: sprintf(
-                            'Only %d session%s are planned for the %s week starting on %s. This race profile usually needs at least %d session%s per week.',
+                            'Only %d session%s are planned for the %s week starting on %s. This race profile usually needs at least %d sessions per week.',
                             $sessionCount,
                             1 === $sessionCount ? '' : 's',
                             $block->getPhase()->value,
                             $weekStart->format('M j'),
                             $rules->getSessionsPerWeekMinimum(),
-                            1 === $rules->getSessionsPerWeekMinimum() ? '' : 's',
                         ),
                         severity: PlanAdaptationWarningSeverity::INFO,
                     );
@@ -462,16 +468,4 @@ final readonly class PlanAdaptationRecommender
         return $recommendations;
     }
 
-    /**
-     * @param array<string, null|float> $plannedSessionEstimatesById
-     */
-    private function isHardSession(PlannedSession $plannedSession, array $plannedSessionEstimatesById): bool
-    {
-        $targetIntensity = $plannedSession->getTargetIntensity();
-        if (null !== $targetIntensity) {
-            return PlannedSessionIntensity::HARD === $targetIntensity || PlannedSessionIntensity::RACE === $targetIntensity;
-        }
-
-        return ($plannedSessionEstimatesById[(string) $plannedSession->getId()] ?? 0.0) >= 110.0;
-    }
 }

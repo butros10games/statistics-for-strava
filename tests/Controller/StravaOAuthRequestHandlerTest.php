@@ -16,7 +16,6 @@ use App\Domain\Strava\StravaClientSecret;
 use App\Infrastructure\Serialization\Json;
 use App\Infrastructure\Time\Clock\Clock;
 use App\Infrastructure\User\CurrentAppUser;
-use App\Infrastructure\ValueObject\Time\SerializableDateTime;
 use App\Tests\ContainerTestCase;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\RequestException;

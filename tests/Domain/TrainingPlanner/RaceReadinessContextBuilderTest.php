@@ -8,24 +8,20 @@ use App\Domain\Activity\ActivityType;
 use App\Domain\Dashboard\Widget\TrainingLoad\ReadinessScore;
 use App\Domain\Dashboard\Widget\TrainingLoad\TrainingLoadForecastProjection;
 use App\Domain\Dashboard\Widget\TrainingLoad\TrainingMetrics;
-use App\Domain\TrainingPlanner\PlannedSession;
-use App\Domain\TrainingPlanner\PlannedSessionEstimationSource;
-use App\Domain\TrainingPlanner\PlannedSessionId;
 use App\Domain\TrainingPlanner\PlannedSessionIntensity;
-use App\Domain\TrainingPlanner\PlannedSessionLinkStatus;
 use App\Domain\TrainingPlanner\RaceEvent;
 use App\Domain\TrainingPlanner\RaceEventId;
-use App\Domain\TrainingPlanner\RaceEventPriority;
 use App\Domain\TrainingPlanner\RaceEventType;
 use App\Domain\TrainingPlanner\RaceReadinessContextBuilder;
 use App\Domain\TrainingPlanner\TrainingBlock;
-use App\Domain\TrainingPlanner\TrainingBlockId;
 use App\Domain\TrainingPlanner\TrainingBlockPhase;
 use App\Infrastructure\ValueObject\Time\SerializableDateTime;
 use PHPUnit\Framework\TestCase;
 
 final class RaceReadinessContextBuilderTest extends TestCase
 {
+    use BuildsPlannerFixtures;
+
     private RaceReadinessContextBuilder $builder;
 
     protected function setUp(): void
@@ -193,77 +189,46 @@ final class RaceReadinessContextBuilderTest extends TestCase
         self::assertSame(2, $context->getEasySessionCount());
     }
 
-    private function buildPlannedSessionEstimatesById(array $plannedSessions): array
+    public function testBuildFallsBackToCurrentTrainingBlockTargetRaceWhenContextWindowBlockCannotResolve(): void
     {
-        $estimatesById = [];
-
-        foreach ($plannedSessions as $plannedSession) {
-            $estimatesById[(string) $plannedSession->getId()] = $plannedSession->getTargetLoad();
-        }
-
-        return $estimatesById;
-    }
-
-    private function createPlannedSession(
-        string $day,
-        ActivityType $activityType,
-        string $title,
-        float $targetLoad,
-        int $targetDurationInSeconds,
-        PlannedSessionIntensity $targetIntensity,
-    ): PlannedSession {
-        return PlannedSession::create(
-            plannedSessionId: PlannedSessionId::random(),
-            day: SerializableDateTime::fromString($day),
-            activityType: $activityType,
-            title: $title,
-            notes: null,
-            targetLoad: $targetLoad,
-            targetDurationInSeconds: $targetDurationInSeconds,
-            targetIntensity: $targetIntensity,
-            templateActivityId: null,
-            estimationSource: PlannedSessionEstimationSource::MANUAL_TARGET_LOAD,
-            linkedActivityId: null,
-            linkStatus: PlannedSessionLinkStatus::UNLINKED,
-            createdAt: SerializableDateTime::fromString('2023-10-01 08:00:00'),
-            updatedAt: SerializableDateTime::fromString('2023-10-01 08:00:00'),
+        $referenceDate = SerializableDateTime::fromString('2026-04-16 08:00:00');
+        $targetRace = $this->createRaceEvent(
+            day: '2026-06-21 00:00:00',
+            type: RaceEventType::HALF_DISTANCE_TRIATHLON,
+            title: 'West Friesland',
         );
+        $staleContextualBlock = $this->createTrainingBlock(
+            startDay: '2026-04-07 00:00:00',
+            endDay: '2026-04-13 00:00:00',
+            phase: TrainingBlockPhase::BASE,
+            title: 'Previous block with stale race link',
+            targetRaceEventId: RaceEventId::random(),
+        );
+        $currentTrainingBlock = $this->createTrainingBlock(
+            startDay: '2026-04-14 00:00:00',
+            endDay: '2026-04-20 00:00:00',
+            phase: TrainingBlockPhase::BUILD,
+            title: 'Current build block',
+            targetRaceEventId: $targetRace->getId(),
+        );
+        $fallbackContextRace = $this->createRaceEvent(
+            day: '2026-04-19 00:00:00',
+            type: RaceEventType::RUN,
+            title: 'Local tune-up race',
+        );
+
+        $context = $this->builder->build(
+            referenceDate: $referenceDate,
+            plannedSessions: [],
+            raceEvents: [$fallbackContextRace],
+            trainingBlocks: [$staleContextualBlock],
+            currentTrainingBlock: $currentTrainingBlock,
+            raceEventsById: [(string) $targetRace->getId() => $targetRace],
+            plannedSessionEstimatesById: [],
+        );
+
+        self::assertSame('West Friesland', $context->getTargetRace()?->getTitle());
+        self::assertSame(66, $context->getTargetRaceCountdownDays());
     }
 
-    private function createRaceEvent(string $day, RaceEventType $type, string $title): RaceEvent
-    {
-        return RaceEvent::create(
-            raceEventId: RaceEventId::random(),
-            day: SerializableDateTime::fromString($day),
-            type: $type,
-            title: $title,
-            location: null,
-            notes: null,
-            priority: RaceEventPriority::A,
-            targetFinishTimeInSeconds: null,
-            createdAt: SerializableDateTime::fromString('2023-10-01 08:00:00'),
-            updatedAt: SerializableDateTime::fromString('2023-10-01 08:00:00'),
-        );
-    }
-
-    private function createTrainingBlock(
-        string $startDay,
-        string $endDay,
-        TrainingBlockPhase $phase,
-        string $title,
-        ?RaceEventId $targetRaceEventId = null,
-    ): TrainingBlock {
-        return TrainingBlock::create(
-            trainingBlockId: TrainingBlockId::random(),
-            startDay: SerializableDateTime::fromString($startDay),
-            endDay: SerializableDateTime::fromString($endDay),
-            targetRaceEventId: $targetRaceEventId,
-            phase: $phase,
-            title: $title,
-            focus: null,
-            notes: null,
-            createdAt: SerializableDateTime::fromString('2023-10-01 08:00:00'),
-            updatedAt: SerializableDateTime::fromString('2023-10-01 08:00:00'),
-        );
-    }
 }

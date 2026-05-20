@@ -9,13 +9,11 @@ use App\Domain\Athlete\AthleteBirthDate;
 use App\Domain\Athlete\AthleteRepository;
 use App\Domain\Strava\Connection\AppUserStravaConnection;
 use App\Domain\Strava\Connection\AppUserStravaConnectionRepository;
-use App\Domain\Strava\Strava;
 use App\Domain\Strava\StravaClientId;
 use App\Domain\Strava\StravaClientSecret;
 use App\Infrastructure\Serialization\Json;
 use App\Infrastructure\Time\Clock\Clock;
 use App\Infrastructure\User\CurrentAppUser;
-use Exception;
 use GuzzleHttp\Client;
 use GuzzleHttp\Exception\ClientException;
 use GuzzleHttp\Exception\RequestException;
@@ -73,7 +71,7 @@ final readonly class StravaOAuthRequestHandler
                 appUserId: $appUser->getId(),
                 stravaAthleteId: (string) ($decodedResponse['athlete']['id'] ?? ''),
                 refreshToken: (string) $decodedResponse['refresh_token'],
-                scopes: array_filter(explode(',', $request->query->getString('scope'))),
+                scopes: array_values(array_filter(explode(',', $request->query->getString('scope')))),
                 accessTokenExpiresAt: isset($decodedResponse['expires_at']) ? \App\Infrastructure\ValueObject\Time\SerializableDateTime::fromString(date('Y-m-d H:i:s', (int) $decodedResponse['expires_at'])) : null,
                 updatedAt: $now,
                 webhookCorrelationKey: sprintf('strava-athlete-%s', (string) ($decodedResponse['athlete']['id'] ?? '')),
@@ -87,7 +85,7 @@ final readonly class StravaOAuthRequestHandler
             }
 
             return new RedirectResponse('/account/settings?stravaConnected=1', Response::HTTP_FOUND);
-        } catch (ClientException|RequestException|Exception $e) {
+        } catch (ClientException|RequestException|\Exception $e) {
             $error = $e->getMessage();
             if ($e instanceof ClientException || $e instanceof RequestException) {
                 if (($response = $e->getResponse()) instanceof ResponseInterface) {

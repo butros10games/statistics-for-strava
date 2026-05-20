@@ -21,6 +21,7 @@ use App\Domain\TrainingPlanner\TrainingBlockPhase;
 use App\Domain\TrainingPlanner\TrainingBlockRepository;
 use App\Infrastructure\ValueObject\Time\SerializableDateTime;
 use App\Tests\Application\BuildAppFilesTestCase;
+use League\Flysystem\FilesystemOperator;
 
 class BuildMonthlyStatsHtmlCommandHandlerTest extends BuildAppFilesTestCase
 {
@@ -29,7 +30,10 @@ class BuildMonthlyStatsHtmlCommandHandlerTest extends BuildAppFilesTestCase
         $this->provideFullTestSet();
 
         $this->commandBus->dispatch(new BuildMonthlyStatsHtml(SerializableDateTime::fromString('2023-10-17 16:15:04')));
-        $this->assertFileSystemWrites($this->getContainer()->get('build.storage'));
+        /** @var FilesystemOperator $buildStorage */
+        $buildStorage = $this->getContainer()->get('build.storage');
+
+        $this->assertFileSystemWrites($buildStorage);
     }
 
     public function testHandleBuildsFuturePlannerMonth(): void
@@ -57,6 +61,7 @@ class BuildMonthlyStatsHtmlCommandHandlerTest extends BuildAppFilesTestCase
 
         $this->commandBus->dispatch(new BuildMonthlyStatsHtml(SerializableDateTime::fromString('2023-10-17 16:15:04')));
 
+        /** @var FilesystemOperator $buildStorage */
         $buildStorage = $this->getContainer()->get('build.storage');
 
         self::assertTrue($buildStorage->fileExists('month/month-2023-11.html'));
@@ -88,6 +93,7 @@ class BuildMonthlyStatsHtmlCommandHandlerTest extends BuildAppFilesTestCase
 
         $this->commandBus->dispatch(new BuildMonthlyStatsHtml(SerializableDateTime::fromString('2023-10-17 16:15:04')));
 
+        /** @var FilesystemOperator $buildStorage */
         $buildStorage = $this->getContainer()->get('build.storage');
 
         self::assertTrue($buildStorage->fileExists('month/month-2023-12.html'));
@@ -201,6 +207,7 @@ class BuildMonthlyStatsHtmlCommandHandlerTest extends BuildAppFilesTestCase
 
         $this->commandBus->dispatch(new BuildMonthlyStatsHtml(SerializableDateTime::fromString('2023-10-17 16:15:04')));
 
+        /** @var FilesystemOperator $buildStorage */
         $buildStorage = $this->getContainer()->get('build.storage');
 
         self::assertStringContainsString('Training blocks', $buildStorage->read('monthly-stats.html'));
@@ -441,7 +448,10 @@ class BuildMonthlyStatsHtmlCommandHandlerTest extends BuildAppFilesTestCase
     {
         $this->commandBus->dispatch(new BuildMonthlyStatsHtml(SerializableDateTime::fromString($now)));
 
-        return $this->getContainer()->get('build.storage')->read('monthly-stats.html');
+        /** @var FilesystemOperator $buildStorage */
+        $buildStorage = $this->getContainer()->get('build.storage');
+
+        return $buildStorage->read('monthly-stats.html');
     }
 
     private function createPlannedSession(

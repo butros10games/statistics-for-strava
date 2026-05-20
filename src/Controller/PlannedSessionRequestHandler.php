@@ -4,14 +4,15 @@ declare(strict_types=1);
 
 namespace App\Controller;
 
+use App\Application\Build\BuildDashboardHtml\BuildDashboardHtml;
 use App\Application\Build\BuildMonthlyStatsHtml\BuildMonthlyStatsHtml;
 use App\Application\Build\BuildRacePlannerHtml\BuildRacePlannerHtml;
-use App\Application\Build\BuildDashboardHtml\BuildDashboardHtml;
 use App\Domain\Activity\Activity;
-use App\Domain\Activity\DbalActivityRepository;
 use App\Domain\Activity\ActivityId;
 use App\Domain\Activity\ActivityType;
+use App\Domain\Activity\DbalActivityRepository;
 use App\Domain\TrainingPlanner\DbalPlannedSessionRepository;
+use App\Domain\TrainingPlanner\DbalTrainingSessionRepository;
 use App\Domain\TrainingPlanner\PlannedSession;
 use App\Domain\TrainingPlanner\PlannedSessionActivityMatcher;
 use App\Domain\TrainingPlanner\PlannedSessionEstimationSource;
@@ -22,9 +23,8 @@ use App\Domain\TrainingPlanner\PlannedSessionIntensity;
 use App\Domain\TrainingPlanner\PlannedSessionLinkStatus;
 use App\Domain\TrainingPlanner\PlannedSessionLoadEstimator;
 use App\Domain\TrainingPlanner\PlannedSessionStepConditionType;
-use App\Domain\TrainingPlanner\PlannedSessionStepType;
 use App\Domain\TrainingPlanner\PlannedSessionStepTargetType;
-use App\Domain\TrainingPlanner\DbalTrainingSessionRepository;
+use App\Domain\TrainingPlanner\PlannedSessionStepType;
 use App\Domain\TrainingPlanner\TrainingSession;
 use App\Domain\TrainingPlanner\TrainingSessionLibrarySynchronizer;
 use App\Infrastructure\CQRS\Command\Bus\CommandBus;
@@ -225,10 +225,10 @@ final readonly class PlannedSessionRequestHandler
             return null;
         }
 
-        $query = isset($parsedRedirectTarget['query']) && is_string($parsedRedirectTarget['query'])
+        $query = isset($parsedRedirectTarget['query'])
             ? '?'.$parsedRedirectTarget['query']
             : '';
-        $fragment = isset($parsedRedirectTarget['fragment']) && is_string($parsedRedirectTarget['fragment'])
+        $fragment = isset($parsedRedirectTarget['fragment'])
             ? '#'.$parsedRedirectTarget['fragment']
             : '';
 
@@ -346,7 +346,7 @@ final readonly class PlannedSessionRequestHandler
     }
 
     /**
-    * @return list<array{activityId: string, activityType: string, name: string, day: string, movingTimeLabel: string, movingTimeInSeconds: int, estimatedLoad: ?float}>
+     * @return list<array{activityId: string, activityType: string, name: string, day: string, movingTimeLabel: string, movingTimeInSeconds: int, estimatedLoad: ?float}>
      */
     private function buildTemplateActivityOptions(?ActivityId $selectedTemplateActivityId): array
     {
@@ -390,7 +390,7 @@ final readonly class PlannedSessionRequestHandler
     }
 
     /**
-    * @return array{activityId: string, activityType: string, name: string, day: string, movingTimeLabel: string, movingTimeInSeconds: int, estimatedLoad: ?float}|null
+     * @return array{activityId: string, activityType: string, name: string, day: string, movingTimeLabel: string, movingTimeInSeconds: int, estimatedLoad: ?float}|null
      */
     private function resolveTemplateActivity(?ActivityId $templateActivityId): ?array
     {
@@ -406,7 +406,7 @@ final readonly class PlannedSessionRequestHandler
     }
 
     /**
-    * @return array{activityId: string, activityType: string, name: string, day: string, movingTimeLabel: string, movingTimeInSeconds: int, estimatedLoad: ?float}
+     * @return array{activityId: string, activityType: string, name: string, day: string, movingTimeLabel: string, movingTimeInSeconds: int, estimatedLoad: ?float}
      */
     private function toTemplateActivityRecord(Activity $activity): array
     {
@@ -430,7 +430,7 @@ final readonly class PlannedSessionRequestHandler
     }
 
     /**
-    * @return list<array{itemId: string, parentBlockId: ?string, type: string, label: ?string, repetitions: int, targetType: ?string, durationInSeconds: ?int, distanceInMeters: ?int, targetPace: ?string, targetPower: ?int, targetHeartRate: ?int, recoveryAfterInSeconds: null}>
+     * @return list<array{itemId: string, parentBlockId: ?string, type: string, label: ?string, repetitions: int, targetType: ?string, conditionType: ?string, durationInSeconds: ?int, distanceInMeters: ?int, targetPace: ?string, targetPower: ?int, targetHeartRate: ?int, recoveryAfterInSeconds: null}>
      */
     private function parseWorkoutSteps(Request $request, ActivityType $activityType): array
     {
@@ -524,7 +524,7 @@ final readonly class PlannedSessionRequestHandler
     }
 
     /**
-     * @param list<array{itemId: string, parentBlockId: ?string, type: string, label: ?string, repetitions: int, targetType: ?string, durationInSeconds: ?int, distanceInMeters: ?int, targetPace: ?string, targetHeartRate: ?int, recoveryAfterInSeconds: ?int}> $workoutSteps
+     * @param list<array{itemId: string, parentBlockId: ?string, type: string, label: ?string, repetitions: int, targetType: ?string, conditionType: ?string, durationInSeconds: ?int, distanceInMeters: ?int, targetPace: ?string, targetPower: ?int, targetHeartRate: ?int, recoveryAfterInSeconds: ?int}> $workoutSteps
      */
     private function resolveTargetDurationInSeconds(?int $requestedTargetDurationInSeconds, array $workoutSteps): ?int
     {
@@ -540,7 +540,7 @@ final readonly class PlannedSessionRequestHandler
     }
 
     /**
-     * @param list<array{itemId: string, parentBlockId: ?string, type: string, label: ?string, repetitions: int, targetType: ?string, durationInSeconds: ?int, distanceInMeters: ?int, targetPace: ?string, targetPower: ?int, targetHeartRate: ?int, recoveryAfterInSeconds: ?int}> $workoutSteps
+     * @param list<array<string, mixed>> $workoutSteps
      *
      * @return list<array{headline: string, meta: string, depth: int}>
      */
@@ -554,7 +554,9 @@ final readonly class PlannedSessionRequestHandler
     }
 
     /**
-     * @param list<array{itemId: string, parentBlockId: ?string, type: string, label: ?string, repetitions: int, targetType: ?string, durationInSeconds: ?int, distanceInMeters: ?int, targetPace: ?string, targetPower: ?int, targetHeartRate: ?int, recoveryAfterInSeconds: ?int}> $workoutSteps
+     * @param list<array{headline: string, meta: string, depth: int}> &$previewRows
+     * @param list<array<string, mixed>>                              $workoutSteps
+     * @param-out list<array{headline: string, meta: string, depth: int}> $previewRows
      */
     private function appendWorkoutPreviewRows(array &$previewRows, array $workoutSteps, ActivityType $activityType, ?string $parentBlockId = null, int $depth = 0): void
     {
@@ -591,7 +593,7 @@ final readonly class PlannedSessionRequestHandler
     }
 
     /**
-    * @param list<array{itemId: string, parentBlockId: ?string, type: string, label: ?string, repetitions: int, targetType: ?string, durationInSeconds: ?int, distanceInMeters: ?int, targetPace: ?string, targetPower: ?int, targetHeartRate: ?int, recoveryAfterInSeconds: ?int}> $workoutSteps
+     * @param list<array<string, mixed>> $workoutSteps
      */
     private function calculateWorkoutSequenceDuration(array $workoutSteps, ?string $parentBlockId = null): ?int
     {
@@ -627,7 +629,7 @@ final readonly class PlannedSessionRequestHandler
     }
 
     /**
-    * @param array{targetType: ?string, conditionType: ?string, durationInSeconds: ?int, distanceInMeters: ?int, targetPace: ?string, targetPower: ?int, targetHeartRate: ?int} $workoutStep
+     * @param array<string, mixed> $workoutStep
      */
     private function estimateWorkoutStepDurationInSeconds(array $workoutStep): ?int
     {
@@ -655,7 +657,7 @@ final readonly class PlannedSessionRequestHandler
     }
 
     /**
-     * @param array{targetType: ?string, conditionType: ?string, durationInSeconds: ?int, distanceInMeters: ?int, targetPace: ?string, targetPower: ?int, targetHeartRate: ?int} $workoutStep
+     * @param array<string, mixed> $workoutStep
      */
     private function formatWorkoutTargetLabel(array $workoutStep, ActivityType $activityType = ActivityType::RUN): string
     {
@@ -696,7 +698,7 @@ final readonly class PlannedSessionRequestHandler
     }
 
     /**
-     * @param array{targetPace: ?string, targetPower: ?int} $workoutStep
+     * @param array<string, mixed> $workoutStep
      */
     private function formatWorkoutEffortLabel(ActivityType $activityType, array $workoutStep): ?string
     {
@@ -810,7 +812,7 @@ final readonly class PlannedSessionRequestHandler
 
     private function formatDurationLabel(int $seconds): string
     {
-        if ($seconds % 60 === 0) {
+        if (0 === $seconds % 60) {
             return sprintf('%d min', (int) round($seconds / 60));
         }
 
@@ -887,8 +889,7 @@ final readonly class PlannedSessionRequestHandler
         SerializableDateTime $createdAt,
         SerializableDateTime $updatedAt,
         bool $manualTargetLoadOverride,
-    ): PlannedSessionEstimationSource
-    {
+    ): PlannedSessionEstimationSource {
         if ($manualTargetLoadOverride && null !== $targetLoad) {
             return PlannedSessionEstimationSource::MANUAL_TARGET_LOAD;
         }
@@ -1054,7 +1055,7 @@ final readonly class PlannedSessionRequestHandler
      *     targetDurationInMinutes: ?int,
      *     targetIntensity: ?string,
      *     templateActivityId: ?string,
-    *     workoutSteps: list<array{itemId: string, parentBlockId: ?string, type: string, label: string, repetitions: string, targetType: string, conditionType: string, durationInMinutes: string, distanceInMeters: string, targetPace: string, targetPower: string, targetHeartRate: string, recoveryAfterInSeconds: string}>,
+     *     workoutSteps: list<array{itemId: string, parentBlockId: ?string, type: string, label: string, repetitions: string, targetType: string, conditionType: string, durationInMinutes: string, distanceInMeters: string, targetPace: string, targetPower: string, targetHeartRate: string, recoveryAfterInSeconds: string}>,
      *     estimationSource: string,
      *     linkedActivityId: ?string,
      *     linkStatus: string
@@ -1083,7 +1084,7 @@ final readonly class PlannedSessionRequestHandler
     }
 
     /**
-    * @return array{title: string, activityType: string, targetLoad: ?float, targetDurationInMinutes: ?int, targetDurationInSecondsPart: ?int, targetIntensity: ?string, templateActivityId: ?string, workoutItems: list<array{itemId: string, parentBlockId: ?string, type: string, label: string, repetitions: string, targetType: string, conditionType: string, durationInMinutes: string, distanceInMeters: string, targetPace: string, targetPower: string, targetHeartRate: string, children: array<int, array<string, mixed>>}>, notes: ?string}
+    * @return array{title: string, activityType: string, targetLoad: ?float, targetDurationInMinutes: ?int, targetDurationInSecondsPart: ?int, targetIntensity: ?string, templateActivityId: ?string, workoutItems: list<array<string, mixed>>, notes: ?string}
      */
     private function plannedSessionFormDefaults(?PlannedSession $plannedSession, ?float $estimatedTargetLoad = null): array
     {
@@ -1118,9 +1119,9 @@ final readonly class PlannedSessionRequestHandler
     }
 
     /**
-    * @param list<array{itemId: string, parentBlockId: ?string, type: string, label: string, repetitions: string, targetType: string, conditionType: string, durationInMinutes: string, distanceInMeters: string, targetPace: string, targetPower: string, targetHeartRate: string, recoveryAfterInSeconds: string}> $workoutSteps
+     * @param list<array{itemId: string, parentBlockId: ?string, type: string, label: string, repetitions: string, targetType: string, conditionType: string, durationInMinutes: string, durationInSecondsPart: string, distanceInMeters: string, targetPace: string, targetPower: string, targetHeartRate: string, recoveryAfterInSeconds: string}> $workoutSteps
      *
-    * @return list<array{itemId: string, parentBlockId: ?string, type: string, label: string, repetitions: string, targetType: string, conditionType: string, durationInMinutes: string, distanceInMeters: string, targetPace: string, targetPower: string, targetHeartRate: string, recoveryAfterInSeconds: string}>
+     * @return list<array{itemId: string, parentBlockId: ?string, type: string, label: string, repetitions: string, targetType: string, conditionType: string, durationInMinutes: string, durationInSecondsPart: string, distanceInMeters: string, targetPace: string, targetPower: string, targetHeartRate: string, recoveryAfterInSeconds: string}>
      */
     private function padWorkoutStepsForForm(array $workoutSteps): array
     {
@@ -1147,9 +1148,9 @@ final readonly class PlannedSessionRequestHandler
     }
 
     /**
-    * @param list<array{itemId: string, parentBlockId: ?string, type: string, label: string, repetitions: string, targetType: string, conditionType: string, durationInMinutes: string, distanceInMeters: string, targetPace: string, targetPower: string, targetHeartRate: string, recoveryAfterInSeconds: string}> $workoutSteps
+    * @param list<array{itemId: string, parentBlockId: ?string, type: string, label: string, repetitions: string, targetType: string, conditionType: string, durationInMinutes: string, durationInSecondsPart: string, distanceInMeters: string, targetPace: string, targetPower: string, targetHeartRate: string, recoveryAfterInSeconds: string}> $workoutSteps
      *
-     * @return list<array{itemId: string, parentBlockId: ?string, type: string, label: string, repetitions: string, targetType: string, durationInMinutes: string, distanceInMeters: string, targetPace: string, targetPower: string, targetHeartRate: string, recoveryAfterInSeconds: string, children: array<int, array<string, mixed>>}>
+    * @return list<array<string, mixed>>
      */
     private function buildWorkoutItemTree(array $workoutSteps): array
     {

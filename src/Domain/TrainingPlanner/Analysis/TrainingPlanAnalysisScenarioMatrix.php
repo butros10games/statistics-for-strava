@@ -6,8 +6,8 @@ namespace App\Domain\TrainingPlanner\Analysis;
 
 use App\Domain\TrainingPlanner\RaceEvent;
 use App\Domain\TrainingPlanner\RaceEventId;
-use App\Domain\TrainingPlanner\RaceEventProfile;
 use App\Domain\TrainingPlanner\RaceEventPriority;
+use App\Domain\TrainingPlanner\RaceEventProfile;
 use App\Domain\TrainingPlanner\RaceEventType;
 use App\Domain\TrainingPlanner\TrainingFocus;
 use App\Domain\TrainingPlanner\TrainingPlan;
@@ -474,6 +474,7 @@ final class TrainingPlanAnalysisScenarioMatrix
     /**
      * @param array<string, mixed>|null $sportSchedule
      * @param array<string, mixed>|null $performanceMetrics
+     * @param list<RaceEvent>           $additionalRaceEvents
      */
     private function createRaceScenario(
         string $name,

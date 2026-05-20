@@ -137,7 +137,7 @@ final class WellnessReadinessCalculatorTest extends TestCase
 
         $strainFactor = current(array_filter(
             $assessment->getFactors(),
-            static fn ($factor): bool => $factor->getKey() === 'strain',
+            static fn ($factor): bool => 'strain' === $factor->getKey(),
         ));
 
         $this->assertInstanceOf(\App\Domain\Dashboard\Widget\TrainingLoad\ReadinessFactor::class, $strainFactor);

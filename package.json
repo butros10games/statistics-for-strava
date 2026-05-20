@@ -9,5 +9,14 @@
     "webpack": "^5.102.1",
     "webpack-cli": "^6.0.1"
   },
-  "packageManager": "yarn@1.22.22+sha512.a6b2f7906b721bba3d67d4aff083df04dad64c399707841b7acf00f6b133b7ac24255f2652fa22ae3534329dc6180534e98d17432037ff6fd140556e2bb3137e"
+  "packageManager": "npm@10.9.2",
+  "scripts": {
+    "build": "npm run build:css && npm run build:js",
+    "build:css": "tailwindcss -i public/css/tailwind.css -o public/css/dist/tailwind.min.css --minify",
+    "build:css:debug": "tailwindcss -i public/css/tailwind.css -o public/css/tailwind.output.css",
+    "build:js": "webpack --config webpack.config.js",
+    "clean": "rm -rf public/css/dist public/js/dist public/css/tailwind.output.css",
+    "watch:css": "tailwindcss -i public/css/tailwind.css -o public/css/dist/tailwind.min.css --watch",
+    "watch:js": "webpack --config webpack.config.js --watch"
+  }
 }

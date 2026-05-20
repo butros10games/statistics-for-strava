@@ -140,7 +140,7 @@ final readonly class RacePlannerSetupPlanRequestHandler
         ];
     }
 
-    private function inferDisciplineFromRace(\App\Domain\TrainingPlanner\RaceEvent $targetRace): ?TrainingPlanDiscipline
+    private function inferDisciplineFromRace(\App\Domain\TrainingPlanner\RaceEvent $targetRace): TrainingPlanDiscipline
     {
         return match ($targetRace->getFamily()) {
             \App\Domain\TrainingPlanner\RaceEventFamily::TRIATHLON,
@@ -209,10 +209,10 @@ final readonly class RacePlannerSetupPlanRequestHandler
             return null;
         }
 
-        $query = isset($parsedRedirectTarget['query']) && is_string($parsedRedirectTarget['query'])
+        $query = isset($parsedRedirectTarget['query'])
             ? '?'.$parsedRedirectTarget['query']
             : '';
-        $fragment = isset($parsedRedirectTarget['fragment']) && is_string($parsedRedirectTarget['fragment'])
+        $fragment = isset($parsedRedirectTarget['fragment'])
             ? '#'.$parsedRedirectTarget['fragment']
             : '';
 

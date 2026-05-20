@@ -37,7 +37,7 @@ final readonly class ProposedWeekSkeleton
         bool $isRecoveryWeek = false,
     ): self {
         $indexedSessions = [];
-        foreach (array_values($sessions) as $index => $session) {
+        foreach ($sessions as $index => $session) {
             $indexedSessions[] = [
                 'index' => $index,
                 'session' => $session,
@@ -57,10 +57,10 @@ final readonly class ProposedWeekSkeleton
             weekNumber: $weekNumber,
             startDay: $startDay,
             endDay: $endDay,
-            sessions: array_values(array_map(
+            sessions: array_map(
                 static fn (array $indexedSession): ProposedSession => $indexedSession['session'],
                 $indexedSessions,
-            )),
+            ),
             targetLoadMultiplier: $targetLoadMultiplier,
             isManuallyPlanned: $isManuallyPlanned,
             isRecoveryWeek: $isRecoveryWeek,

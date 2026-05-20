@@ -8,26 +8,29 @@ use App\Domain\Activity\Activities;
 use App\Domain\Activity\Activity;
 use App\Domain\Activity\ActivityTrainingLoadCalculator;
 use App\Domain\Activity\EnrichedActivities;
-use App\Domain\Dashboard\Widget\TrainingLoad\IntegratedDailyLoadCalculator;
-use App\Domain\Dashboard\Widget\TrainingLoad\ReadinessScore;
-use App\Domain\Dashboard\Widget\TrainingLoad\ReadinessFactor;
-use App\Domain\Dashboard\Widget\TrainingLoad\ReadinessAssessment;
 use App\Domain\Dashboard\Widget\TrainingLoad\AcRatio;
-use App\Domain\Dashboard\Widget\TrainingLoad\TSB;
+use App\Domain\Dashboard\Widget\TrainingLoad\IntegratedDailyLoadCalculator;
+use App\Domain\Dashboard\Widget\TrainingLoad\ReadinessAssessment;
+use App\Domain\Dashboard\Widget\TrainingLoad\ReadinessFactor;
+use App\Domain\Dashboard\Widget\TrainingLoad\ReadinessScore;
 use App\Domain\Dashboard\Widget\TrainingLoad\TrainingLoadChart;
 use App\Domain\Dashboard\Widget\TrainingLoad\TrainingLoadForecastConfidence;
 use App\Domain\Dashboard\Widget\TrainingLoad\TrainingLoadForecastProjection;
 use App\Domain\Dashboard\Widget\TrainingLoad\TrainingMetrics;
+use App\Domain\Dashboard\Widget\TrainingLoad\TSB;
 use App\Domain\Dashboard\Widget\TrainingLoad\WellnessReadinessCalculator;
-use App\Domain\Ftp\FtpHistory;
 use App\Domain\Dashboard\Widget\Wellness\FindWellnessMetrics\FindWellnessMetricsResponse;
+use App\Domain\Ftp\FtpHistory;
 use App\Domain\Performance\PerformanceAnchor\PerformanceAnchorHistory;
 use App\Domain\TrainingPlanner\PlannedSession;
+use App\Domain\TrainingPlanner\PlannedSessionEstimatedLoadMapBuilder;
 use App\Domain\TrainingPlanner\PlannedSessionForecastBuilder;
 use App\Domain\TrainingPlanner\PlannedSessionLoadEstimate;
 use App\Domain\TrainingPlanner\PlannedSessionLoadEstimator;
 use App\Domain\TrainingPlanner\PlannedSessionRepository;
+use App\Domain\TrainingPlanner\CurrentTrainingBlockResolver;
 use App\Domain\TrainingPlanner\RaceEvent;
+use App\Domain\TrainingPlanner\RaceEventsByIdMapBuilder;
 use App\Domain\TrainingPlanner\RaceEventRepository;
 use App\Domain\TrainingPlanner\RaceReadinessContext;
 use App\Domain\TrainingPlanner\RaceReadinessContextBuilder;
@@ -62,6 +65,9 @@ final readonly class TrainingAdvisorExportBuilder
         private PlannedSessionRepository $plannedSessionRepository,
         private RaceEventRepository $raceEventRepository,
         private TrainingBlockRepository $trainingBlockRepository,
+        private CurrentTrainingBlockResolver $currentTrainingBlockResolver,
+        private PlannedSessionEstimatedLoadMapBuilder $plannedSessionEstimatedLoadMapBuilder,
+        private RaceEventsByIdMapBuilder $raceEventsByIdMapBuilder,
         private PlannedSessionLoadEstimator $plannedSessionLoadEstimator,
         private PlannedSessionForecastBuilder $plannedSessionForecastBuilder,
         private RaceReadinessContextBuilder $raceReadinessContextBuilder,
@@ -96,7 +102,7 @@ final readonly class TrainingAdvisorExportBuilder
         $wellnessMetrics = $this->buildWellnessMetricsResponse($wellnessRange);
         $recentRecoveryCheckIns = $this->dailyRecoveryCheckInRepository->findByDateRange($wellnessRange);
         $latestRecoveryCheckInOverall = $this->mapRecoveryCheckIn($this->dailyRecoveryCheckInRepository->findLatest());
-        $latestRecoveryCheckInForToday = $this->latestRecoveryCheckInForToday($recentRecoveryCheckIns, $today);
+        $latestRecoveryCheckInForToday = $this->latestRecoveryCheckInForToday(array_values($recentRecoveryCheckIns), $today);
 
         $integratedLoads = $this->integratedDailyLoadCalculator->calculateForDateRange($trainingMetricsRange);
         $trainingMetrics = TrainingMetrics::create($integratedLoads);
@@ -117,15 +123,15 @@ final readonly class TrainingAdvisorExportBuilder
         );
         $upcomingRaceEvents = $this->raceEventRepository->findUpcoming($now, 4);
         $currentAndUpcomingTrainingBlocks = $this->trainingBlockRepository->findCurrentAndUpcoming($now, 4);
-        $currentTrainingBlock = $this->findCurrentTrainingBlock($currentAndUpcomingTrainingBlocks, $now);
+        $currentTrainingBlock = $this->currentTrainingBlockResolver->findCurrent($currentAndUpcomingTrainingBlocks, $now);
         $raceReadinessContext = $this->raceReadinessContextBuilder->build(
             referenceDate: $now,
             plannedSessions: $plannedSessions,
             raceEvents: $upcomingRaceEvents,
             trainingBlocks: $currentAndUpcomingTrainingBlocks,
             currentTrainingBlock: $currentTrainingBlock,
-            raceEventsById: $this->buildRaceEventsById($upcomingRaceEvents),
-            plannedSessionEstimatesById: $this->buildPlannedSessionEstimatesById($plannedSessions),
+            raceEventsById: $this->raceEventsByIdMapBuilder->build($upcomingRaceEvents),
+            plannedSessionEstimatesById: $this->plannedSessionEstimatedLoadMapBuilder->build($plannedSessions),
             readinessScore: $readinessAssessment?->getScore(),
             forecastProjection: $plannedSessionProjection,
         );
@@ -194,53 +200,6 @@ final readonly class TrainingAdvisorExportBuilder
                 'items' => array_map(fn (PlannedSession $plannedSession): array => $this->mapPlannedSession($plannedSession), $plannedSessions),
             ],
         ];
-    }
-
-    /**
-     * @param list<RaceEvent> $raceEvents
-     *
-     * @return array<string, RaceEvent>
-     */
-    private function buildRaceEventsById(array $raceEvents): array
-    {
-        $raceEventsById = [];
-
-        foreach ($raceEvents as $raceEvent) {
-            $raceEventsById[(string) $raceEvent->getId()] = $raceEvent;
-        }
-
-        return $raceEventsById;
-    }
-
-    /**
-     * @param list<PlannedSession> $plannedSessions
-     *
-     * @return array<string, null|float>
-     */
-    private function buildPlannedSessionEstimatesById(array $plannedSessions): array
-    {
-        $estimatesById = [];
-
-        foreach ($plannedSessions as $plannedSession) {
-            $estimate = $this->plannedSessionLoadEstimator->estimate($plannedSession);
-            $estimatesById[(string) $plannedSession->getId()] = $estimate?->getEstimatedLoad();
-        }
-
-        return $estimatesById;
-    }
-
-    /**
-     * @param list<TrainingBlock> $trainingBlocks
-     */
-    private function findCurrentTrainingBlock(array $trainingBlocks, SerializableDateTime $now): ?TrainingBlock
-    {
-        foreach ($trainingBlocks as $trainingBlock) {
-            if ($trainingBlock->containsDay($now)) {
-                return $trainingBlock;
-            }
-        }
-
-        return null;
     }
 
     /**
@@ -344,7 +303,7 @@ final readonly class TrainingAdvisorExportBuilder
 
     private function buildWellnessMetricsResponse(DateRange $dateRange): FindWellnessMetricsResponse
     {
-        $records = array_map(
+        $records = array_values(array_map(
             static fn (DailyWellness $record): array => [
                 'day' => $record->getDay()->format('Y-m-d'),
                 'stepsCount' => $record->getStepsCount(),
@@ -353,7 +312,7 @@ final readonly class TrainingAdvisorExportBuilder
                 'hrv' => $record->getHrv(),
             ],
             $this->dailyWellnessRepository->findByDateRange($dateRange, WellnessSource::GARMIN),
-        );
+        ));
 
         $lastRecord = [] === $records ? null : $records[array_key_last($records)];
 
@@ -401,7 +360,7 @@ final readonly class TrainingAdvisorExportBuilder
     /**
      * @param array<string, int> $integratedLoads
      *
-    * @return list<array<string, int|float|null|string|array<string, mixed>>>
+     * @return list<array<string, int|float|string|array<string, mixed>|null>>
      */
     private function buildRecentTrainingMetricsTimeline(TrainingMetrics $trainingMetrics, array $integratedLoads): array
     {
@@ -470,26 +429,28 @@ final readonly class TrainingAdvisorExportBuilder
     private function buildRaceReadinessContextSummary(RaceReadinessContext $raceReadinessContext): array
     {
         $readinessScore = $raceReadinessContext->getReadinessScore();
+        $targetRace = $raceReadinessContext->getTargetRace();
+        $primaryTrainingBlock = $raceReadinessContext->getPrimaryTrainingBlock();
 
         return [
-            'targetRace' => null === $raceReadinessContext->getTargetRace() ? null : [
-                'id' => (string) $raceReadinessContext->getTargetRace()?->getId(),
-                'day' => $raceReadinessContext->getTargetRace()?->getDay()->format('Y-m-d'),
-                'type' => $raceReadinessContext->getTargetRace()?->getType()->value,
-                'family' => $raceReadinessContext->getTargetRace()?->getFamily()->value,
-                'profile' => $raceReadinessContext->getTargetRace()?->getProfile()->value,
-                'title' => $raceReadinessContext->getTargetRace()?->getTitle(),
-                'priority' => $raceReadinessContext->getTargetRace()?->getPriority()->value,
+            'targetRace' => null === $targetRace ? null : [
+                'id' => (string) $targetRace->getId(),
+                'day' => $targetRace->getDay()->format('Y-m-d'),
+                'type' => $targetRace->getType()->value,
+                'family' => $targetRace->getFamily()->value,
+                'profile' => $targetRace->getProfile()->value,
+                'title' => $targetRace->getTitle(),
+                'priority' => $targetRace->getPriority()->value,
             ],
             'countdownDays' => $raceReadinessContext->getTargetRaceCountdownDays(),
             'hasRaceEventInWindow' => $raceReadinessContext->hasRaceEventInContextWindow(),
-            'trainingBlock' => null === $raceReadinessContext->getPrimaryTrainingBlock() ? null : [
-                'id' => (string) $raceReadinessContext->getPrimaryTrainingBlock()?->getId(),
-                'phase' => $raceReadinessContext->getPrimaryTrainingBlock()?->getPhase()->value,
-                'title' => $raceReadinessContext->getPrimaryTrainingBlock()?->getTitle(),
-                'focus' => $raceReadinessContext->getPrimaryTrainingBlock()?->getFocus(),
-                'notes' => $raceReadinessContext->getPrimaryTrainingBlock()?->getNotes(),
-                'durationInDays' => $raceReadinessContext->getPrimaryTrainingBlock()?->getDurationInDays(),
+            'trainingBlock' => null === $primaryTrainingBlock ? null : [
+                'id' => (string) $primaryTrainingBlock->getId(),
+                'phase' => $primaryTrainingBlock->getPhase()->value,
+                'title' => $primaryTrainingBlock->getTitle(),
+                'focus' => $primaryTrainingBlock->getFocus(),
+                'notes' => $primaryTrainingBlock->getNotes(),
+                'durationInDays' => $primaryTrainingBlock->getDurationInDays(),
             ],
             'plannerSummary' => [
                 'sessionCount' => $raceReadinessContext->getSessionCount(),
@@ -589,6 +550,7 @@ final readonly class TrainingAdvisorExportBuilder
 
     /**
      * @param list<array{day: string, stepsCount: ?int, sleepDurationInSeconds: ?int, sleepScore: ?int, hrv: ?float}> $records
+     * @param 'stepsCount'|'sleepDurationInSeconds'|'sleepScore'|'hrv' $key
      */
     private function averageMetric(array $records, string $key): ?float
     {
@@ -618,11 +580,22 @@ final readonly class TrainingAdvisorExportBuilder
 
         $mapped = $this->mapRecoveryCheckIn($latest);
 
-        return $mapped['day'] === $today->format('Y-m-d') ? $mapped : null;
+        if (null === $mapped || $mapped['day'] !== $today->format('Y-m-d')) {
+            return null;
+        }
+
+        return [
+            'day' => $mapped['day'],
+            'fatigue' => $mapped['fatigue'],
+            'soreness' => $mapped['soreness'],
+            'stress' => $mapped['stress'],
+            'motivation' => $mapped['motivation'],
+            'sleepQuality' => $mapped['sleepQuality'],
+        ];
     }
 
     /**
-     * @return array<string, mixed>|null
+     * @return array{day: string, fatigue: int, soreness: int, stress: int, motivation: int, sleepQuality: int, recordedAt: string}|null
      */
     private function mapRecoveryCheckIn(?DailyRecoveryCheckIn $checkIn): ?array
     {
@@ -666,7 +639,7 @@ final readonly class TrainingAdvisorExportBuilder
      */
     private function buildForecastProjection(TrainingLoadForecastProjection $projection): array
     {
-        return array_map(
+        return array_values(array_map(
             fn (array $row): array => [
                 'day' => $row['day']->format('Y-m-d'),
                 'projectedLoad' => $row['projectedLoad'],
@@ -688,7 +661,7 @@ final readonly class TrainingAdvisorExportBuilder
                 ],
             ],
             $projection->getProjection(),
-        );
+        ));
     }
 
     /**

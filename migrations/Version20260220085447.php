@@ -15,7 +15,7 @@ final class Version20260220085447 extends AbstractMigration
 {
     public function getDescription(): string
     {
-        return '';
+        return 'Add activity stream payload sizes and compress stored activity stream data';
     }
 
     public function up(Schema $schema): void

@@ -3,8 +3,8 @@
 namespace App\Tests\Application;
 
 use App\Application\AppUrl;
-use App\Application\UpdateData\GarminBridgeUpdater;
 use App\Application\importDataAndBuildAppCronAction;
+use App\Application\UpdateData\GarminBridgeUpdater;
 use App\Domain\Activity\ActivityRepository;
 use App\Domain\Strava\Webhook\WebhookAspectType;
 use App\Domain\Strava\Webhook\WebhookEvent;

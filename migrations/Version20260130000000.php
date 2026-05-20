@@ -11,7 +11,7 @@ final class Version20260130000000 extends AbstractMigration
 {
     public function getDescription(): string
     {
-        return '';
+        return 'Create the initial activity, stream, gear, segment, challenge, and webhook tables';
     }
 
     public function up(Schema $schema): void

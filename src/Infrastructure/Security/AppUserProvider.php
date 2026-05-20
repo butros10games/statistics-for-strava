@@ -7,7 +7,6 @@ namespace App\Infrastructure\Security;
 use App\Domain\Auth\AppUser;
 use App\Domain\Auth\AppUserRepository;
 use App\Infrastructure\Time\Clock\Clock;
-use Symfony\Component\PasswordHasher\Hasher\PasswordHasherAwareInterface;
 use Symfony\Component\Security\Core\Exception\UnsupportedUserException;
 use Symfony\Component\Security\Core\Exception\UserNotFoundException;
 use Symfony\Component\Security\Core\User\PasswordAuthenticatedUserInterface;

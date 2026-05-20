@@ -18,6 +18,9 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Index(name: 'TrainingSession_activityType_phase_objective_updatedAt', columns: ['activityType', 'sessionPhase', 'sessionObjective', 'updatedAt'])]
 final readonly class TrainingSession
 {
+    /**
+     * @param list<array<string, mixed>> $workoutSteps
+     */
     private function __construct(
         #[ORM\Id, ORM\Column(type: 'string', unique: true)]
         private TrainingSessionId $trainingSessionId,
@@ -37,7 +40,9 @@ final readonly class TrainingSession
         private ?PlannedSessionIntensity $targetIntensity,
         #[ORM\Column(type: 'string', nullable: true)]
         private ?ActivityId $templateActivityId,
+        /** @var list<array<string, mixed>> */
         #[ORM\Column(type: 'json', nullable: true)]
+        /** @var list<array<string, mixed>> */
         private array $workoutSteps,
         #[ORM\Column(type: 'string')]
         private PlannedSessionEstimationSource $estimationSource,
@@ -56,6 +61,9 @@ final readonly class TrainingSession
     ) {
     }
 
+    /**
+     * @param list<array<string, mixed>> $workoutSteps
+     */
     public static function create(
         TrainingSessionId $trainingSessionId,
         ?PlannedSessionId $sourcePlannedSessionId,
@@ -247,6 +255,9 @@ final readonly class TrainingSession
         );
     }
 
+    /**
+     * @return array<string, mixed>
+     */
     public function getDeduplicationValues(): array
     {
         return [
@@ -269,10 +280,7 @@ final readonly class TrainingSession
      */
     private static function normalizeWorkoutSteps(array $workoutSteps): array
     {
-        return array_values(array_filter(
-            $workoutSteps,
-            static fn (mixed $workoutStep): bool => is_array($workoutStep),
-        ));
+        return $workoutSteps;
     }
 
     private static function normalizeNullableString(?string $value): ?string

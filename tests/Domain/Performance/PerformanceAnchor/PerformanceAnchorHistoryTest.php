@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Tests\Domain\Performance\PerformanceAnchor;
 
-use App\Domain\Activity\ActivityType;
 use App\Domain\Ftp\FtpHistory;
 use App\Domain\Performance\PerformanceAnchor\PerformanceAnchorConfidence;
 use App\Domain\Performance\PerformanceAnchor\PerformanceAnchorHistory;

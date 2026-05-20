@@ -221,16 +221,16 @@ final readonly class DbalTrainingSessionRepository extends DbalRepository implem
             templateActivityId: null === $result['templateActivityId'] ? null : ActivityId::fromString($result['templateActivityId']),
             workoutSteps: Json::decode((string) ($result['workoutSteps'] ?? '[]')),
             estimationSource: PlannedSessionEstimationSource::from($result['estimationSource']),
-            sessionSource: isset($result['sessionSource']) ? TrainingSessionSource::from($result['sessionSource']) : TrainingSessionSource::PLANNED_SESSION,
-            sessionPhase: isset($result['sessionPhase']) && null !== $result['sessionPhase'] ? TrainingBlockPhase::from($result['sessionPhase']) : null,
-            sessionObjective: isset($result['sessionObjective']) && null !== $result['sessionObjective'] ? TrainingSessionObjective::from($result['sessionObjective']) : null,
+            sessionSource: is_string($result['sessionSource'] ?? null) ? TrainingSessionSource::from($result['sessionSource']) : TrainingSessionSource::PLANNED_SESSION,
+            sessionPhase: is_string($result['sessionPhase'] ?? null) ? TrainingBlockPhase::from($result['sessionPhase']) : null,
+            sessionObjective: is_string($result['sessionObjective'] ?? null) ? TrainingSessionObjective::from($result['sessionObjective']) : null,
             lastPlannedOn: null === $result['lastPlannedOn'] ? null : SerializableDateTime::fromString($result['lastPlannedOn']),
             createdAt: SerializableDateTime::fromString($result['createdAt']),
             updatedAt: SerializableDateTime::fromString($result['updatedAt']),
         );
     }
 
-    private function applyNullableEqualityFilter($queryBuilder, string $column, mixed $value): void
+    private function applyNullableEqualityFilter(\Doctrine\DBAL\Query\QueryBuilder $queryBuilder, string $column, mixed $value): void
     {
         if (null === $value) {
             $queryBuilder->andWhere(sprintf('%s IS NULL', $column));

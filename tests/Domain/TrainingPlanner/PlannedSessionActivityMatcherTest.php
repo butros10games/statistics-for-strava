@@ -29,8 +29,11 @@ final class PlannedSessionActivityMatcherTest extends ContainerTestCase
     {
         parent::setUp();
 
+        /** @var DbalActivityRepository $activityRepository */
+        $activityRepository = $this->getContainer()->get(DbalActivityRepository::class);
+
         $this->matcher = new PlannedSessionActivityMatcher(
-            $this->getContainer()->get(DbalActivityRepository::class),
+            $activityRepository,
         );
     }
 

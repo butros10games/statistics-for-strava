@@ -10,6 +10,9 @@ use App\Infrastructure\ValueObject\Time\SerializableDateTime;
 
 final readonly class ProposedSession
 {
+    /**
+     * @param list<array<string, mixed>> $workoutSteps
+     */
     private function __construct(
         private SerializableDateTime $day,
         private ActivityType $activityType,
@@ -23,6 +26,9 @@ final readonly class ProposedSession
     ) {
     }
 
+    /**
+     * @param list<array<string, mixed>> $workoutSteps
+     */
     public static function create(
         SerializableDateTime $day,
         ActivityType $activityType,
@@ -87,6 +93,9 @@ final readonly class ProposedSession
         return $this->isBrickSession;
     }
 
+    /**
+     * @return list<array<string, mixed>>
+     */
     public function getWorkoutSteps(): array
     {
         return $this->workoutSteps;
@@ -109,7 +118,7 @@ final readonly class ProposedSession
     }
 
     /**
-     * @param list<array<string, mixed>> $steps
+     * @param list<array<string, mixed>>                               $steps
      * @param list<array{headline: string, meta: ?string, depth: int}> $rows
      */
     private function appendWorkoutPreviewRows(array &$rows, array $steps, int $depth): void
@@ -171,15 +180,15 @@ final readonly class ProposedSession
      */
     private function formatWorkoutEffortLabel(array $step): ?string
     {
-        if (isset($step['targetPower']) && null !== $step['targetPower']) {
+        if (isset($step['targetPower'])) {
             return sprintf('%sW', $step['targetPower']);
         }
 
-        if (isset($step['targetPace']) && null !== $step['targetPace']) {
+        if (isset($step['targetPace'])) {
             return trim((string) $step['targetPace']);
         }
 
-        if (isset($step['targetHeartRate']) && null !== $step['targetHeartRate']) {
+        if (isset($step['targetHeartRate'])) {
             return sprintf('%sbpm', $step['targetHeartRate']);
         }
 

@@ -67,11 +67,7 @@ final readonly class GarminBridgeUpdater
                 $command[] = '--full';
             }
         } else {
-            throw new \InvalidArgumentException(sprintf(
-                'Unsupported Garmin source "%s". Expected one of: %s.',
-                $source,
-                implode(', ', [self::SOURCE_GARMIN_CONNECT, self::SOURCE_GIVEMYDATA]),
-            ));
+            throw new \InvalidArgumentException(sprintf('Unsupported Garmin source "%s". Expected one of: %s.', $source, implode(', ', [self::SOURCE_GARMIN_CONNECT, self::SOURCE_GIVEMYDATA])));
         }
 
         if (null !== $days) {

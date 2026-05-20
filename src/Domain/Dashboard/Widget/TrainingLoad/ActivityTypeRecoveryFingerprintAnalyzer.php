@@ -98,7 +98,7 @@ final class ActivityTypeRecoveryFingerprintAnalyzer
     private function averageNumericField(array $samples, string $field): ?float
     {
         $values = array_values(array_filter(
-            array_map(static fn (array $sample): int|float|null => $sample[$field], $samples),
+            array_map(fn (array $sample): int|float|null => $this->extractNumericSampleValue($sample, $field), $samples),
             static fn (int|float|null $value): bool => null !== $value,
         ));
 
@@ -107,5 +107,19 @@ final class ActivityTypeRecoveryFingerprintAnalyzer
         }
 
         return array_sum($values) / count($values);
+    }
+
+    /**
+     * @param array{day: string, activityType: ActivityType, load: int, nextDayHrv: ?float, nextDaySleepScore: ?int, nextDayFatigue: ?int} $sample
+     */
+    private function extractNumericSampleValue(array $sample, string $field): int|float|null
+    {
+        return match ($field) {
+            'load' => $sample['load'],
+            'nextDayHrv' => $sample['nextDayHrv'],
+            'nextDaySleepScore' => $sample['nextDaySleepScore'],
+            'nextDayFatigue' => $sample['nextDayFatigue'],
+            default => null,
+        };
     }
 }

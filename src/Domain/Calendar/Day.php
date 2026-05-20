@@ -12,17 +12,51 @@ use App\Infrastructure\ValueObject\Time\SerializableDateTime;
 
 final readonly class Day
 {
+    private SerializableDateTime $date;
+
+    private int $dayNumber;
+
+    private bool $isCurrentMonth;
+
+    private Activities $activities;
+
+    /** @var list<PlannedSession> */
+    private array $plannedSessions;
+
+    /** @var list<RaceEvent> */
+    private array $raceEvents;
+
+    /** @var list<TrainingBlock> */
+    private array $trainingBlocks;
+
+    /**
+     * @param list<PlannedSession> $plannedSessions
+     * @param list<RaceEvent>      $raceEvents
+     * @param list<TrainingBlock>  $trainingBlocks
+     */
     private function __construct(
-        private SerializableDateTime $date,
-        private int $dayNumber,
-        private bool $isCurrentMonth,
-        private Activities $activities,
-        private array $plannedSessions,
-        private array $raceEvents,
-        private array $trainingBlocks,
+        SerializableDateTime $date,
+        int $dayNumber,
+        bool $isCurrentMonth,
+        Activities $activities,
+        array $plannedSessions,
+        array $raceEvents,
+        array $trainingBlocks,
     ) {
+        $this->date = $date;
+        $this->dayNumber = $dayNumber;
+        $this->isCurrentMonth = $isCurrentMonth;
+        $this->activities = $activities;
+        $this->plannedSessions = $plannedSessions;
+        $this->raceEvents = $raceEvents;
+        $this->trainingBlocks = $trainingBlocks;
     }
 
+    /**
+     * @param list<PlannedSession> $plannedSessions
+     * @param list<RaceEvent>      $raceEvents
+     * @param list<TrainingBlock>  $trainingBlocks
+     */
     public static function create(
         SerializableDateTime $date,
         int $dayNumber,

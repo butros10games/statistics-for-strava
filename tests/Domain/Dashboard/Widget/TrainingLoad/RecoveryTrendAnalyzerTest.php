@@ -69,9 +69,9 @@ final class RecoveryTrendAnalyzerTest extends TestCase
     }
 
     /**
-     * @param array<string, int> $intensities
+     * @param array<string, int>                                                                                      $intensities
      * @param list<array{day: string, stepsCount: ?int, sleepDurationInSeconds: ?int, sleepScore: ?int, hrv: ?float}> $wellnessRecords
-     * @param list<array{day: string, fatigue: int, soreness: int, stress: int, motivation: int, sleepQuality: int}> $recoveryCheckIns
+     * @param list<array{day: string, fatigue: int, soreness: int, stress: int, motivation: int, sleepQuality: int}>  $recoveryCheckIns
      */
     private function buildContext(array $intensities, array $wellnessRecords, array $recoveryCheckIns): TrainingLoadAnalyticsContext
     {

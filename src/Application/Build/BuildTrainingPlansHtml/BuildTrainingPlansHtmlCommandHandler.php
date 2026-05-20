@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Application\Build\BuildTrainingPlansHtml;
 
 use App\Domain\TrainingPlanner\RaceEvent;
+use App\Domain\TrainingPlanner\RaceEventsByIdMapBuilder;
 use App\Domain\TrainingPlanner\RaceEventRepository;
 use App\Domain\TrainingPlanner\TrainingPlan;
 use App\Domain\TrainingPlanner\TrainingPlanRepository;
@@ -21,6 +22,7 @@ final readonly class BuildTrainingPlansHtmlCommandHandler implements CommandHand
     public function __construct(
         private TrainingPlanRepository $trainingPlanRepository,
         private RaceEventRepository $raceEventRepository,
+        private RaceEventsByIdMapBuilder $raceEventsByIdMapBuilder,
         private Environment $twig,
         private FilesystemOperator $buildStorage,
     ) {
@@ -33,7 +35,7 @@ final readonly class BuildTrainingPlansHtmlCommandHandler implements CommandHand
         $now = $command->getCurrentDateTime()->setTime(0, 0);
         $plans = $this->trainingPlanRepository->findAll();
         $raceEvents = $this->loadRaceEvents();
-        $raceEventsById = $this->buildRaceEventsById($raceEvents);
+        $raceEventsById = $this->raceEventsByIdMapBuilder->build($raceEvents);
         [$planRecords, $continuitySummary] = $this->buildPlanRecords($plans, $raceEvents, $raceEventsById, $now);
         $linkedRaceEventIds = $this->buildLinkedRaceEventIds($plans, $raceEvents);
         $unassignedUpcomingRaces = array_values(array_filter(
@@ -80,24 +82,8 @@ final readonly class BuildTrainingPlansHtmlCommandHandler implements CommandHand
     }
 
     /**
-     * @param list<RaceEvent> $raceEvents
-     *
-     * @return array<string, RaceEvent>
-     */
-    private function buildRaceEventsById(array $raceEvents): array
-    {
-        $indexed = [];
-
-        foreach ($raceEvents as $raceEvent) {
-            $indexed[(string) $raceEvent->getId()] = $raceEvent;
-        }
-
-        return $indexed;
-    }
-
-    /**
      * @param list<TrainingPlan> $plans
-     * @param list<RaceEvent> $raceEvents
+     * @param list<RaceEvent>    $raceEvents
      *
      * @return array<string, true>
      */
@@ -125,8 +111,8 @@ final readonly class BuildTrainingPlansHtmlCommandHandler implements CommandHand
     }
 
     /**
-     * @param list<TrainingPlan> $plans
-     * @param list<RaceEvent> $raceEvents
+     * @param list<TrainingPlan>       $plans
+     * @param list<RaceEvent>          $raceEvents
      * @param array<string, RaceEvent> $raceEventsById
      *
      * @return array{0: list<array<string, mixed>>, 1: array{gapCount: int, overlapCount: int, handoffCount: int}}
@@ -312,7 +298,7 @@ final readonly class BuildTrainingPlansHtmlCommandHandler implements CommandHand
     /**
      * @param list<array<string, mixed>> $planRecords
      *
-     * @return null|array<string, mixed>
+     * @return array<string, mixed>|null
      */
     private function findActiveOrNextPlanRecord(array $planRecords): ?array
     {

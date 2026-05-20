@@ -8,9 +8,9 @@ use App\Domain\Activity\ActivityTrainingLoadCalculator;
 use App\Domain\Activity\ActivityType;
 use App\Domain\Activity\EnrichedActivities;
 use App\Domain\Activity\Stream\ActivityHeartRateRepository;
+use App\Domain\Dashboard\Widget\TrainingLoad\FindNumberOfRestDays\FindNumberOfRestDays;
 use App\Domain\Dashboard\Widget\Wellness\FindDailyRecoveryCheckIns\FindDailyRecoveryCheckInsResponse;
 use App\Domain\Dashboard\Widget\Wellness\FindWellnessMetrics\FindWellnessMetricsResponse;
-use App\Domain\Dashboard\Widget\TrainingLoad\FindNumberOfRestDays\FindNumberOfRestDays;
 use App\Domain\Dashboard\Widget\Widget;
 use App\Domain\Dashboard\Widget\WidgetConfiguration;
 use App\Domain\TrainingPlanner\PlannedSessionForecastBuilder;
@@ -218,7 +218,7 @@ final readonly class TrainingLoadWidget implements Widget
     private function averageWellnessMetric(array $records, string $field): ?float
     {
         $values = array_values(array_filter(
-            array_map(static fn (array $record): int|float|null => $record[$field], $records),
+            array_map(fn (array $record): int|float|null => $this->extractNumericWellnessValue($record, $field), $records),
             static fn (int|float|null $value): bool => null !== $value,
         ));
 
@@ -227,6 +227,20 @@ final readonly class TrainingLoadWidget implements Widget
         }
 
         return array_sum($values) / count($values);
+    }
+
+    /**
+     * @param array{day: string, stepsCount: ?int, sleepDurationInSeconds: ?int, sleepScore: ?int, hrv: ?float} $record
+     */
+    private function extractNumericWellnessValue(array $record, string $field): int|float|null
+    {
+        return match ($field) {
+            'stepsCount' => $record['stepsCount'],
+            'sleepDurationInSeconds' => $record['sleepDurationInSeconds'],
+            'sleepScore' => $record['sleepScore'],
+            'hrv' => $record['hrv'],
+            default => null,
+        };
     }
 
     private function filterWellnessMetricsByDateRange(FindWellnessMetricsResponse $response, SerializableDateTime $from): FindWellnessMetricsResponse
@@ -314,5 +328,4 @@ final readonly class TrainingLoadWidget implements Widget
 
         return $samples;
     }
-
 }

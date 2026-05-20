@@ -6,6 +6,7 @@ namespace App\Console;
 
 use App\Domain\TrainingPlanner\Analysis\TrainingPlanAnalysisScenarioMatrix;
 use App\Domain\TrainingPlanner\Analysis\TrainingPlanQualityAnalyzer;
+use App\Domain\TrainingPlanner\Analysis\TrainingPlanQualityReport;
 use App\Domain\TrainingPlanner\PlanGenerator\TrainingPlanGenerator;
 use App\Domain\TrainingPlanner\TrainingPlanDiscipline;
 use App\Domain\TrainingPlanner\TrainingPlanType;
@@ -97,7 +98,7 @@ final class AnalyzeTrainingPlansConsoleCommand extends Command
             'scenarioCount' => count($reports),
             'aggregates' => $this->buildAggregatePayload($reports),
             'reports' => array_map(
-                static fn ($report): array => $report->toArray(),
+                static fn (TrainingPlanQualityReport $report): array => $report->toArray(),
                 $reports,
             ),
         ];
@@ -142,7 +143,7 @@ final class AnalyzeTrainingPlansConsoleCommand extends Command
         }
 
         $scenarioRows = array_map(
-            static fn ($report): array => [
+            static fn (TrainingPlanQualityReport $report): array => [
                 $report->getScenario()->getName(),
                 (string) $report->getScore(),
                 (string) $report->getMetrics()['totalSessions'],

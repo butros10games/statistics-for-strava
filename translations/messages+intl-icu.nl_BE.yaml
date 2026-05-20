@@ -19,6 +19,7 @@
 'AI review': 'AI review'
 ATL: ATL
 'ATL (Fatigue)': 'ATL (Fatigue)'
+Account: Account
 'Account settings': 'Account settings'
 'Accumulated fatigue': 'Accumulated fatigue'
 'Active days': 'Active days'
@@ -34,6 +35,7 @@ Activity: Activity
 'Acute:Chronic Ratio - Ratio of ATL to CTL. Indicates injury risk.': 'Acute:Chronic Ratio - Ratio of ATL to CTL. Indicates injury risk.'
 'Adaptive & Inclusive Sports': 'Adaptive & Inclusive Sports'
 Add: Add
+'Add Garmin credentials or tokens to your environment before using the manual Garmin sync.': 'Add Garmin credentials or tokens to your environment before using the manual Garmin sync.'
 'Add a phase so the planner can show where the season is building, sharpening, or backing off.': 'Add a phase so the planner can show where the season is building, sharpening, or backing off.'
 'Add a race event from the training calendar to get started with race planning.': 'Add a race event from the training calendar to get started with race planning.'
 'Add a session to your training calendar and load forecast.': 'Add a session to your training calendar and load forecast.'
@@ -46,9 +48,11 @@ Afternoon: Namiddag
 All: All
 'All time': 'All time'
 'Alpine Ski': 'Alpine Ski'
+'Already have an account?': 'Already have an account?'
 Apr: Apr
 Aquathlon: Aquathlon
 'Ask Mark something...': 'Ask Mark something...'
+'Athlete ID': 'Athlete ID'
 'Athlete profile': 'Athlete profile'
 Aug: Aug
 Auto-linked: Auto-linked
@@ -59,6 +63,8 @@ Avg: Gem
 BPM: BPM
 Back: Back
 'Back Country Ski': 'Back Country Ski'
+'Back to app': 'Back to app'
+'Back to sign in': 'Back to sign in'
 Badges: Badges
 Badminton: Badminton
 'Balance the disciplines, keep recovery honest, and make the key work count.': 'Balance the disciplines, keep recovery honest, and make the key work count.'
@@ -80,6 +86,8 @@ Bike: Bike
 'Block label': 'Block label'
 Brick: Brick
 'Brick sessions': 'Brick sessions'
+'Bridge source file': 'Bridge source file'
+'Browser token': 'Browser token'
 Build: Build
 'Build toward a race day': 'Build toward a race day'
 'Build zone (–10)': 'Build zone (–10)'
@@ -87,6 +95,7 @@ Build: Build
 CTL: CTL
 'CTL (Fitness)': 'CTL (Fitness)'
 Cadence: Cadans
+Calendar: Calendar
 Calories: Calorieën
 'Calories burned': 'Calories burned'
 Canoeing: Kanoën
@@ -94,6 +103,7 @@ Canoeing: Kanoën
 'Chain training blocks, anchor races, and keep your season on track.': 'Chain training blocks, anchor races, and keep your season on track.'
 'Challenge consistency': 'Challenge consistentie'
 Challenges: Challenges
+'Choose a new password': 'Choose a new password'
 'Chronic Training Load (Fitness) - 42-day exponentially weighted average of your daily training load. Represents long-term training adaptation.': 'Chronic Training Load (Fitness) - 42-day exponentially weighted average of your daily training load. Represents long-term training adaptation.'
 'Clear chat': 'Clear chat'
 'Close modal': Sluiten
@@ -110,6 +120,10 @@ Completed: Completed
 Condition: Condition
 'Confirm match': 'Confirm match'
 'Congrats! You achieved personal bests during this activity.': 'Congrats! You achieved personal bests during this activity.'
+'Connect Strava': 'Connect Strava'
+'Connect your Strava account and trigger a manual refresh whenever you want.': 'Connect your Strava account and trigger a manual refresh whenever you want.'
+Connected: Connected
+'Connection mode': 'Connection mode'
 'Consider reducing load': 'Consider reducing load'
 Consistency: Consistency
 Continuity: Continuity
@@ -119,14 +133,18 @@ Correlation: Correlation
 'Correlation insights (90 days)': 'Correlation insights (90 days)'
 Country: Country
 'Course notes, pacing idea, nutrition reminders, or key execution cues.': 'Course notes, pacing idea, nutrition reminders, or key execution cues.'
+'Create account': 'Create account'
+'Create an account': 'Create an account'
 'Create block': 'Create block'
 'Create first plan': 'Create first plan'
 'Create next plan': 'Create next plan'
 'Create plan': 'Create plan'
 'Create race': 'Create race'
 'Create real plan': 'Create real plan'
+'Create reset link': 'Create reset link'
 'Create session': 'Create session'
 'Create the next plan in sequence': 'Create the next plan in sequence'
+'Create your account': 'Create your account'
 'Create your first training block or race build. Stack them together to map out the months ahead.': 'Create your first training block or race build. Stack them together to map out the months ahead.'
 Cricket: Cricket
 Crossfit: Crossfit
@@ -153,16 +171,21 @@ Day: Day
 'Days needed': 'Dagen nodig'
 'Daytime stats': 'Daytime statistieken'
 Dec: Dec
+'Deep dive into your data': 'Deep dive into your data'
 'Define sets with time, distance, pace or power, and heart-rate targets.': 'Define sets with time, distance, pace or power, and heart-rate targets.'
 'Define the phase, its time window, and the main focus you want visible in the calendar.': 'Define the phase, its time window, and the main focus you want visible in the calendar.'
 Delete: Delete
 'Delete this planned session?': 'Delete this planned session?'
 Density: Density
 'Detailed instructions are available in the documentation on': 'Detailed instructions are available in the documentation on'
+'Detailed statistics': 'Detailed statistics'
 Details: Details
 Device: Apparaat
+'Device token': 'Device token'
+Disabled: Disabled
 Discipline: Discipline
 Disciplines: Disciplines
+Disconnect: Disconnect
 Distance: Afstand
 'Distance & Elevation': 'Distance & Elevation'
 'Distance / profile': 'Distance / profile'
@@ -185,6 +208,7 @@ Duration: Duration
 'Early summer build': 'Early summer build'
 Easy: Easy
 Eddington: Eddington
+'Eddington, best efforts & more': 'Eddington, best efforts & more'
 'Edit plan': 'Edit plan'
 'Edit planned session': 'Edit planned session'
 'Edit race event': 'Edit race event'
@@ -193,8 +217,14 @@ Elev: Elev
 Elevation: Hoogte
 'Elevation in {unit}': 'Elevation in {unit}'
 Elliptical: Elliptical
+Email: Email
+'Email + password': 'Email + password'
+'Email verification': 'Email verification'
+'Enable integrations.wellness.enabled in your app config before Garmin sync can run.': 'Enable integrations.wellness.enabled in your app config before Garmin sync can run.'
+Enabled: Enabled
 'End day': 'End day'
 'Enter fullscreen mode': 'Enter fullscreen mode'
+"Enter your email and we'll create a reset link for you": "Enter your email and we'll create a reset link for you"
 Est.: Est.
 Evening: Avond
 'Event details': 'Event details'
@@ -225,10 +255,13 @@ Focus: Focus
 Forecast: Forecast
 'Forecast confidence': 'Forecast confidence'
 'Forecast load modifier': 'Forecast load modifier'
+'Forgot password?': 'Forgot password?'
 'Form (TSB)': 'Form (TSB)'
 Fri: Vr
 Friday: Vrijdag
 'Full-distance triathlon': 'Full-distance triathlon'
+'Garmin sync uses the wellness bridge configuration from your app environment and config files.': 'Garmin sync uses the wellness bridge configuration from your app environment and config files.'
+'Garmin wellness': 'Garmin wellness'
 Gear: Uitrusting
 'Gear "{gearId}" is referenced in your maintenance config file, but was not imported from Strava. Please check that the gear exists and is correctly synced.': 'Gear "{gearId}" is referenced in your maintenance config file, but was not imported from Strava. Please check that the gear exists and is correctly synced.'
 'Gear details': 'Gear details'
@@ -236,6 +269,7 @@ Gear: Uitrusting
 'Gear stats': Uitrustingsstatistieken
 "Gear that hasn't been used in the last three months, is disabled by default.": 'Uitrusting die de afgelopen drie maanden niet is gebruikt, wordt standaard uitgeschakeld.'
 'Gear that is retired is disabled by default.': 'Uitrusting die niet meer actief is, wordt standaard uitgeschakeld.'
+'Get started with your training data': 'Get started with your training data'
 'Global race planner': 'Global race planner'
 Goal: Goal
 Golf: Golf
@@ -304,6 +338,7 @@ Laps: Laps
 'Last activity': 'Last activity'
 'Last effort': 'Last effort'
 'Last effort date': 'Last effort date'
+'Last imported Garmin day': 'Last imported Garmin day'
 'Last maintenance': 'Last maintenance'
 'Last {numberOfDays} days': 'Last {numberOfDays} days'
 Latest: Latest
@@ -337,6 +372,9 @@ Low: Laag
 Maintenance: Maintenance
 'Maintenance history': 'Maintenance history'
 'Mallorca, Belgium, Kona…': 'Mallorca, Belgium, Kona…'
+'Manage your account and connected services': 'Manage your account and connected services'
+'Manual Garmin import': 'Manual Garmin import'
+'Manual Strava import': 'Manual Strava import'
 Mar: Mar
 'Marathon (42.2K)': 'Marathon (42.2K)'
 Max: Max
@@ -371,6 +409,7 @@ Motivation: Motivation
 'Moving time': Beweegtijd
 Name: Name
 'Needs recovery': 'Needs recovery'
+'Needs setup': 'Needs setup'
 Neutral: Neutral
 'New personal best for': 'New personal best for'
 'New plan': 'New plan'
@@ -379,6 +418,8 @@ Next: Next
 'Next up': 'Next up'
 'Next-day HRV': 'Next-day HRV'
 Night: Nacht
+'No Garmin wellness days imported yet.': 'No Garmin wellness days imported yet.'
+'No Strava account is linked yet.': 'No Strava account is linked yet.'
 'No active plan': 'No active plan'
 'No activities': 'Geen activiteiten'
 'No check-in recorded for today yet. Fill this in to improve readiness and daily load interpretation.': 'No check-in recorded for today yet. Fill this in to improve readiness and daily load interpretation.'
@@ -398,6 +439,8 @@ Night: Nacht
 None: None
 'Nordic Ski': 'Nordic Ski'
 Normalized: Normalized
+'Not configured': 'Not configured'
+'Not connected': 'Not connected'
 'Not enough data to generate insights yet. Keep training and logging activities to unlock correlation analysis and recovery fingerprints.': 'Not enough data to generate insights yet. Keep training and logging activities to unlock correlation analysis and recovery fingerprints.'
 'Not supported': 'Not supported'
 Notes: Notes
@@ -429,7 +472,10 @@ Padel: Padel
 Peak: Peak
 'Peak fresh': 'Peak fresh'
 'Peak power outputs': 'Peak power outputs'
+Pending: Pending
 'Perfect handoff': 'Perfect handoff'
+'Performance insights': 'Performance insights'
+'Periodized race preparation': 'Periodized race preparation'
 'Personal Records': 'Personal Records'
 'Personal bests': 'Personal bests'
 Personalization: Personalization
@@ -439,6 +485,8 @@ Photos: Photos
 'Pick which days you do each sport and mark your long sessions.': 'Pick which days you do each sport and mark your long sessions.'
 'Pickle Ball': 'Pickle Ball'
 Pilates: Pilates
+Plan: Plan
+'Plan and track your training': 'Plan and track your training'
 'Plan details': 'Plan details'
 'Plan manager': 'Plan manager'
 'Plan mix': 'Plan mix'
@@ -464,6 +512,7 @@ Priority: Priority
 'Projected load': 'Projected load'
 'Prompt copied': 'Prompt copied'
 'Proposed periodization': 'Proposed periodization'
+'Pull the latest Strava data and rebuild the app now.': 'Pull the latest Strava data and rebuild the app now.'
 Race: Race
 'Race calendar': 'Race calendar'
 'Race day': 'Race day'
@@ -492,18 +541,21 @@ Readiness: Readiness
 'Recent load has been volatile or sparse, so treat this projection as a rough scenario.': 'Recent load has been volatile or sparse, so treat this projection as a rough scenario.'
 Recommendations: Recommendations
 'Recommended sessions': 'Recommended sessions'
+Reconnect: Reconnect
 'Recording devices': 'Recording devices'
 'Recording devices details': 'Recording devices details'
 Recovery: Recovery
 'Recovery signals are clearly suppressed. Prioritise sleep, recovery, and a lighter training day.': 'Recovery signals are clearly suppressed. Prioritise sleep, recovery, and a lighter training day.'
 'Recovery signals look acceptable, but not fully exceptional. A normal training day is likely fine.': 'Recovery signals look acceptable, but not fully exceptional. A normal training day is likely fine.'
 'Reduced carbon emission by commuting': 'Reduced carbon emission by commuting'
+'Refresh Garmin wellness bridge data, import it, and rebuild the app now.': 'Refresh Garmin wellness bridge data, import it, and rebuild the app now.'
 'Regenerate upcoming sessions': 'Regenerate upcoming sessions'
 'Relative cost': 'Relative cost'
 'Remove block': 'Remove block'
 'Remove set': 'Remove set'
 'Repeat block': 'Repeat block'
 Reps: Reps
+'Reset password': 'Reset password'
 'Reset to today': 'Reset to today'
 Rest: Rest
 'Rest days': 'Rest days'
@@ -533,6 +585,7 @@ Saturday: Zaterdag
 'Save check-in': 'Save check-in'
 'Save session': 'Save session'
 Schedule: Schedule
+Scopes: Scopes
 Score: Score
 Search: Zoeken
 'Search activity...': 'Zoek activiteit...'
@@ -548,10 +601,14 @@ Session: Session
 Sessions: Sessions
 Sessions/week: Sessions/week
 Set: Set
+'Set a strong password to secure your account': 'Set a strong password to secure your account'
 'Set the plan window and give it a name.': 'Set the plan window and give it a name.'
 Sets: Sets
 'Show information': 'Informatie tonen'
 'Shows how your TSB (Form) and A:C Ratio may evolve over the next 7 days across a few preset training scenarios.': 'Shows how your TSB (Form) and A:C Ratio may evolve over the next 7 days across a few preset training scenarios.'
+'Sign in': 'Sign in'
+'Sign in to your account to continue': 'Sign in to your account to continue'
+'Sign out': 'Sign out'
 "Since I began using Strava {numberOfDaysAgo} ago on {startDate}, I've logged {totalDaysOfWorkingOut} active days of training and adventure.": "Since I began using Strava {numberOfDaysAgo} ago on {startDate}, I've logged {totalDaysOfWorkingOut} active days of training and adventure."
 Skateboard: Skateboard
 Skating: Skating
@@ -588,6 +645,7 @@ Status: Status
 Steps: Steps
 'Steps trend': 'Steps trend'
 Strain: Strain
+'Strava connection': 'Strava connection'
 'Strava profile': 'Strava profile'
 'Streak started on {date}': 'Streak started on {date}'
 Streaks: Streaks
@@ -601,7 +659,11 @@ Swim: Zwemmen
 'Swim CSS': 'Swim CSS'
 'Swim days': 'Swim days'
 'Switch this on only if you have access to hills or a treadmill incline and want hill reps in the workout mix.': 'Switch this on only if you have access to hills or a treadmill incline and want hill reps in the workout mix.'
+'Sync Garmin now': 'Sync Garmin now'
+'Sync Strava now': 'Sync Strava now'
 'Sync plan': 'Sync plan'
+'Syncing Garmin…': 'Syncing Garmin…'
+'Syncing Strava…': 'Syncing Strava…'
 TSB: TSB
 'TSB (Form)': 'TSB (Form)'
 'TSB positive in': 'TSB positive in'
@@ -761,6 +823,7 @@ Unlink: Unlink
 Unlinked: Unlinked
 Unspecified: Unspecified
 Upcoming: Upcoming
+'Update password': 'Update password'
 'Update plan': 'Update plan'
 'Update the event your block, taper, and key sessions should build toward.': 'Update the event your block, taper, and key sessions should build toward.'
 'Update the phase guiding the current stretch of training.': 'Update the phase guiding the current stretch of training.'
@@ -776,6 +839,8 @@ Upcoming: Upcoming
 Used: Used
 'User badge': 'User badge'
 'Velo Mobiles': 'Velo Mobiles'
+Verified: Verified
+'Verify now': 'Verify now'
 'Very high': 'Heel hoog'
 'View all': 'Bekijk alles'
 'View details': 'View details'
@@ -791,6 +856,7 @@ Walks: Wandelingen
 'We detected following issues': 'We detected following issues'
 Wed: Woe
 Wednesday: Woensdag
+'Week & Info': 'Week & Info'
 Weekly: Weekly
 'Weekly Strain - Product of weekly training load and monotony. Overall training stress.': 'Weekly Strain - Product of weekly training load and monotony. Overall training stress.'
 'Weekly schedule': 'Weekly schedule'
@@ -799,7 +865,9 @@ Weekly: Weekly
 Weight: Weight
 'Weight Training': Gewichttraining
 'Weight history': 'Weight history'
+'Welcome back': 'Welcome back'
 Wellness: Wellness
+'Wellness import': 'Wellness import'
 'What are you training for?': 'What are you training for?'
 'What kind of plan?': 'What kind of plan?'
 'What should this stretch focus on, protect, or prepare for?': 'What should this stretch focus on, protect, or prepare for?'

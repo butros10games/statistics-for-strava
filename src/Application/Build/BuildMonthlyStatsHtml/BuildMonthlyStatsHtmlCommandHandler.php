@@ -6,17 +6,20 @@ namespace App\Application\Build\BuildMonthlyStatsHtml;
 
 use App\Domain\Activity\ActivityType;
 use App\Domain\Activity\EnrichedActivities;
-use App\Domain\Activity\SportType\SportTypeRepository;
 use App\Domain\Calendar\Calendar;
+use App\Domain\Calendar\FindMonthlyStats\FindMonthlyStats;
+use App\Domain\Calendar\FindMonthlyStats\FindMonthlyStatsResponse;
 use App\Domain\Calendar\Month;
 use App\Domain\Calendar\Months;
-use App\Domain\Calendar\FindMonthlyStats\FindMonthlyStats;
 use App\Domain\Calendar\Week;
+use App\Domain\Challenge\Challenges;
 use App\Domain\Challenge\ChallengeRepository;
+use App\Domain\TrainingPlanner\PlannedSessionEstimatedLoadMapBuilder;
 use App\Domain\TrainingPlanner\PlannedSession;
-use App\Domain\TrainingPlanner\PlannedSessionLoadEstimator;
 use App\Domain\TrainingPlanner\PlannedSessionRepository;
+use App\Domain\TrainingPlanner\CurrentTrainingBlockResolver;
 use App\Domain\TrainingPlanner\RaceEvent;
+use App\Domain\TrainingPlanner\RaceEventsByIdMapBuilder;
 use App\Domain\TrainingPlanner\RaceEventRepository;
 use App\Domain\TrainingPlanner\TrainingBlock;
 use App\Domain\TrainingPlanner\TrainingBlockRepository;
@@ -32,12 +35,13 @@ final readonly class BuildMonthlyStatsHtmlCommandHandler implements CommandHandl
 {
     public function __construct(
         private ChallengeRepository $challengeRepository,
-        private SportTypeRepository $sportTypeRepository,
         private EnrichedActivities $enrichedActivities,
         private PlannedSessionRepository $plannedSessionRepository,
         private RaceEventRepository $raceEventRepository,
         private TrainingBlockRepository $trainingBlockRepository,
-        private PlannedSessionLoadEstimator $plannedSessionLoadEstimator,
+        private CurrentTrainingBlockResolver $currentTrainingBlockResolver,
+        private PlannedSessionEstimatedLoadMapBuilder $plannedSessionEstimatedLoadMapBuilder,
+        private RaceEventsByIdMapBuilder $raceEventsByIdMapBuilder,
         private CurrentWeekCoachInsightsBuilder $currentWeekCoachInsightsBuilder,
         private QueryBus $queryBus,
         private Environment $twig,
@@ -92,14 +96,14 @@ final readonly class BuildMonthlyStatsHtmlCommandHandler implements CommandHandl
         ));
         $plannedSessionsByMonth = $this->groupPlannedSessionsByMonth($plannedSessions);
         $plannedSessionsByDay = $this->groupPlannedSessionsByDay($plannedSessions);
-        $plannedSessionEstimatesById = $this->buildPlannedSessionEstimatesById($plannedSessions);
+        $plannedSessionEstimatesById = $this->plannedSessionEstimatedLoadMapBuilder->build($plannedSessions);
         $raceEvents = $this->raceEventRepository->findByDateRange(DateRange::fromDates(
             $startDate->modify('first day of this month')->setTime(0, 0),
             $endDate->modify('last day of this month')->setTime(23, 59, 59),
         ));
         $raceEventsByMonth = $this->groupRaceEventsByMonth($raceEvents);
         $raceEventsByDay = $this->groupRaceEventsByDay($raceEvents);
-        $raceEventsById = $this->buildRaceEventsById($raceEvents);
+        $raceEventsById = $this->raceEventsByIdMapBuilder->build($raceEvents);
         $upcomingRaceEvents = $this->raceEventRepository->findUpcoming($now, 4);
         $raceEventCountdownDaysById = $this->buildRaceEventCountdownDaysById($raceEvents, $now);
         $trainingBlocks = $this->trainingBlockRepository->findByDateRange(DateRange::fromDates(
@@ -109,7 +113,7 @@ final readonly class BuildMonthlyStatsHtmlCommandHandler implements CommandHandl
         $trainingBlocksByMonth = $this->groupTrainingBlocksByMonth($trainingBlocks);
         $trainingBlocksByDay = $this->groupTrainingBlocksByDay($trainingBlocks);
         $currentAndUpcomingTrainingBlocks = $this->trainingBlockRepository->findCurrentAndUpcoming($now, 4);
-        $currentTrainingBlock = $this->findCurrentTrainingBlock($currentAndUpcomingTrainingBlocks, $now);
+        $currentTrainingBlock = $this->currentTrainingBlockResolver->findCurrent($currentAndUpcomingTrainingBlocks, $now);
         $currentWeek = Week::fromDate($now);
         $currentWeekPlannedSessions = $this->findPlannedSessionsInWeek($plannedSessions, $currentWeek);
         $currentWeekRaceEvents = $this->findRaceEventsInWeek($raceEvents, $currentWeek);
@@ -243,27 +247,27 @@ final readonly class BuildMonthlyStatsHtmlCommandHandler implements CommandHandl
     }
 
     /**
-     * @param array<string, mixed> $monthlyStats
-     * @param list<mixed> $allChallenges
-     * @param array<string, list<PlannedSession>> $plannedSessionsByMonth
-     * @param array<string, list<RaceEvent>> $raceEventsByMonth
-     * @param array<string, list<TrainingBlock>> $trainingBlocksByMonth
-     * @param list<RaceEvent> $upcomingRaceEvents
-     * @param array<string, RaceEvent> $raceEventsById
-     * @param array<string, int> $raceEventCountdownDaysById
-     * @param list<PlannedSession> $currentWeekPlannedSessions
-     * @param list<RaceEvent> $currentWeekRaceEvents
-     * @param list<TrainingBlock> $currentWeekTrainingBlocks
-     * @param list<array{activityType: ActivityType, count: int}> $currentWeekActivityTypeSummaries
-     * @param array<string, true> $currentWeekKeySessionIds
-     * @param array<string, true> $currentWeekBrickSessionIds
-     * @param null|array{label: string, tone: string, title: string, body: string} $currentWeekRaceIntent
-     * @param list<array{tone: string, title: string, body: string}> $currentWeekCoachCues
-     * @param list<TrainingBlock> $currentAndUpcomingTrainingBlocks
-     * @param array<string, null|float> $plannedSessionEstimatesById
-     * @param array<string, list<PlannedSession>> $plannedSessionsByDay
-     * @param array<string, list<RaceEvent>> $raceEventsByDay
-     * @param array<string, list<TrainingBlock>> $trainingBlocksByDay
+    * @param FindMonthlyStatsResponse                                             $monthlyStats
+    * @param Challenges                                                           $allChallenges
+     * @param array<string, list<PlannedSession>>                                  $plannedSessionsByMonth
+     * @param array<string, list<RaceEvent>>                                       $raceEventsByMonth
+     * @param array<string, list<TrainingBlock>>                                   $trainingBlocksByMonth
+     * @param list<RaceEvent>                                                      $upcomingRaceEvents
+     * @param array<string, RaceEvent>                                             $raceEventsById
+     * @param array<string, int>                                                   $raceEventCountdownDaysById
+     * @param list<PlannedSession>                                                 $currentWeekPlannedSessions
+     * @param list<RaceEvent>                                                      $currentWeekRaceEvents
+     * @param list<TrainingBlock>                                                  $currentWeekTrainingBlocks
+     * @param list<array{activityType: ActivityType, count: int}>                  $currentWeekActivityTypeSummaries
+     * @param array<string, true>                                                  $currentWeekKeySessionIds
+     * @param array<string, true>                                                  $currentWeekBrickSessionIds
+     * @param array{label: string, tone: string, title: string, body: string}|null $currentWeekRaceIntent
+     * @param list<array{tone: string, title: string, body: string}>               $currentWeekCoachCues
+     * @param list<TrainingBlock>                                                  $currentAndUpcomingTrainingBlocks
+     * @param array<string, float|null>                                            $plannedSessionEstimatesById
+     * @param array<string, list<PlannedSession>>                                  $plannedSessionsByDay
+     * @param array<string, list<RaceEvent>>                                       $raceEventsByDay
+     * @param array<string, list<TrainingBlock>>                                   $trainingBlocksByDay
      *
      * @return array<string, mixed>
      */
@@ -271,8 +275,8 @@ final readonly class BuildMonthlyStatsHtmlCommandHandler implements CommandHandl
         Month $month,
         string $firstMonthId,
         string $lastMonthId,
-        mixed $monthlyStats,
-        mixed $allChallenges,
+        FindMonthlyStatsResponse $monthlyStats,
+        Challenges $allChallenges,
         array $plannedSessionsByMonth,
         array $raceEventsByMonth,
         array $trainingBlocksByMonth,
@@ -395,22 +399,6 @@ final readonly class BuildMonthlyStatsHtmlCommandHandler implements CommandHandl
     }
 
     /**
-     * @param list<RaceEvent> $raceEvents
-     *
-     * @return array<string, RaceEvent>
-     */
-    private function buildRaceEventsById(array $raceEvents): array
-    {
-        $indexedRaceEvents = [];
-
-        foreach ($raceEvents as $raceEvent) {
-            $indexedRaceEvents[(string) $raceEvent->getId()] = $raceEvent;
-        }
-
-        return $indexedRaceEvents;
-    }
-
-    /**
      * @param list<TrainingBlock> $trainingBlocks
      *
      * @return array<string, list<TrainingBlock>>
@@ -466,20 +454,6 @@ final readonly class BuildMonthlyStatsHtmlCommandHandler implements CommandHandl
     }
 
     /**
-     * @param list<TrainingBlock> $trainingBlocks
-     */
-    private function findCurrentTrainingBlock(array $trainingBlocks, SerializableDateTime $referenceDate): ?TrainingBlock
-    {
-        foreach ($trainingBlocks as $trainingBlock) {
-            if ($trainingBlock->containsDay($referenceDate)) {
-                return $trainingBlock;
-            }
-        }
-
-        return null;
-    }
-
-    /**
      * @param list<PlannedSession> $plannedSessions
      *
      * @return list<PlannedSession>
@@ -521,20 +495,4 @@ final readonly class BuildMonthlyStatsHtmlCommandHandler implements CommandHandl
         ));
     }
 
-    /**
-     * @param list<PlannedSession> $plannedSessions
-     *
-     * @return array<string, null|float>
-     */
-    private function buildPlannedSessionEstimatesById(array $plannedSessions): array
-    {
-        $plannedSessionEstimatesById = [];
-
-        foreach ($plannedSessions as $plannedSession) {
-            $plannedSessionEstimatesById[(string) $plannedSession->getId()] = $this->plannedSessionLoadEstimator
-                ->estimate($plannedSession)?->getEstimatedLoad();
-        }
-
-        return $plannedSessionEstimatesById;
-    }
 }

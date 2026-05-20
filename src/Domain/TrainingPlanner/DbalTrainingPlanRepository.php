@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Domain\TrainingPlanner;
 
 use App\Domain\Auth\AppUserId;
-use App\Infrastructure\User\CurrentAppUser;
 use App\Infrastructure\Repository\DbalRepository;
+use App\Infrastructure\User\CurrentAppUser;
 use App\Infrastructure\ValueObject\Time\SerializableDateTime;
 use Doctrine\DBAL\Query\QueryBuilder;
 
@@ -152,13 +152,13 @@ final readonly class DbalTrainingPlanRepository extends DbalRepository implement
             targetRaceEventId: null === $result['targetRaceEventId'] ? null : RaceEventId::fromString((string) $result['targetRaceEventId']),
             title: $result['title'],
             notes: $result['notes'],
-            discipline: isset($result['discipline']) ? TrainingPlanDiscipline::from($result['discipline']) : null,
+            discipline: is_string($result['discipline'] ?? null) ? TrainingPlanDiscipline::from($result['discipline']) : null,
             sportSchedule: isset($result['sportSchedule']) ? json_decode((string) $result['sportSchedule'], true) : null,
             performanceMetrics: isset($result['performanceMetrics']) ? json_decode((string) $result['performanceMetrics'], true) : null,
-            targetRaceProfile: isset($result['targetRaceProfile']) ? RaceEventProfile::from($result['targetRaceProfile']) : null,
-            trainingFocus: isset($result['trainingFocus']) && null !== $result['trainingFocus'] ? TrainingFocus::tryFrom($result['trainingFocus']) : null,
-            trainingBlockStyle: isset($result['trainingBlockStyle']) && null !== $result['trainingBlockStyle'] ? TrainingBlockStyle::tryFrom($result['trainingBlockStyle']) : null,
-            runningWorkoutTargetMode: isset($result['runningWorkoutTargetMode']) && null !== $result['runningWorkoutTargetMode'] ? RunningWorkoutTargetMode::tryFrom($result['runningWorkoutTargetMode']) : null,
+            targetRaceProfile: is_string($result['targetRaceProfile'] ?? null) ? RaceEventProfile::from($result['targetRaceProfile']) : null,
+            trainingFocus: is_string($result['trainingFocus'] ?? null) ? TrainingFocus::tryFrom($result['trainingFocus']) : null,
+            trainingBlockStyle: is_string($result['trainingBlockStyle'] ?? null) ? TrainingBlockStyle::tryFrom($result['trainingBlockStyle']) : null,
+            runningWorkoutTargetMode: is_string($result['runningWorkoutTargetMode'] ?? null) ? RunningWorkoutTargetMode::tryFrom($result['runningWorkoutTargetMode']) : null,
             runHillSessionsEnabled: (bool) ($result['runHillSessionsEnabled'] ?? false),
             visibility: isset($result['visibility']) && is_string($result['visibility']) ? TrainingPlanVisibility::from($result['visibility']) : TrainingPlanVisibility::FRIENDS,
             createdAt: SerializableDateTime::fromString($result['createdAt']),

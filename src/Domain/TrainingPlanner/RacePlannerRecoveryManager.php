@@ -27,6 +27,10 @@ final readonly class RacePlannerRecoveryManager
     ) {
     }
 
+    /**
+     * @param list<TrainingBlock>  $existingBlocks
+     * @param list<PlannedSession> $existingSessions
+     */
     public function summarizeFromProposal(
         TrainingPlanProposal $proposal,
         array $existingBlocks,
@@ -102,9 +106,7 @@ final readonly class RacePlannerRecoveryManager
             return PlannedSessionEstimationSource::WORKOUT_TARGETS;
         }
 
-        return null !== $proposedSession->getTargetDurationInSeconds() || null !== $proposedSession->getTargetIntensity()
-            ? PlannedSessionEstimationSource::DURATION_INTENSITY
-            : PlannedSessionEstimationSource::UNKNOWN;
+        return PlannedSessionEstimationSource::DURATION_INTENSITY;
     }
 
     /**
@@ -155,7 +157,7 @@ final readonly class RacePlannerRecoveryManager
     }
 
     /**
-     * @param list<TrainingBlock> $existingBlocks
+     * @param list<TrainingBlock>  $existingBlocks
      * @param list<PlannedSession> $existingSessions
      *
      * @return array{0: list<ProposedTrainingBlock>, 1: list<array{block: ProposedTrainingBlock, session: ProposedSession}>}

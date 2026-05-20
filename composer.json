@@ -112,6 +112,14 @@
             "cache:clear": "symfony-cmd",
             "assets:install %PUBLIC_DIR%": "symfony-cmd"
         },
+        "test": "phpunit --order-by=random",
+        "test:parallel": "paratest --order-by=random --processes=auto",
+        "test:coverage": "paratest --order-by=random --processes=auto --coverage-html var/coverage",
+        "phpstan": "phpstan analyse --memory-limit=1G",
+        "cs:check": "php-cs-fixer fix --dry-run --stop-on-violation --config=.php-cs-fixer.dist.php",
+        "cs:fix": "php-cs-fixer fix --config=.php-cs-fixer.dist.php",
+        "rector:check": "rector --dry-run && rector --config rector-tests.php --dry-run",
+        "rector:fix": "rector && rector --config rector-tests.php",
         "post-install-cmd": [
             "@auto-scripts",
             "@compress-intl"

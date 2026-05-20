@@ -95,7 +95,7 @@ final class RacePlannerExistingBlockSelectorTest extends TestCase
         string $startDay,
         string $endDay,
         TrainingBlockPhase $phase,
-        ?\App\Domain\TrainingPlanner\RaceEventId $targetRaceEventId,
+        ?RaceEventId $targetRaceEventId,
     ): TrainingBlock {
         return TrainingBlock::create(
             trainingBlockId: TrainingBlockId::random(),

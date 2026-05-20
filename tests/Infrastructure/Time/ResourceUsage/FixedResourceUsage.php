@@ -10,12 +10,12 @@ final readonly class FixedResourceUsage implements ResourceUsage
 {
     public function startTimer(): void
     {
-        // TODO: Implement startTimer() method.
+        // Intentionally left blank for deterministic test output.
     }
 
     public function stopTimer(): void
     {
-        // TODO: Implement stopTimer() method.
+        // Intentionally left blank for deterministic test output.
     }
 
     public function getRunTimeInSeconds(): float

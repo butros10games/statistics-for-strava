@@ -12,15 +12,43 @@ use App\Infrastructure\ValueObject\Time\SerializableDateTime;
 
 final readonly class Calendar
 {
+    private Month $month;
+
+    private EnrichedActivities $enrichedActivities;
+
+    /** @var array<string, list<PlannedSession>> */
+    private array $plannedSessionsByDay;
+
+    /** @var array<string, list<RaceEvent>> */
+    private array $raceEventsByDay;
+
+    /** @var array<string, list<TrainingBlock>> */
+    private array $trainingBlocksByDay;
+
+    /**
+     * @param array<string, list<PlannedSession>> $plannedSessionsByDay
+     * @param array<string, list<RaceEvent>>      $raceEventsByDay
+     * @param array<string, list<TrainingBlock>>  $trainingBlocksByDay
+     */
     private function __construct(
-        private Month $month,
-        private EnrichedActivities $enrichedActivities,
-        private array $plannedSessionsByDay,
-        private array $raceEventsByDay,
-        private array $trainingBlocksByDay,
+        Month $month,
+        EnrichedActivities $enrichedActivities,
+        array $plannedSessionsByDay,
+        array $raceEventsByDay,
+        array $trainingBlocksByDay,
     ) {
+        $this->month = $month;
+        $this->enrichedActivities = $enrichedActivities;
+        $this->plannedSessionsByDay = $plannedSessionsByDay;
+        $this->raceEventsByDay = $raceEventsByDay;
+        $this->trainingBlocksByDay = $trainingBlocksByDay;
     }
 
+    /**
+     * @param array<string, list<PlannedSession>> $plannedSessionsByDay
+     * @param array<string, list<RaceEvent>>      $raceEventsByDay
+     * @param array<string, list<TrainingBlock>>  $trainingBlocksByDay
+     */
     public static function create(
         Month $month,
         EnrichedActivities $enrichedActivities,

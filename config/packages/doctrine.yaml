@@ -1,7 +1,6 @@
 doctrine:
   dbal:
-    driver: 'pdo_sqlite'
-    path: '%kernel.project_dir%/storage/database/strava.db'
+    url: '%env(resolve:DATABASE_URL)%'
     profiling_collect_backtrace: false
   orm:
     enable_native_lazy_objects: true
@@ -20,7 +19,3 @@ doctrine:
     controller_resolver:
       auto_mapping: false
 
-when@test:
-  doctrine:
-    dbal:
-      url: 'sqlite:///:memory:'

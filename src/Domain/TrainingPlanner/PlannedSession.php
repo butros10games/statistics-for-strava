@@ -16,6 +16,9 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Index(name: 'PlannedSession_linkedActivityId', columns: ['linkedActivityId'])]
 final readonly class PlannedSession
 {
+    /**
+     * @param list<array{itemId: string, parentBlockId: ?string, type: string, label: ?string, repetitions: int, targetType: ?string, conditionType: ?string, durationInSeconds: ?int, distanceInMeters: ?int, targetPace: ?string, targetPower: ?int, targetHeartRate: ?int, recoveryAfterInSeconds: ?int}> $workoutSteps
+     */
     private function __construct(
         #[ORM\Id, ORM\Column(type: 'string', unique: true)]
         private PlannedSessionId $plannedSessionId,
@@ -38,6 +41,7 @@ final readonly class PlannedSession
         #[ORM\Column(type: 'string', nullable: true)]
         private ?ActivityId $templateActivityId,
         #[ORM\Column(type: 'json', nullable: true)]
+        /** @var list<array{itemId: string, parentBlockId: ?string, type: string, label: ?string, repetitions: int, targetType: ?string, conditionType: ?string, durationInSeconds: ?int, distanceInMeters: ?int, targetPace: ?string, targetPower: ?int, targetHeartRate: ?int, recoveryAfterInSeconds: ?int}> */
         private array $workoutSteps,
         #[ORM\Column(type: 'string')]
         private PlannedSessionEstimationSource $estimationSource,
@@ -52,6 +56,9 @@ final readonly class PlannedSession
     ) {
     }
 
+    /**
+     * @param list<array<string, mixed>> $workoutSteps
+     */
     public static function create(
         PlannedSessionId $plannedSessionId,
         SerializableDateTime $day,
@@ -141,7 +148,7 @@ final readonly class PlannedSession
     }
 
     /**
-    * @return list<array{itemId: string, parentBlockId: ?string, type: string, label: ?string, repetitions: int, targetType: ?string, conditionType: ?string, durationInSeconds: ?int, distanceInMeters: ?int, targetPace: ?string, targetPower: ?int, targetHeartRate: ?int, recoveryAfterInSeconds: ?int}>
+     * @return list<array{itemId: string, parentBlockId: ?string, type: string, label: ?string, repetitions: int, targetType: ?string, conditionType: ?string, durationInSeconds: ?int, distanceInMeters: ?int, targetPace: ?string, targetPower: ?int, targetHeartRate: ?int, recoveryAfterInSeconds: ?int}>
      */
     public function getWorkoutSteps(): array
     {
@@ -256,17 +263,13 @@ final readonly class PlannedSession
     /**
      * @param list<array<string, mixed>> $workoutSteps
      *
-    * @return list<array{itemId: string, parentBlockId: ?string, type: string, label: ?string, repetitions: int, targetType: ?string, conditionType: ?string, durationInSeconds: ?int, distanceInMeters: ?int, targetPace: ?string, targetPower: ?int, targetHeartRate: ?int, recoveryAfterInSeconds: ?int}>
+     * @return list<array{itemId: string, parentBlockId: ?string, type: string, label: ?string, repetitions: int, targetType: ?string, conditionType: ?string, durationInSeconds: ?int, distanceInMeters: ?int, targetPace: ?string, targetPower: ?int, targetHeartRate: ?int, recoveryAfterInSeconds: ?int}>
      */
     private static function normalizeWorkoutSteps(ActivityType $activityType, array $workoutSteps): array
     {
         $normalizedSteps = [];
 
-        foreach (array_values($workoutSteps) as $index => $workoutStep) {
-            if (!is_array($workoutStep)) {
-                continue;
-            }
-
+        foreach ($workoutSteps as $index => $workoutStep) {
             $type = $workoutStep['type'] ?? PlannedSessionStepType::INTERVAL->value;
             if (!$type instanceof PlannedSessionStepType) {
                 $type = PlannedSessionStepType::tryFrom((string) $type) ?? PlannedSessionStepType::INTERVAL;
@@ -394,7 +397,7 @@ final readonly class PlannedSession
     }
 
     /**
-    * @param list<array{itemId: string, parentBlockId: ?string, type: string, label: ?string, repetitions: int, targetType: ?string, conditionType: ?string, durationInSeconds: ?int, distanceInMeters: ?int, targetPace: ?string, targetPower: ?int, targetHeartRate: ?int, recoveryAfterInSeconds: ?int}> $workoutSteps
+     * @param list<array{itemId: string, parentBlockId: ?string, type: string, label: ?string, repetitions: int, targetType: ?string, conditionType: ?string, durationInSeconds: ?int, distanceInMeters: ?int, targetPace: ?string, targetPower: ?int, targetHeartRate: ?int, recoveryAfterInSeconds: ?int}> $workoutSteps
      */
     private static function calculateWorkoutSequenceDuration(array $workoutSteps, ?string $parentBlockId = null): ?int
     {
@@ -430,7 +433,7 @@ final readonly class PlannedSession
     }
 
     /**
-    * @param array{targetType: ?string, conditionType: ?string, durationInSeconds: ?int, distanceInMeters: ?int, targetPace: ?string, targetPower: ?int, targetHeartRate: ?int} $workoutStep
+     * @param array{targetType: ?string, conditionType: ?string, durationInSeconds: ?int, distanceInMeters: ?int, targetPace: ?string, targetPower: ?int, targetHeartRate: ?int} $workoutStep
      */
     private static function estimateWorkoutStepDurationInSeconds(array $workoutStep): ?int
     {

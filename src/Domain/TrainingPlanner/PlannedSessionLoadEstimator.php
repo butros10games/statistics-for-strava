@@ -18,6 +18,7 @@ final class PlannedSessionLoadEstimator
     private const int RECENT_ACTIVITY_SAMPLE_LIMIT = 12;
     private const int EFFORT_MATCH_NEAREST_SAMPLE_COUNT = 3;
 
+    private ?TrainingPlannerActivityIndex $activityIndex = null;
     /** @var array<string, ?float> */
     private array $historicalLoadPerHourByActivityType = [];
     /** @var array<string, list<array{effort: float, loadPerHour: float}>> */
@@ -75,10 +76,7 @@ final class PlannedSessionLoadEstimator
             return $this->historicalLoadPerHourByActivityType[$activityType->value];
         }
 
-        $activities = array_filter(
-            iterator_to_array($this->activityRepository->findAll()),
-            static fn (Activity $activity): bool => $activity->getSportType()->getActivityType() === $activityType,
-        );
+        $activities = $this->activityIndex()->byActivityType($activityType);
 
         return $this->historicalLoadPerHourByActivityType[$activityType->value] = $this->calculateAverageLoadPerHour($activities);
     }
@@ -89,7 +87,7 @@ final class PlannedSessionLoadEstimator
             return $this->globalHistoricalLoadPerHour;
         }
 
-        return $this->globalHistoricalLoadPerHour = $this->calculateAverageLoadPerHour(iterator_to_array($this->activityRepository->findAll()));
+        return $this->globalHistoricalLoadPerHour = $this->calculateAverageLoadPerHour($this->activityIndex()->all());
     }
 
     /**
@@ -353,8 +351,9 @@ final class PlannedSessionLoadEstimator
     private function estimateLoadFromTargetHeartRate(int $targetHeartRate, int $durationInSeconds, \DateTimeImmutable $on): ?float
     {
         $athlete = $this->athleteRepository->find();
-        $restingHeartRate = $athlete->getRestingHeartRateFormula($on);
-        $maxHeartRate = $athlete->getMaxHeartRate($on);
+        $measurementDay = SerializableDateTime::fromDateTimeImmutable($on);
+        $restingHeartRate = $athlete->getRestingHeartRateFormula($measurementDay);
+        $maxHeartRate = $athlete->getMaxHeartRate($measurementDay);
         if ($maxHeartRate <= $restingHeartRate) {
             return null;
         }
@@ -380,7 +379,7 @@ final class PlannedSessionLoadEstimator
         $sessionIntensityMultiplier = null === $plannedSession->getTargetIntensity()
             ? null
             : $this->getIntensityMultiplier($plannedSession->getTargetIntensity());
-        $stepType = PlannedSessionStepType::tryFrom($workoutStep['type'] ?? '') ?? PlannedSessionStepType::INTERVAL;
+        $stepType = PlannedSessionStepType::tryFrom($workoutStep['type']) ?? PlannedSessionStepType::INTERVAL;
         $defaultMultiplier = match ($stepType) {
             PlannedSessionStepType::RECOVERY => 0.65,
             PlannedSessionStepType::WARMUP, PlannedSessionStepType::COOLDOWN => 0.8,
@@ -502,10 +501,7 @@ final class PlannedSessionLoadEstimator
      */
     private function getRecentActivitiesForType(ActivityType $activityType): array
     {
-        $activities = array_values(array_filter(
-            iterator_to_array($this->activityRepository->findAll()),
-            static fn (Activity $activity): bool => $activity->getSportType()->getActivityType() === $activityType,
-        ));
+        $activities = $this->activityIndex()->byActivityType($activityType);
 
         usort(
             $activities,
@@ -513,6 +509,11 @@ final class PlannedSessionLoadEstimator
         );
 
         return $activities;
+    }
+
+    private function activityIndex(): TrainingPlannerActivityIndex
+    {
+        return $this->activityIndex ??= TrainingPlannerActivityIndex::fromActivities($this->activityRepository->findAll());
     }
 
     private function parsePaceSecondsPerMeter(?string $targetPace): ?float

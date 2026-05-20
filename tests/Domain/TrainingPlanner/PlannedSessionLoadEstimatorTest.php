@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Tests\Domain\TrainingPlanner;
 
-use App\Domain\Activity\ActivityRepository;
 use App\Domain\Activity\ActivityId;
+use App\Domain\Activity\ActivityRepository;
 use App\Domain\Activity\ActivityType;
 use App\Domain\Activity\ActivityWithRawData;
 use App\Domain\Activity\SportType\SportType;
@@ -38,9 +38,16 @@ final class PlannedSessionLoadEstimatorTest extends ContainerTestCase
         $this->seedRideActivities();
         $this->seedRunActivities();
 
-        $this->plannedSessionLoadEstimator = $this->getContainer()->get(PlannedSessionLoadEstimator::class);
-        $this->athleteRepository = $this->getContainer()->get(AthleteRepository::class);
-        $this->activityRepository = $this->getContainer()->get(ActivityRepository::class);
+        /** @var PlannedSessionLoadEstimator $plannedSessionLoadEstimator */
+        $plannedSessionLoadEstimator = $this->getContainer()->get(PlannedSessionLoadEstimator::class);
+        /** @var AthleteRepository $athleteRepository */
+        $athleteRepository = $this->getContainer()->get(AthleteRepository::class);
+        /** @var ActivityRepository $activityRepository */
+        $activityRepository = $this->getContainer()->get(ActivityRepository::class);
+
+        $this->plannedSessionLoadEstimator = $plannedSessionLoadEstimator;
+        $this->athleteRepository = $athleteRepository;
+        $this->activityRepository = $activityRepository;
     }
 
     public function testItUsesManualTargetLoadWhenPresent(): void
@@ -63,6 +70,7 @@ final class PlannedSessionLoadEstimatorTest extends ContainerTestCase
     public function testItUsesTemplateActivityLoadWhenTemplateExists(): void
     {
         $templateActivity = $this->activityRepository->find(ActivityId::fromUnprefixed('900001'));
+        self::assertNotNull($templateActivity->getAverageHeartRate());
         $expectedLoad = $this->calculateExpectedLoad($templateActivity->getAverageHeartRate(), $templateActivity->getMovingTimeInSeconds(), $templateActivity->getStartDate());
         $plannedSession = $this->createPlannedSession(
             day: '2026-04-09 00:00:00',
@@ -273,6 +281,9 @@ final class PlannedSessionLoadEstimatorTest extends ContainerTestCase
         self::assertNotSame(74.2, $estimate->getEstimatedLoad());
     }
 
+    /**
+     * @param list<array{itemId: string, parentBlockId: ?string, type: string, repetitions: int, targetType: ?string, conditionType: ?string, durationInSeconds: ?int, distanceInMeters: ?int, targetPace: ?string, targetPower: ?int, targetHeartRate: ?int, recoveryAfterInSeconds: ?int}> $workoutSteps
+     */
     private function createPlannedSession(
         string $day,
         ?float $targetLoad = null,
@@ -304,7 +315,10 @@ final class PlannedSessionLoadEstimatorTest extends ContainerTestCase
 
     private function seedAthlete(): void
     {
-        $this->getContainer()->get(AthleteRepository::class)->save(Athlete::create([
+        /** @var AthleteRepository $athleteRepository */
+        $athleteRepository = $this->getContainer()->get(AthleteRepository::class);
+
+        $athleteRepository->save(Athlete::create([
             'id' => 100,
             'birthDate' => '1989-08-14',
             'firstname' => 'Robin',

@@ -102,7 +102,7 @@ final readonly class AppUser implements UserInterface, PasswordAuthenticatedUser
 
     public function getDisplayName(): string
     {
-        $localPart = explode('@', $this->email)[0] ?? $this->email;
+        $localPart = explode('@', $this->email)[0];
 
         return ucfirst(str_replace(['.', '-', '_'], ' ', $localPart));
     }
@@ -122,6 +122,10 @@ final readonly class AppUser implements UserInterface, PasswordAuthenticatedUser
     #[\Override]
     public function getUserIdentifier(): string
     {
+        if ('' === $this->email) {
+            throw new \LogicException('App user email must never be empty.');
+        }
+
         return $this->email;
     }
 
@@ -226,9 +230,17 @@ final readonly class AppUser implements UserInterface, PasswordAuthenticatedUser
         return $roles;
     }
 
+    /**
+     * @return non-empty-string
+     */
     private static function normalizeEmail(string $email): string
     {
-        return strtolower(trim($email));
+        $normalizedEmail = strtolower(trim($email));
+        if ('' === $normalizedEmail) {
+            throw new \InvalidArgumentException('Email must not be empty.');
+        }
+
+        return $normalizedEmail;
     }
 
     private static function normalizeNullableToken(?string $value): ?string

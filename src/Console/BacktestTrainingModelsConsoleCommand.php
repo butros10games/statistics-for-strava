@@ -7,9 +7,11 @@ namespace App\Console;
 use App\Domain\Activity\Activities;
 use App\Domain\Activity\Activity;
 use App\Domain\Activity\ActivityId;
+use App\Domain\Activity\ActivityIds;
 use App\Domain\Activity\ActivityRepository;
 use App\Domain\Activity\ActivityWithRawData;
 use App\Domain\Activity\DailyTrainingLoad;
+use App\Domain\Athlete\AthleteRepository;
 use App\Domain\Dashboard\Widget\TrainingLoad\IntegratedDailyLoadCalculator;
 use App\Domain\Dashboard\Widget\TrainingLoad\ReadinessAssessment;
 use App\Domain\Dashboard\Widget\TrainingLoad\ReadinessFactor;
@@ -20,7 +22,6 @@ use App\Domain\Performance\PerformanceAnchor\PerformanceAnchorHistory;
 use App\Domain\TrainingPlanner\PlannedSession;
 use App\Domain\TrainingPlanner\PlannedSessionLoadEstimator;
 use App\Domain\TrainingPlanner\PlannedSessionRepository;
-use App\Domain\Athlete\AthleteRepository;
 use App\Domain\Wellness\DailyRecoveryCheckIn;
 use App\Domain\Wellness\DailyRecoveryCheckInRepository;
 use App\Domain\Wellness\DailyWellness;
@@ -508,74 +509,7 @@ final class BacktestTrainingModelsConsoleCommand extends Command
             static fn (Activity $activity): bool => $activity->getStartDate()->isBeforeOrOn($cutoff),
         ));
 
-        return new class($activities) implements ActivityRepository {
-            /** @var array<string, Activity> */
-            private array $activitiesById = [];
-
-            /**
-             * @param list<Activity> $activities
-             */
-            public function __construct(array $activities)
-            {
-                foreach ($activities as $activity) {
-                    $this->activitiesById[(string) $activity->getId()] = $activity;
-                }
-            }
-
-            public function find(ActivityId $activityId): Activity
-            {
-                if (!array_key_exists((string) $activityId, $this->activitiesById)) {
-                    throw new \RuntimeException(sprintf('Activity %s not found in historical snapshot.', $activityId));
-                }
-
-                return $this->activitiesById[(string) $activityId];
-            }
-
-            public function findAll(): Activities
-            {
-                return Activities::fromArray(array_values($this->activitiesById));
-            }
-
-            public function findWithRawData(ActivityId $activityId): ActivityWithRawData
-            {
-                throw new \BadMethodCallException('Historical snapshot repository does not expose raw activity payloads.');
-            }
-
-            public function exists(ActivityId $activityId): bool
-            {
-                return array_key_exists((string) $activityId, $this->activitiesById);
-            }
-
-            public function add(ActivityWithRawData $activityWithRawData): void
-            {
-                throw new \BadMethodCallException('Historical snapshot repository is read-only.');
-            }
-
-            public function update(ActivityWithRawData $activityWithRawData): void
-            {
-                throw new \BadMethodCallException('Historical snapshot repository is read-only.');
-            }
-
-            public function delete(ActivityId $activityId): void
-            {
-                throw new \BadMethodCallException('Historical snapshot repository is read-only.');
-            }
-
-            public function activityNeedsStreamImport(ActivityId $activityId): bool
-            {
-                throw new \BadMethodCallException('Historical snapshot repository does not manage imports.');
-            }
-
-            public function markActivityStreamsAsImported(ActivityId $activityId): void
-            {
-                throw new \BadMethodCallException('Historical snapshot repository does not manage imports.');
-            }
-
-            public function markActivitiesForDeletion(\App\Domain\Activity\ActivityIds $activityIds): void
-            {
-                throw new \BadMethodCallException('Historical snapshot repository is read-only.');
-            }
-        };
+        return new HistoricalSnapshotActivityRepository($activities);
     }
 
     private function buildReadinessAssessmentForDay(SerializableDateTime $evaluationDay): ?ReadinessAssessment
@@ -603,7 +537,7 @@ final class BacktestTrainingModelsConsoleCommand extends Command
 
         return $this->wellnessReadinessCalculator->assess(
             TrainingMetrics::create($integratedLoads),
-            $this->buildWellnessMetricsResponse($wellnessRecords),
+            $this->buildWellnessMetricsResponse(array_values($wellnessRecords)),
             $latestRecoveryCheckIn instanceof DailyRecoveryCheckIn ? $this->mapRecoveryCheckIn($latestRecoveryCheckIn) : null,
         );
     }
@@ -624,11 +558,14 @@ final class BacktestTrainingModelsConsoleCommand extends Command
             $records,
         );
 
-        $lastRecord = $records[array_key_last($records)] ?? null;
+        $lastRecord = end($mappedRecords);
+        if (false === $lastRecord) {
+            $lastRecord = null;
+        }
 
         return new FindWellnessMetricsResponse(
             records: $mappedRecords,
-            latestDay: $lastRecord instanceof DailyWellness ? $lastRecord->getDay()->setTime(0, 0) : null,
+            latestDay: is_array($lastRecord) ? SerializableDateTime::fromString($lastRecord['day'])->setTime(0, 0) : null,
         );
     }
 
@@ -772,7 +709,82 @@ final class BacktestTrainingModelsConsoleCommand extends Command
             '%s%s (%s)',
             $prefix,
             number_format($delta, $decimals),
-            $isImprovement ? 'better' : ($delta === 0.0 ? 'flat' : 'worse'),
+            $isImprovement ? 'better' : (0.0 === $delta ? 'flat' : 'worse'),
         );
+    }
+}
+
+final class HistoricalSnapshotActivityRepository implements ActivityRepository
+{
+    /** @var array<string, Activity> */
+    private array $activitiesById = [];
+
+    /**
+     * @param list<Activity> $activities
+     */
+    public function __construct(array $activities)
+    {
+        foreach ($activities as $activity) {
+            $this->activitiesById[(string) $activity->getId()] = $activity;
+        }
+    }
+
+    public function find(ActivityId $activityId): Activity
+    {
+        if (!array_key_exists((string) $activityId, $this->activitiesById)) {
+            throw new \RuntimeException(sprintf('Activity %s not found in historical snapshot.', $activityId));
+        }
+
+        return $this->activitiesById[(string) $activityId];
+    }
+
+    public function findAll(): Activities
+    {
+        return Activities::fromArray(array_values($this->activitiesById));
+    }
+
+    public function findWithRawData(ActivityId $activityId): ActivityWithRawData
+    {
+        throw new \BadMethodCallException('Historical snapshot repository does not expose raw activity payloads.');
+    }
+
+    public function exists(ActivityId $activityId): bool
+    {
+        return array_key_exists((string) $activityId, $this->activitiesById);
+    }
+
+    public function add(ActivityWithRawData $activityWithRawData): void
+    {
+        $this->throwReadOnly();
+    }
+
+    public function update(ActivityWithRawData $activityWithRawData): void
+    {
+        $this->throwReadOnly();
+    }
+
+    public function delete(ActivityId $activityId): void
+    {
+        $this->throwReadOnly();
+    }
+
+    public function activityNeedsStreamImport(ActivityId $activityId): bool
+    {
+        throw new \BadMethodCallException('Historical snapshot repository does not manage imports.');
+    }
+
+    public function markActivityStreamsAsImported(ActivityId $activityId): void
+    {
+        throw new \BadMethodCallException('Historical snapshot repository does not manage imports.');
+    }
+
+    public function markActivitiesForDeletion(ActivityIds $activityIds): void
+    {
+        $this->throwReadOnly();
+    }
+
+    private function throwReadOnly(): never
+    {
+        throw new \BadMethodCallException('Historical snapshot repository is read-only.');
     }
 }

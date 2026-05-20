@@ -14,7 +14,7 @@ final class Version20260203112204 extends AbstractMigration
 {
     public function getDescription(): string
     {
-        return '';
+        return 'Add supporting indexes for activity, gear, chat message, segment, and segment effort queries';
     }
 
     public function up(Schema $schema): void

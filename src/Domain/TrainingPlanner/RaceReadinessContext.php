@@ -12,7 +12,7 @@ final readonly class RaceReadinessContext
 {
     /**
      * @param list<array{activityType: ActivityType, count: int}> $activityTypeSummaries
-     * @param array{swim: int, bike: int, run: int} $disciplineCounts
+     * @param array{swim: int, bike: int, run: int}               $disciplineCounts
      */
     public function __construct(
         private ?RaceEvent $targetRace,

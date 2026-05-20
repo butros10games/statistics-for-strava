@@ -16,15 +16,15 @@ use App\Domain\Activity\DbalActivityRepository;
 use App\Domain\Activity\SportType\SportType;
 use App\Domain\Athlete\Athlete;
 use App\Domain\Athlete\AthleteRepository;
-use App\Domain\TrainingPlanner\PlannedSessionActivityMatcher;
 use App\Domain\TrainingPlanner\DbalPlannedSessionRepository;
+use App\Domain\TrainingPlanner\DbalTrainingSessionRepository;
+use App\Domain\TrainingPlanner\PlannedSessionActivityMatcher;
 use App\Domain\TrainingPlanner\PlannedSessionEstimationSource;
 use App\Domain\TrainingPlanner\PlannedSessionForecastBuilder;
 use App\Domain\TrainingPlanner\PlannedSessionId;
 use App\Domain\TrainingPlanner\PlannedSessionIntensity;
 use App\Domain\TrainingPlanner\PlannedSessionLinkStatus;
 use App\Domain\TrainingPlanner\PlannedSessionLoadEstimator;
-use App\Domain\TrainingPlanner\DbalTrainingSessionRepository;
 use App\Domain\TrainingPlanner\TrainingSession;
 use App\Domain\TrainingPlanner\TrainingSessionId;
 use App\Domain\TrainingPlanner\TrainingSessionLibrarySynchronizer;
@@ -158,7 +158,7 @@ final class PlannedSessionRequestHandlerTest extends ContainerTestCase
 
         self::assertEquals(new RedirectResponse('/dashboard', Response::HTTP_FOUND), $response);
 
-        $records = $this->repository->findByDay(\App\Infrastructure\ValueObject\Time\SerializableDateTime::fromString('2026-04-12 00:00:00'));
+        $records = $this->repository->findByDay(SerializableDateTime::fromString('2026-04-12 00:00:00'));
         self::assertCount(1, $records);
         self::assertSame('Sunday long run', $records[0]->getTitle());
         self::assertSame(78.5, $records[0]->getTargetLoad());

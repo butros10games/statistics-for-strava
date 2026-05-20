@@ -20,7 +20,7 @@ final readonly class CompressedString implements \Stringable
     public static function fromUncompressed(string $value): self
     {
         $compressed = self::compressWithExtension($value) ?? self::compressWithBinary($value);
-        if (false === $compressed) {
+        if (!is_string($compressed)) {
             throw new \RuntimeException('ZSTD compression failed'); // @codeCoverageIgnore
         }
 
@@ -35,7 +35,7 @@ final readonly class CompressedString implements \Stringable
     public function uncompress(): string
     {
         $uncompressed = self::uncompressWithExtension($this->compressedValue) ?? self::uncompressWithBinary($this->compressedValue);
-        if (false === $uncompressed) {
+        if (!is_string($uncompressed)) {
             throw new \RuntimeException('ZSTD decompression failed');
         }
 
@@ -91,6 +91,9 @@ final readonly class CompressedString implements \Stringable
         );
     }
 
+    /**
+     * @param list<string> $command
+     */
     private static function runZstdProcess(array $command, string $input): string|false
     {
         $process = new Process($command);

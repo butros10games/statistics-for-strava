@@ -2,6 +2,7 @@
 
 namespace App\Tests\Application\RunBuild;
 
+use App\Application\Build\BuildDashboardHtml\BuildDashboardHtml;
 use App\Application\Import\ImportGear\GearImportStatus;
 use App\Application\RunBuild\RunBuild;
 use App\Application\RunBuild\RunBuildCommandHandler;
@@ -12,6 +13,7 @@ use App\Domain\Activity\ActivityWithRawData;
 use App\Domain\Gear\GearId;
 use App\Domain\Gear\ImportedGear\ImportedGearRepository;
 use App\Infrastructure\CQRS\Command\Bus\CommandBus;
+use App\Infrastructure\CQRS\Command\Command;
 use App\Infrastructure\Doctrine\Migrations\MigrationRunner;
 use App\Infrastructure\Serialization\Json;
 use App\Infrastructure\ValueObject\Time\SerializableDateTime;
@@ -37,17 +39,7 @@ class RunBuildCommandHandlerTest extends ContainerTestCase
 
     public function testHandle(): void
     {
-        $this->getContainer()->get(ActivityRepository::class)->add(ActivityWithRawData::fromState(
-            ActivityBuilder::fromDefaults()
-                ->withActivityId(ActivityId::fromUnprefixed(4))
-                ->withGearId(GearId::fromUnprefixed(4))
-                ->build(), []
-        ));
-        $this->getContainer()->get(ImportedGearRepository::class)->save(
-            ImportedGearBuilder::fromDefaults()
-                ->withGearId(GearId::fromUnprefixed(4))
-                ->build()
-        );
+        $this->seedImportedActivityWithGear();
 
         $this->migrationRunner
             ->expects($this->once())
@@ -84,6 +76,48 @@ class RunBuildCommandHandlerTest extends ContainerTestCase
             output: new SymfonyStyle(new StringInput('input'), $output),
         ));
         $this->assertStringContainsString('[WARNING] Some of your gear hasn’t been imported yet', $output);
+    }
+
+    public function testHandleWrapsBuildStepFailuresWithStageContext(): void
+    {
+        $this->seedImportedActivityWithGear();
+
+        $this->migrationRunner
+            ->expects($this->once())
+            ->method('isAtLatestVersion')
+            ->willReturn(true);
+
+        $handler = new RunBuildCommandHandler(
+            commandBus: new class() implements CommandBus {
+                public function dispatch(Command $command): void
+                {
+                    if ($command instanceof BuildDashboardHtml) {
+                        throw new \RuntimeException('OH NO ERROR');
+                    }
+                }
+            },
+            activityIdRepository: $this->getContainer()->get(ActivityIdRepository::class),
+            gearImportStatus: $this->getContainer()->get(GearImportStatus::class),
+            plannedSessionActivityLinker: $this->getContainer()->get(\App\Domain\TrainingPlanner\PlannedSessionActivityLinker::class),
+            migrationRunner: $this->migrationRunner,
+            clock: PausedClock::on(SerializableDateTime::fromString('2023-10-17 16:15:04')),
+        );
+
+        $output = new SpyOutput();
+
+        try {
+            $handler->handle(new RunBuild(
+                output: new SymfonyStyle(new StringInput('input'), $output),
+            ));
+            $this->fail('Expected build step failure to be wrapped with stage context.');
+        } catch (\RuntimeException $exception) {
+            $this->assertSame(
+                sprintf('Build failed during stage "Core pages" while "Building dashboard" (%s).', BuildDashboardHtml::class),
+                $exception->getMessage(),
+            );
+            $this->assertInstanceOf(\RuntimeException::class, $exception->getPrevious());
+            $this->assertSame('OH NO ERROR', $exception->getPrevious()?->getMessage());
+        }
     }
 
     public function testHandleWhenStravaImportIsNotCompleted(): void
@@ -128,6 +162,22 @@ class RunBuildCommandHandlerTest extends ContainerTestCase
             plannedSessionActivityLinker: $this->getContainer()->get(\App\Domain\TrainingPlanner\PlannedSessionActivityLinker::class),
             migrationRunner: $this->migrationRunner = $this->createMock(MigrationRunner::class),
             clock: PausedClock::on(SerializableDateTime::fromString('2023-10-17 16:15:04')),
+        );
+    }
+
+    private function seedImportedActivityWithGear(): void
+    {
+        $this->getContainer()->get(ActivityRepository::class)->add(ActivityWithRawData::fromState(
+            ActivityBuilder::fromDefaults()
+                ->withActivityId(ActivityId::fromUnprefixed(4))
+                ->withGearId(GearId::fromUnprefixed(4))
+                ->build(),
+            []
+        ));
+        $this->getContainer()->get(ImportedGearRepository::class)->save(
+            ImportedGearBuilder::fromDefaults()
+                ->withGearId(GearId::fromUnprefixed(4))
+                ->build()
         );
     }
 }

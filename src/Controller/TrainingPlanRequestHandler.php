@@ -15,10 +15,10 @@ use App\Domain\TrainingPlanner\DbalTrainingPlanRepository;
 use App\Domain\TrainingPlanner\PlannedSession;
 use App\Domain\TrainingPlanner\PlannedSessionRepository;
 use App\Domain\TrainingPlanner\RaceEvent;
-use App\Domain\TrainingPlanner\RaceEventId;
 use App\Domain\TrainingPlanner\RaceEventFamily;
-use App\Domain\TrainingPlanner\RacePlannerUpcomingSessionRegenerator;
+use App\Domain\TrainingPlanner\RaceEventId;
 use App\Domain\TrainingPlanner\RaceEventProfile;
+use App\Domain\TrainingPlanner\RacePlannerUpcomingSessionRegenerator;
 use App\Domain\TrainingPlanner\RunningWorkoutTargetMode;
 use App\Domain\TrainingPlanner\TrainingBlockStyle;
 use App\Domain\TrainingPlanner\TrainingFocus;
@@ -242,7 +242,7 @@ final readonly class TrainingPlanRequestHandler
     }
 
     /**
-     * @param list<RaceEvent> $raceEvents
+     * @param list<RaceEvent>     $raceEvents
      * @param array<string, true> $linkedRaceEventIds
      */
     private function findSuggestedRaceEvent(array $raceEvents, array $linkedRaceEventIds, SerializableDateTime $fromDay): ?RaceEvent
@@ -445,10 +445,10 @@ final readonly class TrainingPlanRequestHandler
             return null;
         }
 
-        $query = isset($parsedRedirectTarget['query']) && is_string($parsedRedirectTarget['query'])
+        $query = isset($parsedRedirectTarget['query'])
             ? '?'.$parsedRedirectTarget['query']
             : '';
-        $fragment = isset($parsedRedirectTarget['fragment']) && is_string($parsedRedirectTarget['fragment'])
+        $fragment = isset($parsedRedirectTarget['fragment'])
             ? '#'.$parsedRedirectTarget['fragment']
             : '';
 

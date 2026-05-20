@@ -52,7 +52,7 @@ final readonly class PlannedSessionActivityLinker
         }
 
         $activitiesByDay = $this->groupActivitiesByDay(
-            iterator_to_array($this->activityRepository->findByDateRange($dateRange))
+            TrainingPlannerActivityIndex::fromActivities($this->activityRepository->findByDateRange($dateRange))->all(),
         );
         $updatedAt = $this->clock->getCurrentDateTimeImmutable();
 
@@ -148,7 +148,7 @@ final readonly class PlannedSessionActivityLinker
 
     /**
      * @param list<PlannedSession> $sessionsForDay
-     * @param list<Activity> $activitiesForDay
+     * @param list<Activity>       $activitiesForDay
      *
      * @return array<string, string>
      */

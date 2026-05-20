@@ -15,16 +15,13 @@ final readonly class PlannedSessionActivityMatcher
     }
 
     /**
-     * @param null|list<Activity> $candidateActivities
+     * @param list<Activity>|null $candidateActivities
      */
     public function findSuggestedMatch(PlannedSession $plannedSession, ?array $candidateActivities = null): ?Activity
     {
-        $candidates = array_values(array_filter(
-            $candidateActivities ?? iterator_to_array($this->activityRepository->findAll()),
-            static fn (Activity $activity): bool =>
-                $activity->getStartDate()->format('Y-m-d') === $plannedSession->getDay()->format('Y-m-d')
-                && $activity->getSportType()->getActivityType() === $plannedSession->getActivityType(),
-        ));
+        $candidates = TrainingPlannerActivityIndex::fromActivities(
+            $candidateActivities ?? $this->activityRepository->findAll(),
+        )->byDayAndActivityType($plannedSession->getDay(), $plannedSession->getActivityType());
 
         if ([] === $candidates) {
             return null;

@@ -124,7 +124,7 @@ final class WellnessReadinessCalculator
     }
 
     /**
-     * @param array{day: string, stepsCount: ?int, sleepDurationInSeconds: ?int, sleepScore: ?int, hrv: ?float} $latestRecord
+     * @param array{day: string, stepsCount: ?int, sleepDurationInSeconds: ?int, sleepScore: ?int, hrv: ?float}       $latestRecord
      * @param list<array{day: string, stepsCount: ?int, sleepDurationInSeconds: ?int, sleepScore: ?int, hrv: ?float}> $baselineRecords
      */
     private function calculateHrvComponent(array $latestRecord, array $baselineRecords): float
@@ -151,11 +151,11 @@ final class WellnessReadinessCalculator
             return ($delta / $smallestWorthwhileChange) * 4.0;
         }
 
-        return $this->clamp((($delta) / $baseline) * 100 * 0.9, -16, 12);
+        return $this->clamp(($delta / $baseline) * 100 * 0.9, -16, 12);
     }
 
     /**
-     * @param array{day: string, stepsCount: ?int, sleepDurationInSeconds: ?int, sleepScore: ?int, hrv: ?float} $latestRecord
+     * @param array{day: string, stepsCount: ?int, sleepDurationInSeconds: ?int, sleepScore: ?int, hrv: ?float}       $latestRecord
      * @param list<array{day: string, stepsCount: ?int, sleepDurationInSeconds: ?int, sleepScore: ?int, hrv: ?float}> $baselineRecords
      */
     private function calculateSleepDurationComponent(array $latestRecord, array $baselineRecords): float
@@ -172,7 +172,7 @@ final class WellnessReadinessCalculator
     }
 
     /**
-     * @param array{day: string, stepsCount: ?int, sleepDurationInSeconds: ?int, sleepScore: ?int, hrv: ?float} $latestRecord
+     * @param array{day: string, stepsCount: ?int, sleepDurationInSeconds: ?int, sleepScore: ?int, hrv: ?float}       $latestRecord
      * @param list<array{day: string, stepsCount: ?int, sleepDurationInSeconds: ?int, sleepScore: ?int, hrv: ?float}> $baselineRecords
      */
     private function calculateSleepScoreComponent(array $latestRecord, array $baselineRecords): float
@@ -188,7 +188,7 @@ final class WellnessReadinessCalculator
     }
 
     /**
-     * @param array{day: string, stepsCount: ?int, sleepDurationInSeconds: ?int, sleepScore: ?int, hrv: ?float} $latestRecord
+     * @param array{day: string, stepsCount: ?int, sleepDurationInSeconds: ?int, sleepScore: ?int, hrv: ?float}       $latestRecord
      * @param list<array{day: string, stepsCount: ?int, sleepDurationInSeconds: ?int, sleepScore: ?int, hrv: ?float}> $baselineRecords
      */
     private function calculateStepsComponent(array $latestRecord, array $baselineRecords): float
@@ -246,7 +246,7 @@ final class WellnessReadinessCalculator
     private function average(array $records, string $field): ?float
     {
         $values = array_values(array_filter(
-            array_map(static fn (array $record): int|float|null => $record[$field], $records),
+            array_map(fn (array $record): int|float|null => $this->extractNumericWellnessValue($record, $field), $records),
             static fn (int|float|null $value): bool => null !== $value,
         ));
 
@@ -265,9 +265,23 @@ final class WellnessReadinessCalculator
     private function values(array $records, string $field): array
     {
         return array_values(array_filter(
-            array_map(static fn (array $record): int|float|null => $record[$field], $records),
+            array_map(fn (array $record): int|float|null => $this->extractNumericWellnessValue($record, $field), $records),
             static fn (int|float|null $value): bool => null !== $value,
         ));
+    }
+
+    /**
+     * @param array{day: string, stepsCount: ?int, sleepDurationInSeconds: ?int, sleepScore: ?int, hrv: ?float} $record
+     */
+    private function extractNumericWellnessValue(array $record, string $field): int|float|null
+    {
+        return match ($field) {
+            'stepsCount' => $record['stepsCount'],
+            'sleepDurationInSeconds' => $record['sleepDurationInSeconds'],
+            'sleepScore' => $record['sleepScore'],
+            'hrv' => $record['hrv'],
+            default => null,
+        };
     }
 
     /**

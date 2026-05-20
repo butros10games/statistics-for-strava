@@ -7,7 +7,7 @@ namespace App\Domain\TrainingPlanner;
 final readonly class PlannedSessionForecast
 {
     /**
-     * @param array<int, float> $projectedLoads
+     * @param array<int, float>                $projectedLoads
      * @param list<PlannedSessionLoadEstimate> $estimates
      */
     private function __construct(
@@ -27,8 +27,7 @@ final readonly class PlannedSessionForecast
     }
 
     /**
-     * @param float $currentDayProjectedLoad
-     * @param array<int, float> $projectedLoads
+     * @param array<int, float>                $projectedLoads
      * @param list<PlannedSessionLoadEstimate> $estimates
      */
     public static function create(float $currentDayProjectedLoad, array $projectedLoads, array $estimates): self

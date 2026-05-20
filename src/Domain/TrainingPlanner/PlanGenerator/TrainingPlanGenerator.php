@@ -9,10 +9,11 @@ use App\Domain\Dashboard\Widget\TrainingLoad\ReadinessStatus;
 use App\Domain\TrainingPlanner\AdaptivePlanningContext;
 use App\Domain\TrainingPlanner\PlannedSession;
 use App\Domain\TrainingPlanner\PlannedSessionIntensity;
+use App\Domain\TrainingPlanner\Prediction\RunningPlanPerformancePredictor;
 use App\Domain\TrainingPlanner\RaceEvent;
 use App\Domain\TrainingPlanner\RaceEventFamily;
-use App\Domain\TrainingPlanner\RaceEventProfile;
 use App\Domain\TrainingPlanner\RaceEventPriority;
+use App\Domain\TrainingPlanner\RaceEventProfile;
 use App\Domain\TrainingPlanner\RunningWorkoutTargetMode;
 use App\Domain\TrainingPlanner\TrainingBlock;
 use App\Domain\TrainingPlanner\TrainingBlockPhase;
@@ -25,7 +26,6 @@ use App\Domain\TrainingPlanner\TrainingSession;
 use App\Domain\TrainingPlanner\TrainingSessionObjective;
 use App\Domain\TrainingPlanner\TrainingSessionRecommendationCriteria;
 use App\Domain\TrainingPlanner\TrainingSessionRepository;
-use App\Domain\TrainingPlanner\Prediction\RunningPlanPerformancePredictor;
 use App\Infrastructure\ValueObject\Time\SerializableDateTime;
 
 final readonly class TrainingPlanGenerator
@@ -37,7 +37,9 @@ final readonly class TrainingPlanGenerator
     }
 
     /**
-     * @param list<RaceEvent> $allRaceEvents all upcoming race events, sorted by day ASC
+     * @param list<RaceEvent>      $allRaceEvents     all upcoming race events, sorted by day ASC
+     * @param list<TrainingBlock>  $existingBlocks
+     * @param list<PlannedSession> $existingSessions
      */
     public function generate(
         RaceEvent $targetRace,
@@ -110,6 +112,7 @@ final readonly class TrainingPlanGenerator
 
     /**
      * @param list<ProposedTrainingBlock> $proposedBlocks
+     * @param list<PlannedSession>        $existingSessions
      *
      * @return list<ProposedTrainingBlock>
      */
@@ -217,8 +220,10 @@ final readonly class TrainingPlanGenerator
     ): array {
         return array_map(function (array $workoutStep) use ($intensity, $isLongSession, $projectedThresholdPaceInSeconds): array {
             if ('repeatBlock' === ($workoutStep['type'] ?? null) && is_array($workoutStep['steps'] ?? null)) {
+                /** @var list<array<string, mixed>> $nestedWorkoutSteps */
+                $nestedWorkoutSteps = array_values($workoutStep['steps']);
                 $workoutStep['steps'] = $this->applyProjectedRunningThresholdToWorkoutSteps(
-                    workoutSteps: $workoutStep['steps'],
+                    workoutSteps: $nestedWorkoutSteps,
                     intensity: $intensity,
                     isLongSession: $isLongSession,
                     projectedThresholdPaceInSeconds: $projectedThresholdPaceInSeconds,
@@ -242,7 +247,7 @@ final readonly class TrainingPlanGenerator
         ?string $notes,
         int $projectedThresholdPaceInSeconds,
         PlannedSessionIntensity $intensity,
-    ): ?string {
+    ): string {
         $guidance = $this->buildRunGuidance($projectedThresholdPaceInSeconds, $intensity);
         if (null === $notes || '' === trim($notes)) {
             return $guidance;
@@ -488,11 +493,11 @@ final readonly class TrainingPlanGenerator
                 $totalWeeks <= 6 => max(1, $totalWeeks - 3),
                 default => min(max(2, (int) round($totalWeeks * 0.3)), max(2, $totalWeeks - 5)),
             }
-            : match (true) {
-                $totalWeeks <= 3 => max(1, $totalWeeks - 1),
-                $totalWeeks <= 6 => max(2, $totalWeeks - 2),
-                default => min(max(4, (int) round($totalWeeks * 0.4)), max(4, $totalWeeks - 4)),
-            };
+        : match (true) {
+            $totalWeeks <= 3 => max(1, $totalWeeks - 1),
+            $totalWeeks <= 6 => max(2, $totalWeeks - 2),
+            default => min(max(4, (int) round($totalWeeks * 0.4)), max(4, $totalWeeks - 4)),
+        };
         $baseWeeks = max(0, min($baseWeeks, max(0, $totalWeeks - 1)));
         $buildWeeks = max(1, $totalWeeks - $baseWeeks);
 
@@ -531,9 +536,9 @@ final readonly class TrainingPlanGenerator
     }
 
     /**
-     * @param list<TrainingBlock> $blocks
+     * @param list<TrainingBlock>  $blocks
      * @param list<PlannedSession> $existingSessions
-     * @param list<RaceEvent> $allRaceEvents
+     * @param list<RaceEvent>      $allRaceEvents
      *
      * @return list<ProposedTrainingBlock>
      */
@@ -642,9 +647,9 @@ final readonly class TrainingPlanGenerator
     }
 
     /**
-     * @param list<TrainingBlock> $existingBlocks
+     * @param list<TrainingBlock>  $existingBlocks
      * @param list<PlannedSession> $existingSessions
-     * @param list<RaceEvent> $allRaceEvents
+     * @param list<RaceEvent>      $allRaceEvents
      */
     private function buildGeneratedRecoveryTail(
         array $existingBlocks,
@@ -760,7 +765,7 @@ final readonly class TrainingPlanGenerator
 
     /**
      * @param list<ProposedTrainingBlock> $blocks
-     * @param list<RaceEvent> $allRaceEvents
+     * @param list<RaceEvent>             $allRaceEvents
      *
      * @return list<ProposedTrainingBlock>
      */
@@ -848,8 +853,7 @@ final readonly class TrainingPlanGenerator
         int $planWeekNumber,
         ?TrainingPlan $linkedTrainingPlan = null,
         ?AdaptivePlanningContext $adaptivePlanningContext = null,
-    ): float
-    {
+    ): float {
         if (TrainingBlockPhase::RECOVERY === $phase) {
             return 0.4;
         }
@@ -859,7 +863,6 @@ final readonly class TrainingPlanGenerator
             TrainingBlockPhase::BUILD => 0.8 + (0.15 * min($weekInBlock / max(1, $blockDurationWeeks), 1.0)),
             TrainingBlockPhase::PEAK => 1.0,
             TrainingBlockPhase::TAPER => $this->resolveTaperLoadMultiplier($weekInBlock, $blockDurationWeeks),
-            TrainingBlockPhase::RECOVERY => 0.4,
         };
 
         if (!$this->isCycleRecoveryWeek($phase, $planWeekNumber)) {
@@ -959,17 +962,18 @@ final readonly class TrainingPlanGenerator
             }
         }
 
-        $hardSessionsPlaced = 0;
         $maxHardSessions = $this->resolveHardSessionCount($rules, $phase, $isCycleRecoveryWeek, $linkedTrainingPlan);
         $longSessionDisciplines = $this->resolveLongSessionDisciplines($rules, $linkedTrainingPlan);
         $remainingDisciplines = $disciplines;
         $plannedSessions = [];
 
-        if (!in_array($phase, [TrainingBlockPhase::TAPER, TrainingBlockPhase::RECOVERY], true)) {
+        if (TrainingBlockPhase::RECOVERY !== $phase) {
             foreach ($longSessionDisciplines as $longSessionDiscipline) {
-                if (!$this->removeFirstDisciplineOccurrence($remainingDisciplines, $longSessionDiscipline)) {
+                $updatedDisciplines = $this->removeFirstDisciplineOccurrence($remainingDisciplines, $longSessionDiscipline);
+                if (null === $updatedDisciplines) {
                     continue;
                 }
+                $remainingDisciplines = $updatedDisciplines;
 
                 $plannedSessions[] = [
                     'activityType' => $longSessionDiscipline,
@@ -984,22 +988,21 @@ final readonly class TrainingPlanGenerator
         }
 
         foreach ($this->resolveHardSessionActivityTypes($remainingDisciplines, $maxHardSessions, $linkedTrainingPlan) as $hardSessionActivityType) {
-            if (!$this->removeFirstDisciplineOccurrence($remainingDisciplines, $hardSessionActivityType)) {
+            $updatedDisciplines = $this->removeFirstDisciplineOccurrence($remainingDisciplines, $hardSessionActivityType);
+            if (null === $updatedDisciplines) {
                 continue;
             }
+            $remainingDisciplines = $updatedDisciplines;
 
             $plannedSessions[] = [
                 'activityType' => $hardSessionActivityType,
-                'intensity' => TrainingBlockPhase::TAPER === $phase
-                    ? PlannedSessionIntensity::MODERATE
-                    : PlannedSessionIntensity::HARD,
+                'intensity' => PlannedSessionIntensity::HARD,
                 'isKey' => true,
                 'isLongSession' => false,
                 'title' => $this->buildKeySessionTitle($hardSessionActivityType, $phase),
                 'notes' => null,
                 'targetDuration' => $this->resolveKeySessionDuration($hardSessionActivityType, $targetRace->getProfile(), $phase, $loadMultiplier, $linkedTrainingPlan, $adaptivePlanningContext),
             ];
-            ++$hardSessionsPlaced;
         }
 
         foreach ($remainingDisciplines as $activityType) {
@@ -1258,13 +1261,13 @@ final readonly class TrainingPlanGenerator
 
     private function supportsDoubleRunScheduling(RaceProfileTrainingRules $rules, ?TrainingPlan $linkedTrainingPlan = null): bool
     {
-        if (!$rules->needsRunSessions() || !$this->isDevelopmentTrainingPlan($linkedTrainingPlan)) {
+        if (!$rules->needsRunSessions() || !($linkedTrainingPlan instanceof TrainingPlan) || !$this->isDevelopmentTrainingPlan($linkedTrainingPlan)) {
             return false;
         }
 
-        return match ($linkedTrainingPlan?->getDiscipline()) {
+        return match ($linkedTrainingPlan->getDiscipline()) {
             TrainingPlanDiscipline::RUNNING => true,
-            TrainingPlanDiscipline::TRIATHLON => TrainingFocus::RUN === $linkedTrainingPlan?->getTrainingFocus(),
+            TrainingPlanDiscipline::TRIATHLON => TrainingFocus::RUN === $linkedTrainingPlan->getTrainingFocus(),
             default => false,
         };
     }
@@ -1315,14 +1318,14 @@ final readonly class TrainingPlanGenerator
             return ($left->getTargetDurationInSeconds() ?? 0) <=> ($right->getTargetDurationInSeconds() ?? 0);
         });
 
-        return $candidates[0] ?? null;
+        return $candidates[0];
     }
 
     private function resolveDoubleRunDayRank(SerializableDateTime $day): int
     {
         $ranking = [2 => 0, 4 => 1, 5 => 2, 3 => 3, 6 => 4, 1 => 5, 7 => 6];
 
-        return $ranking[(int) $day->format('N')] ?? 99;
+        return $ranking[(int) $day->format('N')];
     }
 
     private function resolveSecondaryRunDuration(
@@ -1477,8 +1480,10 @@ final readonly class TrainingPlanGenerator
 
     /**
      * @param list<ActivityType> $disciplines
+     *
+     * @return list<ActivityType>|null
      */
-    private function removeFirstDisciplineOccurrence(array &$disciplines, ActivityType $activityType): bool
+    private function removeFirstDisciplineOccurrence(array $disciplines, ActivityType $activityType): ?array
     {
         foreach ($disciplines as $index => $discipline) {
             if ($discipline !== $activityType) {
@@ -1486,12 +1491,10 @@ final readonly class TrainingPlanGenerator
             }
 
             unset($disciplines[$index]);
-            $disciplines = array_values($disciplines);
-
-            return true;
+            return array_values($disciplines);
         }
 
-        return false;
+        return null;
     }
 
     /**
@@ -1614,7 +1617,7 @@ final readonly class TrainingPlanGenerator
     private function matchesExistingWeekSession(TrainingSession $trainingSession, array $existingSessions): bool
     {
         foreach ($existingSessions as $existingSession) {
-            if ($trainingSession->getTitle() !== null && $trainingSession->getTitle() === $existingSession->getTitle()) {
+            if (null !== $trainingSession->getTitle() && $trainingSession->getTitle() === $existingSession->getTitle()) {
                 return true;
             }
 
@@ -1673,26 +1676,6 @@ final readonly class TrainingPlanGenerator
             : max(1, $rules->getLongSessionsPerWeek());
 
         return array_slice($disciplines, 0, $longSessionCount);
-    }
-
-    /**
-     * @param list<ActivityType> $longSessionDisciplines
-     * @param array<string, true> $placedLongSessionDisciplines
-     */
-    private function shouldPlaceLongSession(
-        ActivityType $activityType,
-        array $longSessionDisciplines,
-        array $placedLongSessionDisciplines,
-    ): bool {
-        foreach ($longSessionDisciplines as $discipline) {
-            if (isset($placedLongSessionDisciplines[$discipline->value])) {
-                continue;
-            }
-
-            return $discipline === $activityType;
-        }
-
-        return false;
     }
 
     private function resolveTaperLoadMultiplier(int $weekInBlock, int $blockDurationWeeks): float
@@ -2217,6 +2200,11 @@ final readonly class TrainingPlanGenerator
         return $sessions;
     }
 
+    /**
+     * @param list<ProposedSession>      $sessions
+     * @param list<array<string, mixed>> $workoutSteps
+     * @param-out list<ProposedSession>  $sessions
+     */
     private function appendTaperSession(
         array &$sessions,
         SerializableDateTime $weekStart,
@@ -2591,8 +2579,7 @@ final readonly class TrainingPlanGenerator
         bool $isCycleRecoveryWeek = false,
         ?TrainingPlan $linkedTrainingPlan = null,
         ?AdaptivePlanningContext $adaptivePlanningContext = null,
-    ): int
-    {
+    ): int {
         $ideal = $rules->getSessionsPerWeekIdeal();
 
         if ($this->isDevelopmentTrainingPlan($linkedTrainingPlan)) {
@@ -2634,8 +2621,7 @@ final readonly class TrainingPlanGenerator
         TrainingBlockPhase $phase,
         bool $isCycleRecoveryWeek = false,
         ?TrainingPlan $linkedTrainingPlan = null,
-    ): int
-    {
+    ): int {
         if ($isCycleRecoveryWeek) {
             return 1;
         }
@@ -2714,10 +2700,7 @@ final readonly class TrainingPlanGenerator
                 return ($countsByDiscipline[$left->value] ?? 0) <=> ($countsByDiscipline[$right->value] ?? 0);
             });
 
-            $selectedDiscipline = $needed[0] ?? null;
-            if (!$selectedDiscipline instanceof ActivityType) {
-                break;
-            }
+            $selectedDiscipline = $needed[0];
 
             $countsByDiscipline[$selectedDiscipline->value] = ($countsByDiscipline[$selectedDiscipline->value] ?? 0) + 1;
             --$remaining;
@@ -3037,8 +3020,7 @@ final readonly class TrainingPlanGenerator
         int $blockDurationWeeks,
         ?string $sessionTitle = null,
         ?TrainingPlan $linkedTrainingPlan = null,
-    ): array
-    {
+    ): array {
         return match ($activityType) {
             ActivityType::RUN => $this->buildVariedRunKeyWorkoutSteps(
                 targetDurationInSeconds: $targetDurationInSeconds,
@@ -3740,7 +3722,7 @@ final readonly class TrainingPlanGenerator
 
     /**
      * @param list<array<string, mixed>> $workoutSteps
-     * @param array<string, mixed> $performanceMetrics
+     * @param array<string, mixed>       $performanceMetrics
      *
      * @return list<array<string, mixed>>
      */
@@ -3754,10 +3736,12 @@ final readonly class TrainingPlanGenerator
     ): array {
         return array_map(function (array $workoutStep) use ($activityType, $intensity, $performanceMetrics, $isLongSession, $linkedTrainingPlan): array {
             if ('repeatBlock' === ($workoutStep['type'] ?? null) && is_array($workoutStep['steps'] ?? null)) {
+                /** @var list<array<string, mixed>> $nestedWorkoutSteps */
+                $nestedWorkoutSteps = array_values($workoutStep['steps']);
                 $workoutStep['steps'] = $this->applyPerformanceTargetsToWorkoutStepsFromMetrics(
                     activityType: $activityType,
                     intensity: $intensity,
-                    workoutSteps: $workoutStep['steps'],
+                    workoutSteps: $nestedWorkoutSteps,
                     performanceMetrics: $performanceMetrics,
                     isLongSession: $isLongSession,
                     linkedTrainingPlan: $linkedTrainingPlan,
@@ -3928,8 +3912,7 @@ final readonly class TrainingPlanGenerator
         float $loadMultiplier,
         ?TrainingPlan $linkedTrainingPlan = null,
         ?AdaptivePlanningContext $adaptivePlanningContext = null,
-    ): int
-    {
+    ): int {
         $baseDuration = match ($activityType) {
             ActivityType::WATER_SPORTS => 3000,
             ActivityType::RIDE => 4500,
@@ -3955,8 +3938,7 @@ final readonly class TrainingPlanGenerator
         float $loadMultiplier,
         ?TrainingPlan $linkedTrainingPlan = null,
         ?AdaptivePlanningContext $adaptivePlanningContext = null,
-    ): int
-    {
+    ): int {
         $baseDuration = match ($activityType) {
             ActivityType::WATER_SPORTS => 3600,
             ActivityType::RIDE => 7200,
@@ -3980,8 +3962,7 @@ final readonly class TrainingPlanGenerator
         float $loadMultiplier,
         ?TrainingPlan $linkedTrainingPlan = null,
         ?AdaptivePlanningContext $adaptivePlanningContext = null,
-    ): int
-    {
+    ): int {
         $baseDuration = match ($activityType) {
             ActivityType::WATER_SPORTS => 2400,
             ActivityType::RIDE => 3600,
@@ -3998,8 +3979,7 @@ final readonly class TrainingPlanGenerator
         float $loadMultiplier,
         ?TrainingPlan $linkedTrainingPlan = null,
         ?AdaptivePlanningContext $adaptivePlanningContext = null,
-    ): int
-    {
+    ): int {
         $baseDuration = match ($activityType) {
             ActivityType::WATER_SPORTS => 1800,
             ActivityType::RIDE => 2700,
@@ -4083,13 +4063,13 @@ final readonly class TrainingPlanGenerator
                     TrainingBlockPhase::TAPER => 'Keep the legs snappy while preserving just enough endurance continuity.',
                     TrainingBlockPhase::RECOVERY => 'Absorb the sharper work without letting the endurance floor disappear.',
                 }
-                : match ($phase) {
-                    TrainingBlockPhase::BASE => 'Build durable aerobic support and movement quality for the target distance.',
-                    TrainingBlockPhase::BUILD => 'Build event-distance fitness with progressive volume, threshold support, and regular recovery weeks.',
-                    TrainingBlockPhase::PEAK => 'Consolidate strong training without tapering yet.',
-                    TrainingBlockPhase::TAPER => 'Keep continuity high; save tapering for race-specific blocks.',
-                    TrainingBlockPhase::RECOVERY => 'Use easier work to absorb the block and keep momentum.',
-                };
+            : match ($phase) {
+                TrainingBlockPhase::BASE => 'Build durable aerobic support and movement quality for the target distance.',
+                TrainingBlockPhase::BUILD => 'Build event-distance fitness with progressive volume, threshold support, and regular recovery weeks.',
+                TrainingBlockPhase::PEAK => 'Consolidate strong training without tapering yet.',
+                TrainingBlockPhase::TAPER => 'Keep continuity high; save tapering for race-specific blocks.',
+                TrainingBlockPhase::RECOVERY => 'Use easier work to absorb the block and keep momentum.',
+            };
         }
 
         $focus = $linkedTrainingPlan?->getTrainingFocus();
@@ -4315,8 +4295,6 @@ final readonly class TrainingPlanGenerator
     }
 
     /**
-     * @param mixed $dayValues
-     *
      * @return list<int>
      */
     private function resolveScheduleDayOffsets(SerializableDateTime $weekStart, mixed $dayValues): array
@@ -4489,8 +4467,7 @@ final readonly class TrainingPlanGenerator
     private function resolveAthleteBaselineLoad(
         ?TrainingPlan $linkedTrainingPlan = null,
         ?AdaptivePlanningContext $adaptivePlanningContext = null,
-    ): ?float
-    {
+    ): ?float {
         $signals = [];
 
         $runningVolume = $this->resolveEffectiveWeeklyVolume(ActivityType::RUN, $linkedTrainingPlan, $adaptivePlanningContext);
@@ -4773,7 +4750,7 @@ final readonly class TrainingPlanGenerator
      */
     private function mapExistingPlannedSessionsToProposedSessions(array $plannedSessions): array
     {
-        return array_values(array_map(function (PlannedSession $plannedSession): ProposedSession {
+        return array_map(function (PlannedSession $plannedSession): ProposedSession {
             return ProposedSession::create(
                 day: $plannedSession->getDay(),
                 activityType: $plannedSession->getActivityType(),
@@ -4785,33 +4762,7 @@ final readonly class TrainingPlanGenerator
                 isBrickSession: $this->isBrickPlannedSession($plannedSession),
                 workoutSteps: $plannedSession->getWorkoutSteps(),
             );
-        }, $plannedSessions));
-    }
-
-    /**
-     * @param list<ProposedSession> $existingSessions
-     * @param list<ProposedSession> $suggestedSessions
-     *
-     * @return list<ProposedSession>
-     */
-    private function mergeSuggestedSessionsIntoExistingWeek(array $existingSessions, array $suggestedSessions): array
-    {
-        $mergedSessions = $existingSessions;
-        $targetCount = max(count($existingSessions), count($suggestedSessions));
-
-        foreach ($suggestedSessions as $suggestedSession) {
-            if (count($mergedSessions) >= $targetCount) {
-                break;
-            }
-
-            if ($this->hasConflictingSession($mergedSessions, $suggestedSession)) {
-                continue;
-            }
-
-            $mergedSessions[] = $suggestedSession;
-        }
-
-        return $mergedSessions;
+        }, $plannedSessions);
     }
 
     /**

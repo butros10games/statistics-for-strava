@@ -189,9 +189,7 @@ final readonly class RacePlannerUpcomingSessionRegenerator
             return PlannedSessionEstimationSource::WORKOUT_TARGETS;
         }
 
-        return null !== $proposedSession->getTargetDurationInSeconds() || null !== $proposedSession->getTargetIntensity()
-            ? PlannedSessionEstimationSource::DURATION_INTENSITY
-            : PlannedSessionEstimationSource::UNKNOWN;
+        return PlannedSessionEstimationSource::DURATION_INTENSITY;
     }
 
     /**

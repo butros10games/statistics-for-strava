@@ -9,8 +9,8 @@ use App\Domain\TrainingPlanner\DbalTrainingPlanRepository;
 use App\Domain\TrainingPlanner\TrainingPlan;
 use App\Domain\TrainingPlanner\TrainingPlanId;
 use App\Domain\TrainingPlanner\TrainingPlanType;
-use App\Tests\ContainerTestCase;
 use App\Infrastructure\ValueObject\Time\SerializableDateTime;
+use App\Tests\ContainerTestCase;
 
 final class DbalTrainingPlanRepositoryIsolationTest extends ContainerTestCase
 {

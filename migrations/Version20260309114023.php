@@ -12,7 +12,7 @@ final class Version20260309114023 extends AbstractMigration
 {
     public function getDescription(): string
     {
-        return '';
+        return 'Add segment average gradient and backfill it from stored activity data';
     }
 
     public function up(Schema $schema): void

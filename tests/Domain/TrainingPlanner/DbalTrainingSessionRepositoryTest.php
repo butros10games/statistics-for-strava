@@ -11,15 +11,15 @@ use App\Domain\TrainingPlanner\PlannedSessionEstimationSource;
 use App\Domain\TrainingPlanner\PlannedSessionId;
 use App\Domain\TrainingPlanner\PlannedSessionIntensity;
 use App\Domain\TrainingPlanner\PlannedSessionLinkStatus;
+use App\Domain\TrainingPlanner\TrainingBlockPhase;
 use App\Domain\TrainingPlanner\TrainingSession;
 use App\Domain\TrainingPlanner\TrainingSessionId;
 use App\Domain\TrainingPlanner\TrainingSessionObjective;
 use App\Domain\TrainingPlanner\TrainingSessionRecommendationCriteria;
 use App\Domain\TrainingPlanner\TrainingSessionRepository;
 use App\Domain\TrainingPlanner\TrainingSessionSource;
-use App\Domain\TrainingPlanner\TrainingBlockPhase;
-use App\Tests\ContainerTestCase;
 use App\Infrastructure\ValueObject\Time\SerializableDateTime;
+use App\Tests\ContainerTestCase;
 
 final class DbalTrainingSessionRepositoryTest extends ContainerTestCase
 {

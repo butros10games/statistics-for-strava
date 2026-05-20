@@ -95,26 +95,29 @@ final readonly class TrainingLoadChart
         $extendedCtlValues = array_merge($ctlValues, array_fill(0, $forecastHorizon, null));
         $extendedAtlValues = array_merge($atlValues, array_fill(0, $forecastHorizon, null));
         $extendedTrimpValues = array_merge($trimpValues, array_fill(0, $forecastHorizon, null));
+        $latestHistoricalCtl = $this->lastNumericValueOrDefault($ctlValues, 0.0);
+        $latestHistoricalAtl = $this->lastNumericValueOrDefault($atlValues, 0.0);
+        $latestHistoricalTsb = $this->lastNumericValueOrDefault($tsbValues, 0.0);
 
         $forecastStartIndex = max(0, $historicalDays - 1);
         $plannedForecastCtlSeries = $forecastHorizon > 0
             ? array_merge(
                 array_fill(0, $forecastStartIndex, null),
-                [(float) ($currentDayProjection['ctl'] ?? ($ctlValues[array_key_last($ctlValues)] ?? 0.0))],
+                [(float) ($currentDayProjection['ctl'] ?? $latestHistoricalCtl)],
                 $forecastCtlValues,
             )
             : [];
         $plannedForecastAtlSeries = $forecastHorizon > 0
             ? array_merge(
                 array_fill(0, $forecastStartIndex, null),
-                [(float) ($currentDayProjection['atl'] ?? ($atlValues[array_key_last($atlValues)] ?? 0.0))],
+                [(float) ($currentDayProjection['atl'] ?? $latestHistoricalAtl)],
                 $forecastAtlValues,
             )
             : [];
         $plannedForecastTsbSeries = $forecastHorizon > 0
             ? array_merge(
                 array_fill(0, $forecastStartIndex, null),
-                [(float) (($currentDayProjection['tsb'] ?? null)?->getValue() ?? ($tsbValues[array_key_last($tsbValues)] ?? 0.0))],
+                [(float) (($currentDayProjection['tsb'] ?? null)?->getValue() ?? $latestHistoricalTsb)],
                 $forecastTsbValues,
             )
             : [];
@@ -376,5 +379,15 @@ final readonly class TrainingLoadChart
                 'emphasis' => ['itemStyle' => ['opacity' => 0.9]],
             ],
         ];
+    }
+
+    /**
+     * @param array<int, int|float|null> $values
+     */
+    private function lastNumericValueOrDefault(array $values, float $default): float
+    {
+        $lastValue = array_slice($values, -1)[0] ?? null;
+
+        return is_int($lastValue) || is_float($lastValue) ? (float) $lastValue : $default;
     }
 }

@@ -6,7 +6,7 @@ namespace App\Application\Build\BuildMonthlyStatsHtml;
 
 use App\Domain\Activity\ActivityType;
 use App\Domain\TrainingPlanner\PlannedSession;
-use App\Domain\TrainingPlanner\PlannedSessionIntensity;
+use App\Domain\TrainingPlanner\PlannedSessionDemandClassifier;
 use App\Domain\TrainingPlanner\RaceEvent;
 use App\Domain\TrainingPlanner\RaceEventProfile;
 use App\Domain\TrainingPlanner\RaceReadinessContext;
@@ -22,11 +22,11 @@ final class CurrentWeekCoachInsightsBuilder
     }
 
     /**
-     * @param list<PlannedSession> $plannedSessions
-     * @param list<RaceEvent> $raceEvents
-     * @param list<TrainingBlock> $trainingBlocks
-     * @param array<string, RaceEvent> $raceEventsById
-     * @param array<string, null|float> $plannedSessionEstimatesById
+     * @param list<PlannedSession>      $plannedSessions
+     * @param list<RaceEvent>           $raceEvents
+     * @param list<TrainingBlock>       $trainingBlocks
+     * @param array<string, RaceEvent>  $raceEventsById
+     * @param array<string, float|null> $plannedSessionEstimatesById
      */
     public function build(
         SerializableDateTime $referenceDate,
@@ -70,8 +70,8 @@ final class CurrentWeekCoachInsightsBuilder
     }
 
     /**
-     * @param list<PlannedSession> $plannedSessions
-     * @param array<string, null|float> $plannedSessionEstimatesById
+     * @param list<PlannedSession>      $plannedSessions
+     * @param array<string, float|null> $plannedSessionEstimatesById
      *
      * @return array<string, true>
      */
@@ -82,8 +82,8 @@ final class CurrentWeekCoachInsightsBuilder
         }
 
         usort($plannedSessions, function (PlannedSession $left, PlannedSession $right) use ($plannedSessionEstimatesById): int {
-            $leftHard = $this->isHardPlannedSession($left, $plannedSessionEstimatesById);
-            $rightHard = $this->isHardPlannedSession($right, $plannedSessionEstimatesById);
+            $leftHard = PlannedSessionDemandClassifier::isHard($left, $plannedSessionEstimatesById);
+            $rightHard = PlannedSessionDemandClassifier::isHard($right, $plannedSessionEstimatesById);
             if ($leftHard !== $rightHard) {
                 return $rightHard <=> $leftHard;
             }
@@ -151,7 +151,7 @@ final class CurrentWeekCoachInsightsBuilder
     }
 
     /**
-     * @return null|array{label: string, tone: string, title: string, body: string}
+     * @return array{label: string, tone: string, title: string, body: string}|null
      */
     private function buildRaceIntentForWeek(RaceReadinessContext $raceReadinessContext): ?array
     {
@@ -288,10 +288,10 @@ final class CurrentWeekCoachInsightsBuilder
     }
 
     /**
-     * @param list<PlannedSession> $plannedSessions
-     * @param array<string, null|float> $plannedSessionEstimatesById
-     * @param array<string, true> $keySessionIds
-     * @param null|array{label: string, tone: string, title: string, body: string} $raceIntent
+     * @param list<PlannedSession>                                                 $plannedSessions
+     * @param array<string, float|null>                                            $plannedSessionEstimatesById
+     * @param array<string, true>                                                  $keySessionIds
+     * @param array{label: string, tone: string, title: string, body: string}|null $raceIntent
      *
      * @return list<array{tone: string, title: string, body: string}>
      */
@@ -312,6 +312,7 @@ final class CurrentWeekCoachInsightsBuilder
         $hardSessionCount = $raceReadinessContext->getHardSessionCount();
         $easySessionCount = $raceReadinessContext->getEasySessionCount();
         $distinctSessionDayCount = $raceReadinessContext->getDistinctSessionDayCount();
+        $primaryTrainingBlock = $raceReadinessContext->getPrimaryTrainingBlock();
         $keySessions = $this->findKeySessionsFromIds($plannedSessions, $keySessionIds);
         $disciplineBalanceCue = $this->buildDisciplineBalanceCue($raceReadinessContext);
 
@@ -328,10 +329,7 @@ final class CurrentWeekCoachInsightsBuilder
         }
 
         if (count($keySessions) >= 2) {
-            $sequencingCue = $this->buildKeySessionSequencingCue($keySessions);
-            if (null !== $sequencingCue) {
-                $cues[] = $sequencingCue;
-            }
+            $cues[] = $this->buildKeySessionSequencingCue($keySessions);
         }
 
         if ([] !== $keySessions) {
@@ -353,7 +351,7 @@ final class CurrentWeekCoachInsightsBuilder
                     'title' => 'Race week looks controlled',
                     'body' => 'The week has enough work to stay sharp without turning the final build into one last fitness chase.',
                 ];
-        } elseif (null !== $raceReadinessContext->getPrimaryTrainingBlock() && 'taper' === $raceReadinessContext->getPrimaryTrainingBlock()?->getPhase()->value) {
+        } elseif (null !== $primaryTrainingBlock && 'taper' === $primaryTrainingBlock->getPhase()->value) {
             $cues[] = $hardSessionCount > 1 || $totalEstimatedLoad > 280.0
                 ? [
                     'tone' => 'warning',
@@ -365,7 +363,7 @@ final class CurrentWeekCoachInsightsBuilder
                     'title' => 'Taper looks controlled',
                     'body' => 'The load is light enough to protect freshness while keeping a bit of rhythm in the legs.',
                 ];
-        } elseif (null !== $raceReadinessContext->getPrimaryTrainingBlock() && 'build' === $raceReadinessContext->getPrimaryTrainingBlock()?->getPhase()->value && 0 === $hardSessionCount && $sessionCount >= 3 && $totalEstimatedLoad >= 180.0) {
+        } elseif (null !== $primaryTrainingBlock && 'build' === $primaryTrainingBlock->getPhase()->value && 0 === $hardSessionCount && $sessionCount >= 3 && $totalEstimatedLoad >= 180.0) {
             $cues[] = [
                 'tone' => 'info',
                 'title' => 'Build week needs a clear quality touch',
@@ -416,33 +414,6 @@ final class CurrentWeekCoachInsightsBuilder
         return array_slice($cues, 0, 3);
     }
 
-    /**
-     * @param array<string, null|float> $plannedSessionEstimatesById
-     */
-    private function isHardPlannedSession(PlannedSession $plannedSession, array $plannedSessionEstimatesById): bool
-    {
-        $targetIntensity = $plannedSession->getTargetIntensity();
-        if (PlannedSessionIntensity::HARD === $targetIntensity || PlannedSessionIntensity::RACE === $targetIntensity) {
-            return true;
-        }
-
-        return ($plannedSessionEstimatesById[(string) $plannedSession->getId()] ?? 0.0) >= 110.0;
-    }
-
-    /**
-     * @param array<string, null|float> $plannedSessionEstimatesById
-     */
-    private function isEasyPlannedSession(PlannedSession $plannedSession, array $plannedSessionEstimatesById): bool
-    {
-        if (PlannedSessionIntensity::EASY === $plannedSession->getTargetIntensity()) {
-            return true;
-        }
-
-        $estimatedLoad = $plannedSessionEstimatesById[(string) $plannedSession->getId()] ?? null;
-
-        return null !== $estimatedLoad && $estimatedLoad > 0 && $estimatedLoad <= 50.0;
-    }
-
     private function buildActivityTypeLabel(ActivityType $activityType): string
     {
         return match ($activityType) {
@@ -455,7 +426,7 @@ final class CurrentWeekCoachInsightsBuilder
 
     /**
      * @param list<PlannedSession> $plannedSessions
-     * @param array<string, true> $keySessionIds
+     * @param array<string, true>  $keySessionIds
      *
      * @return list<PlannedSession>
      */
@@ -474,9 +445,9 @@ final class CurrentWeekCoachInsightsBuilder
     /**
      * @param list<PlannedSession> $keySessions
      *
-     * @return array{tone: string, title: string, body: string}|null
+     * @return array{tone: string, title: string, body: string}
      */
-    private function buildKeySessionSequencingCue(array $keySessions): ?array
+    private function buildKeySessionSequencingCue(array $keySessions): array
     {
         for ($index = 0; $index < count($keySessions) - 1; ++$index) {
             $currentKeySession = $keySessions[$index];
@@ -504,9 +475,9 @@ final class CurrentWeekCoachInsightsBuilder
     }
 
     /**
-     * @param list<PlannedSession> $plannedSessions
-     * @param array<string, null|float> $plannedSessionEstimatesById
-     * @param list<PlannedSession> $keySessions
+     * @param list<PlannedSession>      $plannedSessions
+     * @param array<string, float|null> $plannedSessionEstimatesById
+     * @param list<PlannedSession>      $keySessions
      *
      * @return array{tone: string, title: string, body: string}|null
      */
@@ -532,7 +503,7 @@ final class CurrentWeekCoachInsightsBuilder
 
             $hasEasyNextDay = false;
             foreach ($nextDaySessions as $nextDaySession) {
-                if ($this->isEasyPlannedSession($nextDaySession, $plannedSessionEstimatesById)) {
+                if (PlannedSessionDemandClassifier::isEasy($nextDaySession, $plannedSessionEstimatesById)) {
                     $hasEasyNextDay = true;
 
                     break;
@@ -571,7 +542,7 @@ final class CurrentWeekCoachInsightsBuilder
 
         $presentTriDisciplines = count(array_filter($disciplineCounts, static fn (int $count): bool => $count > 0));
 
-        if ($presentTriDisciplines === 3) {
+        if (3 === $presentTriDisciplines) {
             return [
                 'tone' => 'positive',
                 'title' => 'All three triathlon disciplines are represented',
@@ -579,7 +550,7 @@ final class CurrentWeekCoachInsightsBuilder
             ];
         }
 
-        if ($raceReadinessContext->getSessionCount() >= 4 && $presentTriDisciplines <= 2) {
+        if ($raceReadinessContext->getSessionCount() >= 4) {
             $missingDisciplines = [];
 
             if (0 === $disciplineCounts['swim']) {
@@ -613,5 +584,4 @@ final class CurrentWeekCoachInsightsBuilder
             $plannedSession->getTitle() ?? $this->buildActivityTypeLabel($plannedSession->getActivityType()),
         );
     }
-
 }

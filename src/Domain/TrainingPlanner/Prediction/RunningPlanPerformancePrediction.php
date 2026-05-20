@@ -8,7 +8,7 @@ final readonly class RunningPlanPerformancePrediction
 {
     /**
      * @param list<RunningRaceBenchmarkPrediction> $benchmarkPredictions
-     * @param array<string, int> $projectedThresholdPaceByWeekStartDate
+     * @param array<string, int>                   $projectedThresholdPaceByWeekStartDate
      */
     public function __construct(
         private int $currentThresholdPaceInSeconds,

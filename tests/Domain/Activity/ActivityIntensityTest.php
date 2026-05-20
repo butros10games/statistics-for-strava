@@ -2,8 +2,8 @@
 
 namespace App\Tests\Domain\Activity;
 
-use App\Domain\Activity\ActivityIntensity;
 use App\Domain\Activity\ActivityId;
+use App\Domain\Activity\ActivityIntensity;
 use App\Domain\Activity\ActivityRepository;
 use App\Domain\Activity\ActivityWithRawData;
 use App\Domain\Activity\CouldNotDetermineActivityIntensity;
@@ -17,9 +17,9 @@ use App\Domain\Athlete\Athlete;
 use App\Domain\Athlete\AthleteRepository;
 use App\Domain\Athlete\KeyValueBasedAthleteRepository;
 use App\Domain\Athlete\MaxHeartRate\MaxHeartRateFormula;
-use App\Domain\Performance\PerformanceAnchor\PerformanceAnchorHistory;
 use App\Domain\Athlete\RestingHeartRate\RestingHeartRateFormula;
 use App\Domain\Ftp\FtpHistory;
+use App\Domain\Performance\PerformanceAnchor\PerformanceAnchorHistory;
 use App\Infrastructure\KeyValue\KeyValueStore;
 use App\Infrastructure\ValueObject\Time\SerializableDateTime;
 use App\Tests\ContainerTestCase;

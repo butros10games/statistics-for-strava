@@ -14,7 +14,7 @@ final class Version20260211033128 extends AbstractMigration
 {
     public function getDescription(): string
     {
-        return '';
+        return 'Clear cached combined activity stream rows before rebuilding them';
     }
 
     public function up(Schema $schema): void

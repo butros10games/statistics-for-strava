@@ -11,8 +11,8 @@ use App\Domain\TrainingPlanner\DbalRaceEventRepository;
 use App\Domain\TrainingPlanner\RaceEvent;
 use App\Domain\TrainingPlanner\RaceEventFamily;
 use App\Domain\TrainingPlanner\RaceEventId;
-use App\Domain\TrainingPlanner\RaceEventProfile;
 use App\Domain\TrainingPlanner\RaceEventPriority;
+use App\Domain\TrainingPlanner\RaceEventProfile;
 use App\Infrastructure\CQRS\Command\Bus\CommandBus;
 use App\Infrastructure\Time\Clock\Clock;
 use App\Infrastructure\ValueObject\Time\SerializableDateTime;
@@ -199,10 +199,10 @@ final readonly class RaceEventRequestHandler
             return null;
         }
 
-        $query = isset($parsedRedirectTarget['query']) && is_string($parsedRedirectTarget['query'])
+        $query = isset($parsedRedirectTarget['query'])
             ? '?'.$parsedRedirectTarget['query']
             : '';
-        $fragment = isset($parsedRedirectTarget['fragment']) && is_string($parsedRedirectTarget['fragment'])
+        $fragment = isset($parsedRedirectTarget['fragment'])
             ? '#'.$parsedRedirectTarget['fragment']
             : '';
 

@@ -9,21 +9,22 @@ use Symfony\Contracts\Translation\TranslatorInterface;
 final readonly class WellnessTrendChart
 {
     /**
-     * @param list<string> $labels
+     * @param list<string>         $labels
      * @param list<int|float|null> $values
      */
+    // @phpstan-ignore-next-line constructor.unusedParameter
     private function __construct(
         private string $title,
         private array $labels,
         private array $values,
         private string $color,
-        private string $unit,
+        string $unit,
         private TranslatorInterface $translator,
     ) {
     }
 
     /**
-     * @param list<string> $labels
+     * @param list<string>         $labels
      * @param list<int|float|null> $values
      */
     public static function create(
@@ -50,7 +51,7 @@ final readonly class WellnessTrendChart
     public function build(): array
     {
         $numericValues = array_values(array_filter($this->values, static fn (int|float|null $value): bool => null !== $value));
-        $minValue = [] === $numericValues ? 0 : min($numericValues);
+        $minValue = [] === $numericValues ? 0.0 : (float) min($numericValues);
 
         return [
             'animation' => true,
@@ -81,7 +82,7 @@ final readonly class WellnessTrendChart
             'yAxis' => [
                 [
                     'type' => 'value',
-                    'min' => is_numeric($minValue) ? floor(((float) $minValue) * 0.9) : 0,
+                    'min' => floor($minValue * 0.9),
                     'splitLine' => ['show' => false],
                     'axisTick' => ['show' => false],
                     'axisLine' => ['show' => false],

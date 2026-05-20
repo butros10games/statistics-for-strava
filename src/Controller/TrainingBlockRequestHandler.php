@@ -95,6 +95,9 @@ final readonly class TrainingBlockRequestHandler
         ]));
     }
 
+    /**
+     * @return list<\App\Domain\TrainingPlanner\RaceEvent>
+     */
     private function loadRaceEventOptions(): array
     {
         $earliestRaceEvent = $this->raceEventRepository->findEarliest();
@@ -178,10 +181,10 @@ final readonly class TrainingBlockRequestHandler
             return null;
         }
 
-        $query = isset($parsedRedirectTarget['query']) && is_string($parsedRedirectTarget['query'])
+        $query = isset($parsedRedirectTarget['query'])
             ? '?'.$parsedRedirectTarget['query']
             : '';
-        $fragment = isset($parsedRedirectTarget['fragment']) && is_string($parsedRedirectTarget['fragment'])
+        $fragment = isset($parsedRedirectTarget['fragment'])
             ? '#'.$parsedRedirectTarget['fragment']
             : '';
 

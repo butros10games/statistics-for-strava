@@ -7,7 +7,6 @@ namespace App\Tests\Application\Build\BuildRacePlannerHtml;
 use App\Application\Build\BuildRacePlannerHtml\BuildRacePlannerHtml;
 use App\Domain\Activity\ActivityId;
 use App\Domain\Activity\ActivityType;
-use App\Infrastructure\Serialization\Json;
 use App\Domain\TrainingPlanner\PlannedSession;
 use App\Domain\TrainingPlanner\PlannedSessionEstimationSource;
 use App\Domain\TrainingPlanner\PlannedSessionId;
@@ -21,16 +20,17 @@ use App\Domain\TrainingPlanner\RaceEventProfile;
 use App\Domain\TrainingPlanner\RaceEventRepository;
 use App\Domain\TrainingPlanner\RaceEventType;
 use App\Domain\TrainingPlanner\RacePlannerConfiguration;
-use App\Domain\TrainingPlanner\TrainingPlan;
-use App\Domain\TrainingPlanner\TrainingBlockStyle;
-use App\Domain\TrainingPlanner\TrainingPlanId;
-use App\Domain\TrainingPlanner\TrainingPlanDiscipline;
-use App\Domain\TrainingPlanner\TrainingPlanRepository;
-use App\Domain\TrainingPlanner\TrainingPlanType;
 use App\Domain\TrainingPlanner\TrainingBlock;
 use App\Domain\TrainingPlanner\TrainingBlockId;
 use App\Domain\TrainingPlanner\TrainingBlockPhase;
 use App\Domain\TrainingPlanner\TrainingBlockRepository;
+use App\Domain\TrainingPlanner\TrainingBlockStyle;
+use App\Domain\TrainingPlanner\TrainingPlan;
+use App\Domain\TrainingPlanner\TrainingPlanDiscipline;
+use App\Domain\TrainingPlanner\TrainingPlanId;
+use App\Domain\TrainingPlanner\TrainingPlanRepository;
+use App\Domain\TrainingPlanner\TrainingPlanType;
+use App\Infrastructure\Serialization\Json;
 use App\Infrastructure\ValueObject\Time\SerializableDateTime;
 use App\Tests\Application\BuildAppFilesTestCase;
 
@@ -75,7 +75,7 @@ final class BuildRacePlannerHtmlCommandHandlerTest extends BuildAppFilesTestCase
                 'runningThresholdPace' => 255,
                 'weeklyRunningVolume' => 48.0,
             ],
-            targetRaceProfile: \App\Domain\TrainingPlanner\RaceEventProfile::HALF_DISTANCE_TRIATHLON,
+            targetRaceProfile: RaceEventProfile::HALF_DISTANCE_TRIATHLON,
             trainingFocus: \App\Domain\TrainingPlanner\TrainingFocus::RUN,
         );
         $trainingPlanRepository->upsert($trainingPlan);

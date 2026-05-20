@@ -6,6 +6,9 @@ namespace App\Domain\TrainingPlanner\Analysis;
 
 final readonly class TrainingPlanAnalysisIssue
 {
+    /**
+     * @param list<string> $examples
+     */
     private function __construct(
         private string $code,
         private string $severity,
@@ -23,7 +26,7 @@ final readonly class TrainingPlanAnalysisIssue
             code: $code,
             severity: $severity,
             message: $message,
-            examples: array_values($examples),
+            examples: $examples,
         );
     }
 

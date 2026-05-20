@@ -2,11 +2,13 @@
 
 namespace App\Tests\Application\RunImport;
 
+use App\Application\Import\ImportSegments\ImportSegments;
 use App\Application\RunImport\RunImport;
 use App\Application\RunImport\RunImportCommandHandler;
 use App\Domain\Strava\Strava;
 use App\Domain\Wellness\WellnessImportConfig;
 use App\Infrastructure\CQRS\Command\Bus\CommandBus;
+use App\Infrastructure\CQRS\Command\Command;
 use App\Infrastructure\Serialization\Json;
 use App\Tests\ContainerTestCase;
 use App\Tests\Infrastructure\CQRS\Command\Bus\SpyCommandBus;
@@ -87,6 +89,45 @@ class RunImportCommandHandlerTest extends ContainerTestCase
             restrictToActivityIds: null,
         ));
         $this->assertMatchesTextSnapshot(str_replace(' ', '', $output));
+    }
+
+    public function testHandleWrapsImportStepFailuresWithStageContext(): void
+    {
+        $this->connection
+            ->expects($this->never())
+            ->method('executeStatement');
+
+        $handler = new RunImportCommandHandler(
+            $this->getContainer()->get(Strava::class),
+            new class() implements CommandBus {
+                public function dispatch(Command $command): void
+                {
+                    if ($command instanceof ImportSegments) {
+                        throw new \RuntimeException('OH NO ERROR');
+                    }
+                }
+            },
+            WellnessImportConfig::create(false, 'storage/imports/wellness/garmin-bridge.json'),
+            new SuccessfulPermissionChecker(),
+            $this->connection,
+        );
+
+        $output = new SpyOutput();
+
+        try {
+            $handler->handle(new RunImport(
+                output: new SymfonyStyle(new StringInput('input'), $output),
+                restrictToActivityIds: null,
+            ));
+            $this->fail('Expected import step failure to be wrapped with stage context.');
+        } catch (\RuntimeException $exception) {
+            $this->assertSame(
+                sprintf('Import failed during stage "Enrichment" while "Importing segments" (%s).', ImportSegments::class),
+                $exception->getMessage(),
+            );
+            $this->assertInstanceOf(\RuntimeException::class, $exception->getPrevious());
+            $this->assertSame('OH NO ERROR', $exception->getPrevious()?->getMessage());
+        }
     }
 
     #[\Override]

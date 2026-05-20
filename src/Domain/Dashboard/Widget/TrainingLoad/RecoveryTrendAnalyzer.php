@@ -96,12 +96,12 @@ final class RecoveryTrendAnalyzer
     }
 
     /**
-     * @param list<array<string, int|float|null|array|null>> $rows
+     * @param list<array<string, mixed>> $rows
      */
     private function averageNumericField(array $rows, string $field): float
     {
         $values = array_values(array_filter(
-            array_map(static fn (array $row): int|float|null => is_numeric($row[$field] ?? null) ? $row[$field] : null, $rows),
+            array_map(fn (array $row): int|float|null => $this->extractNumericRowValue($row, $field), $rows),
             static fn (int|float|null $value): bool => null !== $value,
         ));
 
@@ -118,7 +118,7 @@ final class RecoveryTrendAnalyzer
     private function averageMetric(array $records, string $field): ?float
     {
         $values = array_values(array_filter(
-            array_map(static fn (array $record): int|float|null => $record[$field], $records),
+            array_map(fn (array $record): int|float|null => $this->extractNumericMetricValue($record, $field), $records),
             static fn (int|float|null $value): bool => null !== $value,
         ));
 
@@ -127,5 +127,29 @@ final class RecoveryTrendAnalyzer
         }
 
         return array_sum($values) / count($values);
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     */
+    private function extractNumericRowValue(array $row, string $field): int|float|null
+    {
+        $value = $row[$field] ?? null;
+
+        return is_int($value) || is_float($value) ? $value : null;
+    }
+
+    /**
+     * @param array{day: string, stepsCount: ?int, sleepDurationInSeconds: ?int, sleepScore: ?int, hrv: ?float} $record
+     */
+    private function extractNumericMetricValue(array $record, string $field): int|float|null
+    {
+        return match ($field) {
+            'stepsCount' => $record['stepsCount'],
+            'sleepDurationInSeconds' => $record['sleepDurationInSeconds'],
+            'sleepScore' => $record['sleepScore'],
+            'hrv' => $record['hrv'],
+            default => null,
+        };
     }
 }

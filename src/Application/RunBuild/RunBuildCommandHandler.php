@@ -23,8 +23,8 @@ use App\Application\Build\BuildRacePlannerHtml\BuildRacePlannerHtml;
 use App\Application\Build\BuildRecordingDevices\BuildRecordingDevices;
 use App\Application\Build\BuildRewindHtml\BuildRewindHtml;
 use App\Application\Build\BuildSegmentsHtml\BuildSegmentsHtml;
-use App\Application\Build\BuildTrainingPlansHtml\BuildTrainingPlansHtml;
 use App\Application\Build\BuildTrainingAdvisorExport\BuildTrainingAdvisorExport;
+use App\Application\Build\BuildTrainingPlansHtml\BuildTrainingPlansHtml;
 use App\Application\Build\ConfigureAppColors\ConfigureAppColors;
 use App\Application\Build\ConfigureAppLocale\ConfigureAppLocale;
 use App\Application\Import\ImportGear\GearImportStatus;
@@ -36,6 +36,7 @@ use App\Infrastructure\CQRS\Command\Command;
 use App\Infrastructure\CQRS\Command\CommandHandler;
 use App\Infrastructure\Doctrine\Migrations\MigrationRunner;
 use App\Infrastructure\Time\Clock\Clock;
+use App\Infrastructure\ValueObject\Time\SerializableDateTime;
 
 final readonly class RunBuildCommandHandler implements CommandHandler
 {
@@ -78,42 +79,98 @@ This is not a bug, once all your activities have been imported, your gear statis
         $output->writeln('Building app...');
         $output->newLine();
 
-        $commandsWithMessages = [
-            'Configuring locale' => new ConfigureAppLocale(),
-            'Configuring theme colors' => new ConfigureAppColors(),
-            'Building Manifest' => new BuildManifest(),
-            'Building index' => new BuildIndexHtml($now),
-            'Building dashboard' => new BuildDashboardHtml(),
-            'Building activities' => new BuildActivitiesHtml($now),
-            'Building gpx files' => new BuildGpxFiles(),
-            'Building monthly stats' => new BuildMonthlyStatsHtml($now),
-            'Building gear stats' => new BuildGearStatsHtml($now),
-            'Building gear maintenance' => new BuildGearMaintenanceHtml(),
-            'Building recording devices' => new BuildRecordingDevices(),
-            'Building eddington' => new BuildEddingtonHtml($now),
-            'Building milestones' => new BuildMilestonesHtml(),
-            'Building segments' => new BuildSegmentsHtml(),
-            'Building heatmap' => new BuildHeatmapHtml($now),
-            'Building best efforts' => new BuildBestEffortsHtml(),
-            'Building rewind' => new BuildRewindHtml($now),
-            'Building challenges' => new BuildChallengesHtml($now),
-            'Building photos' => new BuildPhotosHtml(),
-            'Building training advisor export' => new BuildTrainingAdvisorExport($now),
-            'Building race planner' => new BuildRacePlannerHtml($now),
-            'Building plan manager' => new BuildTrainingPlansHtml($now),
-            'Building badges' => new BuildBadgeSvg($now),
-        ];
+        $buildStages = $this->buildStages($now);
 
-        $progressBar = new ProgressBar($output, count($commandsWithMessages));
+        $progressBar = new ProgressBar($output, $this->countBuildSteps($buildStages));
         $progressBar->start();
 
-        foreach ($commandsWithMessages as $message => $command) {
-            $progressBar->updateMessage($message);
-            $progressBar->advance();
-            $this->commandBus->dispatch($command);
+        foreach ($buildStages as $buildStage) {
+            foreach ($buildStage['steps'] as $buildStep) {
+                $progressBar->updateMessage($buildStep['message']);
+                $progressBar->advance();
+                $this->dispatchBuildStep(
+                    stageName: $buildStage['name'],
+                    message: $buildStep['message'],
+                    command: $buildStep['command'],
+                );
+            }
         }
 
         $progressBar->finish();
         $output->writeln('');
+    }
+
+    /**
+     * @return list<array{name: string, steps: list<array{message: string, command: Command}>}>
+     */
+    private function buildStages(
+        SerializableDateTime $now,
+    ): array {
+        return [
+            [
+                'name' => 'Application setup',
+                'steps' => [
+                    ['message' => 'Configuring locale', 'command' => new ConfigureAppLocale()],
+                    ['message' => 'Configuring theme colors', 'command' => new ConfigureAppColors()],
+                    ['message' => 'Building Manifest', 'command' => new BuildManifest()],
+                ],
+            ],
+            [
+                'name' => 'Core pages',
+                'steps' => [
+                    ['message' => 'Building index', 'command' => new BuildIndexHtml($now)],
+                    ['message' => 'Building dashboard', 'command' => new BuildDashboardHtml()],
+                    ['message' => 'Building activities', 'command' => new BuildActivitiesHtml($now)],
+                    ['message' => 'Building gpx files', 'command' => new BuildGpxFiles()],
+                    ['message' => 'Building monthly stats', 'command' => new BuildMonthlyStatsHtml($now)],
+                    ['message' => 'Building gear stats', 'command' => new BuildGearStatsHtml($now)],
+                    ['message' => 'Building gear maintenance', 'command' => new BuildGearMaintenanceHtml()],
+                    ['message' => 'Building recording devices', 'command' => new BuildRecordingDevices()],
+                    ['message' => 'Building eddington', 'command' => new BuildEddingtonHtml($now)],
+                    ['message' => 'Building milestones', 'command' => new BuildMilestonesHtml()],
+                    ['message' => 'Building segments', 'command' => new BuildSegmentsHtml()],
+                    ['message' => 'Building heatmap', 'command' => new BuildHeatmapHtml($now)],
+                    ['message' => 'Building best efforts', 'command' => new BuildBestEffortsHtml()],
+                    ['message' => 'Building rewind', 'command' => new BuildRewindHtml($now)],
+                    ['message' => 'Building challenges', 'command' => new BuildChallengesHtml($now)],
+                    ['message' => 'Building photos', 'command' => new BuildPhotosHtml()],
+                ],
+            ],
+            [
+                'name' => 'Planning and exports',
+                'steps' => [
+                    ['message' => 'Building training advisor export', 'command' => new BuildTrainingAdvisorExport($now)],
+                    ['message' => 'Building race planner', 'command' => new BuildRacePlannerHtml($now)],
+                    ['message' => 'Building plan manager', 'command' => new BuildTrainingPlansHtml($now)],
+                    ['message' => 'Building badges', 'command' => new BuildBadgeSvg($now)],
+                ],
+            ],
+        ];
+    }
+
+    /**
+     * @param list<array{name: string, steps: list<array{message: string, command: Command}>}> $buildStages
+     */
+    private function countBuildSteps(array $buildStages): int
+    {
+        $count = 0;
+
+        foreach ($buildStages as $buildStage) {
+            $count += count($buildStage['steps']);
+        }
+
+        return $count;
+    }
+
+    private function dispatchBuildStep(string $stageName, string $message, Command $command): void
+    {
+        try {
+            $this->commandBus->dispatch($command);
+        } catch (\Throwable $e) {
+            throw new \RuntimeException(
+                sprintf('Build failed during stage "%s" while "%s" (%s).', $stageName, $message, $command::class),
+                previous: $e,
+            );
+        }
     }
 }

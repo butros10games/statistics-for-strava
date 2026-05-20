@@ -58,6 +58,10 @@ final readonly class TrainingPlan
     ) {
     }
 
+    /**
+     * @param array<string, mixed>|null $sportSchedule
+     * @param array<string, mixed>|null $performanceMetrics
+     */
     public static function create(
         TrainingPlanId $trainingPlanId,
         TrainingPlanType $type,

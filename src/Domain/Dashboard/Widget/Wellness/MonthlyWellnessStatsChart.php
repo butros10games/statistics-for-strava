@@ -59,10 +59,6 @@ final readonly class MonthlyWellnessStatsChart
             $lastDate = null === $lastDate || $date > $lastDate ? $date : $lastDate;
         }
 
-        if (!$firstDate instanceof \DateTimeImmutable || !$lastDate instanceof \DateTimeImmutable) {
-            return [];
-        }
-
         $firstYear = (int) $firstDate->format('Y');
         $lastYear = (int) $lastDate->format('Y');
         $years = range($lastYear, $firstYear);

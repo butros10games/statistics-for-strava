@@ -1,10 +1,11 @@
 compose=docker compose
+test-envs=-e APP_ENV=test -e DATABASE_URL=sqlite:///:memory:
 
 dc:
 	@${compose} -f docker-compose.yml $(cmd)
 
 dcr:
-	@make dc cmd="run --rm -e PHP_IDE_CONFIG=serverName=SFS php-cli $(cmd)"
+	@make dc cmd="run --rm $(envs) -e PHP_IDE_CONFIG=serverName=SFS php-cli $(cmd)"
 
 stop:
 	@make dc cmd="stop"
@@ -54,10 +55,10 @@ translation-debug:
 
 # Code quality tools.
 phpunit:
-	@make dcr cmd="vendor/bin/phpunit --order-by=random $(arg)"
+	@make dcr envs="$(test-envs)" cmd="rm -rf var/cache/test && mkdir -p var/cache/test && vendor/bin/phpunit --order-by=random $(arg)"
 
 paratest:
-	@make dcr cmd="vendor/bin/paratest --order-by=random --processes=auto $(arg)"
+	@make dcr envs="$(test-envs)" cmd="rm -rf var/cache/test && mkdir -p var/cache/test && vendor/bin/paratest --order-by=random --processes=auto $(arg)"
 
 phpunit-html-coverage:
 	@make paratest arg="--coverage-html var/coverage"
@@ -91,9 +92,15 @@ app-install-node-deps:
 
 app-build-assets:
 	@make app-install-node-deps
-	@make dcr cmd="node_modules/.bin/tailwindcss -i public/css/tailwind.css -o public/css/dist/tailwind.min.css --minify"
-	@make dcr cmd="node_modules/.bin/tailwindcss -i public/css/tailwind.css -o public/css/tailwind.output.css"
-	@make dcr cmd="node_modules/.bin/webpack --config webpack.config.js"
+	@make dcr cmd="npm run build"
+
+app-watch-assets-css:
+	@make app-install-node-deps
+	@make dcr cmd="npm run watch:css"
+
+app-watch-assets-js:
+	@make app-install-node-deps
+	@make dcr cmd="npm run watch:js"
 
 app-build-all:
 	@make build-containers

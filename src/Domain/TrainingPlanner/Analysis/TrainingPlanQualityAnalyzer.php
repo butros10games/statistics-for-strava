@@ -8,6 +8,7 @@ use App\Domain\Activity\ActivityType;
 use App\Domain\TrainingPlanner\PlanGenerator\PlanAdaptationWarning;
 use App\Domain\TrainingPlanner\PlanGenerator\ProposedSession;
 use App\Domain\TrainingPlanner\PlanGenerator\ProposedTrainingBlock;
+use App\Domain\TrainingPlanner\PlanGenerator\ProposedWeekSkeleton;
 use App\Domain\TrainingPlanner\PlanGenerator\TrainingPlanProposal;
 use App\Domain\TrainingPlanner\TrainingBlockPhase;
 use App\Domain\TrainingPlanner\TrainingFocus;
@@ -28,16 +29,8 @@ final class TrainingPlanQualityAnalyzer
 
         foreach ($proposal->getProposedBlocks() as $block) {
             foreach ($block->getWeekSkeletons() as $week) {
-                $disciplineCounts = [
-                    'swim' => 0,
-                    'bike' => 0,
-                    'run' => 0,
-                ];
-                $disciplineDurations = [
-                    'swim' => $week->getTargetDurationInSecondsForActivityType(ActivityType::WATER_SPORTS),
-                    'bike' => $week->getTargetDurationInSecondsForActivityType(ActivityType::RIDE),
-                    'run' => $week->getTargetDurationInSecondsForActivityType(ActivityType::RUN),
-                ];
+                $disciplineCounts = $this->createEmptyDisciplineSummary();
+                $disciplineDurations = $this->buildDisciplineDurations($week);
                 $hardSessionCount = 0;
                 $keySessionCount = 0;
                 $brickSessionCount = 0;
@@ -53,9 +46,7 @@ final class TrainingPlanQualityAnalyzer
 
                 foreach ($week->getSessions() as $session) {
                     $disciplineKey = $this->mapActivityTypeToSummaryKey($session->getActivityType());
-                    if (null !== $disciplineKey) {
-                        ++$disciplineCounts[$disciplineKey];
-                    }
+                    $this->incrementDisciplineCount($disciplineCounts, $disciplineKey);
 
                     if ($session->isKeySession()) {
                         ++$keySessionCount;
@@ -278,22 +269,15 @@ final class TrainingPlanQualityAnalyzer
             return [];
         }
 
-        $requiredDisciplines = [];
-        if ($proposal->getRules()->needsSwimSessions()) {
-            $requiredDisciplines['swim'] = true;
-        }
-        if ($proposal->getRules()->needsBikeSessions()) {
-            $requiredDisciplines['bike'] = true;
-        }
-        if ($proposal->getRules()->needsRunSessions()) {
-            $requiredDisciplines['run'] = true;
-        }
-
         $missing = [];
-        foreach (array_keys($requiredDisciplines) as $disciplineKey) {
-            if (($disciplineDurations[$disciplineKey] ?? 0) <= 0) {
-                $missing[] = $disciplineKey;
-            }
+        if ($proposal->getRules()->needsSwimSessions() && $disciplineDurations['swim'] <= 0) {
+            $missing[] = 'swim';
+        }
+        if ($proposal->getRules()->needsBikeSessions() && $disciplineDurations['bike'] <= 0) {
+            $missing[] = 'bike';
+        }
+        if ($proposal->getRules()->needsRunSessions() && $disciplineDurations['run'] <= 0) {
+            $missing[] = 'run';
         }
 
         return $missing;
@@ -328,18 +312,60 @@ final class TrainingPlanQualityAnalyzer
             return false;
         }
 
-        $supportKeys = array_values(array_filter(['swim', 'bike', 'run'], static fn (string $key): bool => $key !== $focusKey));
+        /** @var 'swim'|'bike'|'run' $focusKey */
+        $supportKeys = match ($focusKey) {
+            'swim' => ['bike', 'run'],
+            'bike' => ['swim', 'run'],
+            'run' => ['swim', 'bike'],
+        };
         $maxSupportSessionCount = 0;
         $maxSupportDuration = 0;
         foreach ($supportKeys as $supportKey) {
-            $maxSupportSessionCount = max($maxSupportSessionCount, $disciplineCounts[$supportKey] ?? 0);
-            $maxSupportDuration = max($maxSupportDuration, $disciplineDurations[$supportKey] ?? 0);
+            $maxSupportSessionCount = max($maxSupportSessionCount, $disciplineCounts[$supportKey]);
+            $maxSupportDuration = max($maxSupportDuration, $disciplineDurations[$supportKey]);
         }
 
-        $focusSessionCount = $disciplineCounts[$focusKey] ?? 0;
-        $focusDuration = $disciplineDurations[$focusKey] ?? 0;
+        $focusSessionCount = $disciplineCounts[$focusKey];
+        $focusDuration = $disciplineDurations[$focusKey];
 
         return $focusSessionCount < $maxSupportSessionCount && $focusDuration < (int) round($maxSupportDuration * 0.9);
+    }
+
+    /**
+     * @return array{swim: int, bike: int, run: int}
+     */
+    private function createEmptyDisciplineSummary(): array
+    {
+        return [
+            'swim' => 0,
+            'bike' => 0,
+            'run' => 0,
+        ];
+    }
+
+    /**
+     * @return array{swim: int, bike: int, run: int}
+     */
+    private function buildDisciplineDurations(ProposedWeekSkeleton $week): array
+    {
+        return [
+            'swim' => $week->getTargetDurationInSecondsForActivityType(ActivityType::WATER_SPORTS),
+            'bike' => $week->getTargetDurationInSecondsForActivityType(ActivityType::RIDE),
+            'run' => $week->getTargetDurationInSecondsForActivityType(ActivityType::RUN),
+        ];
+    }
+
+    /**
+     * @param array{swim: int, bike: int, run: int} $disciplineCounts
+     */
+    private function incrementDisciplineCount(array &$disciplineCounts, ?string $disciplineKey): void
+    {
+        match ($disciplineKey) {
+            'swim' => ++$disciplineCounts['swim'],
+            'bike' => ++$disciplineCounts['bike'],
+            'run' => ++$disciplineCounts['run'],
+            default => null,
+        };
     }
 
     private function hasContradictoryEasyLabel(ProposedSession $session): bool

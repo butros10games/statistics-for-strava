@@ -9,8 +9,8 @@ use App\Domain\Activity\ActivityType;
 final class TrainingLoadPersonalizationAdvisor
 {
     /**
-     * @param list<TrainingLoadCorrelationInsight> $correlationInsights
-     * @param list<ActivityTypeRecoveryFingerprint> $activityTypeRecoveryFingerprints
+     * @param list<TrainingLoadCorrelationInsight>                                                                                               $correlationInsights
+     * @param list<ActivityTypeRecoveryFingerprint>                                                                                              $activityTypeRecoveryFingerprints
      * @param list<array{day: string, activityType: ActivityType, load: int, nextDayHrv: ?float, nextDaySleepScore: ?int, nextDayFatigue: ?int}> $recentActivityDaySamples
      */
     public function build(TrainingLoadAnalyticsContext $analyticsContext, array $correlationInsights, array $activityTypeRecoveryFingerprints, array $recentActivityDaySamples): TrainingLoadPersonalization
@@ -40,18 +40,44 @@ final class TrainingLoadPersonalizationAdvisor
                         $readinessAdjustment -= 4,
                         $forecastLoadFactor += 0.08,
                         $messages[] = sprintf('%s usually asks for a bigger recovery buffer for you.', $primaryFingerprint->getActivityType()->trans(new class implements \Symfony\Contracts\Translation\TranslatorInterface {
-                            public function setLocale(string $locale): void {}
-                            public function getLocale(): string { return 'en'; }
-                            public function trans(?string $id, array $parameters = [], ?string $domain = null, ?string $locale = null): string { return (string) $id; }
+                            public function setLocale(string $locale): void
+                            {
+                            }
+
+                            public function getLocale(): string
+                            {
+                                return 'en';
+                            }
+
+                            /**
+                             * @param array<string, mixed> $parameters
+                             */
+                            public function trans(?string $id, array $parameters = [], ?string $domain = null, ?string $locale = null): string
+                            {
+                                return (string) $id;
+                            }
                         })),
                     ],
                     ActivityTypeRecoveryFingerprintProfile::BOUNCES_BACK => [
                         $readinessAdjustment += 3,
                         $forecastLoadFactor -= 0.05,
                         $messages[] = sprintf('%s tends to land well for you the next day.', $primaryFingerprint->getActivityType()->trans(new class implements \Symfony\Contracts\Translation\TranslatorInterface {
-                            public function setLocale(string $locale): void {}
-                            public function getLocale(): string { return 'en'; }
-                            public function trans(?string $id, array $parameters = [], ?string $domain = null, ?string $locale = null): string { return (string) $id; }
+                            public function setLocale(string $locale): void
+                            {
+                            }
+
+                            public function getLocale(): string
+                            {
+                                return 'en';
+                            }
+
+                            /**
+                             * @param array<string, mixed> $parameters
+                             */
+                            public function trans(?string $id, array $parameters = [], ?string $domain = null, ?string $locale = null): string
+                            {
+                                return (string) $id;
+                            }
                         })),
                     ],
                     default => null,
@@ -78,7 +104,7 @@ final class TrainingLoadPersonalizationAdvisor
             }
 
             if ('monotonyToNextDayFatigue' === $insight->getKey() && null !== $currentMonotony && $currentMonotony >= 1.6) {
-                $readinessAdjustment -= 1;
+                --$readinessAdjustment;
                 $forecastLoadFactor += 0.02;
                 $messages[] = 'Recent monotony has been showing up in your next-day fatigue.';
             }
@@ -108,6 +134,16 @@ final class TrainingLoadPersonalizationAdvisor
             return 0.0;
         }
 
-        return array_sum(array_map(static fn (array $row): int|float => $row[$field], $rows)) / count($rows);
+        return array_sum(array_map(fn (array $row): int|float => $this->extractNumericRowValue($row, $field), $rows)) / count($rows);
+    }
+
+    /**
+     * @param array<string, mixed> $row
+     */
+    private function extractNumericRowValue(array $row, string $field): int|float
+    {
+        $value = $row[$field] ?? 0;
+
+        return is_int($value) || is_float($value) ? $value : 0;
     }
 }

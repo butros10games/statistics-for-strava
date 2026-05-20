@@ -64,8 +64,8 @@ final readonly class TrainingLoadAnalyticsContextBuilder
                 'ctl' => (float) ($ctlValues[$day] ?? 0.0),
                 'tsb' => (float) ($tsbValues[$day] ?? 0.0),
                 'acRatio' => (float) ($acRatioValues[$day] ?? 0.0),
-                'monotony' => isset($monotonyValues[$day]) ? (null === $monotonyValues[$day] ? null : (float) $monotonyValues[$day]) : null,
-                'strain' => isset($strainValues[$day]) ? (null === $strainValues[$day] ? null : (int) $strainValues[$day]) : null,
+                'monotony' => array_key_exists($day, $monotonyValues) ? (null === $monotonyValues[$day] ? null : (float) $monotonyValues[$day]) : null,
+                'strain' => array_key_exists($day, $strainValues) ? (null === $strainValues[$day] ? null : (int) $strainValues[$day]) : null,
                 'wellness' => $wellnessByDay[$day] ?? null,
                 'recoveryCheckIn' => $recoveryCheckInsByDay[$day] ?? null,
             ];

@@ -4,8 +4,8 @@ declare(strict_types=1);
 
 namespace App\Tests\Domain\TrainingPlanner;
 
-use App\Domain\Activity\ActivityRepository;
 use App\Domain\Activity\ActivityId;
+use App\Domain\Activity\ActivityRepository;
 use App\Domain\Activity\ActivityType;
 use App\Domain\Activity\ActivityWithRawData;
 use App\Domain\Activity\SportType\SportType;

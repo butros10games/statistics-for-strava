@@ -402,7 +402,7 @@ final class RunningPlanPerformancePredictorTest extends TestCase
             sessions: [
                 ProposedSession::create(
                     day: SerializableDateTime::fromString(sprintf('%s 00:00:00', $startDay)),
-                    activityType: \App\Domain\Activity\ActivityType::RUN,
+                    activityType: ActivityType::RUN,
                     targetIntensity: TrainingBlockPhase::BUILD === $phase ? PlannedSessionIntensity::HARD : PlannedSessionIntensity::MODERATE,
                     title: TrainingBlockPhase::BUILD === $phase ? 'Run tempo' : 'Easy run',
                     notes: null,

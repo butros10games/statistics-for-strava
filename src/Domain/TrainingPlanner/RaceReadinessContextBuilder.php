@@ -12,11 +12,11 @@ use App\Infrastructure\ValueObject\Time\SerializableDateTime;
 final class RaceReadinessContextBuilder
 {
     /**
-     * @param list<PlannedSession> $plannedSessions
-     * @param list<RaceEvent> $raceEvents
-     * @param list<TrainingBlock> $trainingBlocks
-     * @param array<string, RaceEvent> $raceEventsById
-     * @param array<string, null|float> $plannedSessionEstimatesById
+     * @param list<PlannedSession>      $plannedSessions
+     * @param list<RaceEvent>           $raceEvents
+     * @param list<TrainingBlock>       $trainingBlocks
+     * @param array<string, RaceEvent>  $raceEventsById
+     * @param array<string, float|null> $plannedSessionEstimatesById
      */
     public function build(
         SerializableDateTime $referenceDate,
@@ -47,11 +47,11 @@ final class RaceReadinessContextBuilder
         $hasLongRunSession = false;
 
         foreach ($plannedSessions as $plannedSession) {
-            if ($this->isHardPlannedSession($plannedSession, $plannedSessionEstimatesById)) {
+            if (PlannedSessionDemandClassifier::isHard($plannedSession, $plannedSessionEstimatesById)) {
                 ++$hardSessionCount;
             }
 
-            if ($this->isEasyPlannedSession($plannedSession, $plannedSessionEstimatesById)) {
+            if (PlannedSessionDemandClassifier::isEasy($plannedSession, $plannedSessionEstimatesById)) {
                 ++$easySessionCount;
             }
 
@@ -90,8 +90,8 @@ final class RaceReadinessContextBuilder
     }
 
     /**
-     * @param list<PlannedSession> $plannedSessions
-     * @param array<string, null|float> $plannedSessionEstimatesById
+     * @param list<PlannedSession>      $plannedSessions
+     * @param array<string, float|null> $plannedSessionEstimatesById
      */
     private function buildEstimatedLoadForPlannedSessions(array $plannedSessions, array $plannedSessionEstimatesById): float
     {
@@ -135,7 +135,7 @@ final class RaceReadinessContextBuilder
             return $right['count'] <=> $left['count'];
         });
 
-        return array_values($countsByActivityType);
+        return $countsByActivityType;
     }
 
     /**
@@ -160,8 +160,8 @@ final class RaceReadinessContextBuilder
     }
 
     /**
-     * @param list<TrainingBlock> $contextualTrainingBlocks
-     * @param list<RaceEvent> $contextualRaceEvents
+     * @param list<TrainingBlock>      $contextualTrainingBlocks
+     * @param list<RaceEvent>          $contextualRaceEvents
      * @param array<string, RaceEvent> $raceEventsById
      */
     private function resolveTargetRace(
@@ -176,12 +176,18 @@ final class RaceReadinessContextBuilder
                 continue;
             }
 
-            return $raceEventsById[(string) $targetRaceEventId] ?? null;
+            $targetRace = $raceEventsById[(string) $targetRaceEventId] ?? null;
+            if (null !== $targetRace) {
+                return $targetRace;
+            }
         }
 
         $currentTrainingBlockTargetRaceEventId = $currentTrainingBlock?->getTargetRaceEventId();
         if (null !== $currentTrainingBlockTargetRaceEventId) {
-            return $raceEventsById[(string) $currentTrainingBlockTargetRaceEventId] ?? null;
+            $targetRace = $raceEventsById[(string) $currentTrainingBlockTargetRaceEventId] ?? null;
+            if (null !== $targetRace) {
+                return $targetRace;
+            }
         }
 
         return $contextualRaceEvents[0] ?? null;
@@ -234,30 +240,4 @@ final class RaceReadinessContextBuilder
         return $brickDays;
     }
 
-    /**
-     * @param array<string, null|float> $plannedSessionEstimatesById
-     */
-    private function isHardPlannedSession(PlannedSession $plannedSession, array $plannedSessionEstimatesById): bool
-    {
-        $targetIntensity = $plannedSession->getTargetIntensity();
-        if (null !== $targetIntensity) {
-            return PlannedSessionIntensity::HARD === $targetIntensity || PlannedSessionIntensity::RACE === $targetIntensity;
-        }
-
-        return ($plannedSessionEstimatesById[(string) $plannedSession->getId()] ?? 0.0) >= 110.0;
-    }
-
-    /**
-     * @param array<string, null|float> $plannedSessionEstimatesById
-     */
-    private function isEasyPlannedSession(PlannedSession $plannedSession, array $plannedSessionEstimatesById): bool
-    {
-        if (PlannedSessionIntensity::EASY === $plannedSession->getTargetIntensity()) {
-            return true;
-        }
-
-        $estimatedLoad = $plannedSessionEstimatesById[(string) $plannedSession->getId()] ?? null;
-
-        return null !== $estimatedLoad && $estimatedLoad > 0 && $estimatedLoad <= 50.0;
-    }
 }

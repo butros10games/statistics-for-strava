@@ -16,24 +16,24 @@ use App\Domain\TrainingPlanner\PlannedSessionLinkStatus;
 use App\Domain\TrainingPlanner\RaceEvent;
 use App\Domain\TrainingPlanner\RaceEventId;
 use App\Domain\TrainingPlanner\RaceEventPriority;
-use App\Domain\TrainingPlanner\RaceReadinessContext;
 use App\Domain\TrainingPlanner\RaceEventType;
+use App\Domain\TrainingPlanner\RaceReadinessContext;
 use App\Domain\TrainingPlanner\RunningWorkoutTargetMode;
+use App\Domain\TrainingPlanner\TrainingBlock;
+use App\Domain\TrainingPlanner\TrainingBlockId;
+use App\Domain\TrainingPlanner\TrainingBlockPhase;
+use App\Domain\TrainingPlanner\TrainingBlockStyle;
+use App\Domain\TrainingPlanner\TrainingFocus;
+use App\Domain\TrainingPlanner\TrainingPlan;
+use App\Domain\TrainingPlanner\TrainingPlanDiscipline;
+use App\Domain\TrainingPlanner\TrainingPlanId;
+use App\Domain\TrainingPlanner\TrainingPlanType;
 use App\Domain\TrainingPlanner\TrainingSession;
 use App\Domain\TrainingPlanner\TrainingSessionId;
 use App\Domain\TrainingPlanner\TrainingSessionObjective;
 use App\Domain\TrainingPlanner\TrainingSessionRecommendationCriteria;
 use App\Domain\TrainingPlanner\TrainingSessionRepository;
 use App\Domain\TrainingPlanner\TrainingSessionSource;
-use App\Domain\TrainingPlanner\TrainingBlockStyle;
-use App\Domain\TrainingPlanner\TrainingFocus;
-use App\Domain\TrainingPlanner\TrainingBlock;
-use App\Domain\TrainingPlanner\TrainingBlockId;
-use App\Domain\TrainingPlanner\TrainingBlockPhase;
-use App\Domain\TrainingPlanner\TrainingPlan;
-use App\Domain\TrainingPlanner\TrainingPlanDiscipline;
-use App\Domain\TrainingPlanner\TrainingPlanId;
-use App\Domain\TrainingPlanner\TrainingPlanType;
 use App\Infrastructure\ValueObject\Time\SerializableDateTime;
 use PHPUnit\Framework\TestCase;
 
@@ -949,8 +949,8 @@ final class TrainingPlanGeneratorTest extends TestCase
             $weekSessions,
         ));
 
-        self::assertGreaterThan(($disciplineCounts[ActivityType::RIDE->value] ?? 0), $disciplineCounts[ActivityType::RUN->value] ?? 0);
-        self::assertGreaterThan(($disciplineCounts[ActivityType::WATER_SPORTS->value] ?? 0), $disciplineCounts[ActivityType::RUN->value] ?? 0);
+        self::assertGreaterThan($disciplineCounts[ActivityType::RIDE->value] ?? 0, $disciplineCounts[ActivityType::RUN->value] ?? 0);
+        self::assertGreaterThan($disciplineCounts[ActivityType::WATER_SPORTS->value] ?? 0, $disciplineCounts[ActivityType::RUN->value] ?? 0);
         self::assertGreaterThanOrEqual(2, $disciplineCounts[ActivityType::WATER_SPORTS->value] ?? 0);
         self::assertGreaterThanOrEqual(2, $disciplineCounts[ActivityType::RIDE->value] ?? 0);
     }
@@ -2287,7 +2287,7 @@ final class TrainingPlanGeneratorTest extends TestCase
                 throw new \BadMethodCallException('Not implemented for this test stub.');
             }
 
-            public function findBySourcePlannedSessionId(\App\Domain\TrainingPlanner\PlannedSessionId $plannedSessionId): ?TrainingSession
+            public function findBySourcePlannedSessionId(PlannedSessionId $plannedSessionId): ?TrainingSession
             {
                 throw new \BadMethodCallException('Not implemented for this test stub.');
             }
@@ -2356,7 +2356,7 @@ final class TrainingPlanGeneratorTest extends TestCase
         string $startDay,
         string $endDay,
         TrainingBlockPhase $phase,
-        ?\App\Domain\TrainingPlanner\RaceEventId $targetRaceEventId,
+        ?RaceEventId $targetRaceEventId,
     ): TrainingBlock {
         return TrainingBlock::create(
             trainingBlockId: TrainingBlockId::random(),
