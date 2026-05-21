@@ -7,6 +7,7 @@ namespace App\Application\Build\BuildActivitiesHtml;
 use App\Application\Countries;
 use App\Domain\Activity\ActivityTotals;
 use App\Domain\Activity\BestEffort\BestEffortsCalculator;
+use App\Domain\Activity\CadenceDistributionChart;
 use App\Domain\Activity\Device\DeviceRepository;
 use App\Domain\Activity\EnrichedActivities;
 use App\Domain\Activity\HeartRateDistributionChart;
@@ -96,12 +97,6 @@ final readonly class BuildActivitiesHtmlCommandHandler implements CommandHandler
         foreach ($activities as $activity) {
             $activityType = $activity->getSportType()->getActivityType();
 
-            $heartRateStream = null;
-            try {
-                $heartRateStream = $this->activityStreamRepository->findOneByActivityAndStreamType($activity->getId(), StreamType::HEART_RATE);
-            } catch (EntityNotFound) {
-            }
-
             $valueDistributionMetrics = $this->activityStreamMetricRepository->findByActivityIdAndMetricType(
                 $activity->getId(),
                 ActivityStreamMetricType::VALUE_DISTRIBUTION
@@ -172,31 +167,26 @@ final readonly class BuildActivitiesHtmlCommandHandler implements CommandHandler
                 }
             }
 
+            $cadenceDistribution = $valueDistributionMetrics->filterOnStreamType(StreamType::CADENCE)?->getData() ?? [];
+            if ($activity->getAverageCadence() && count($cadenceDistribution) > 1) {
+                $cadenceDistributionChart = CadenceDistributionChart::create(
+                    cadenceData: $cadenceDistribution,
+                    averageCadence: $activity->getAverageCadence(),
+                    activityType: $activityType,
+                )->build();
+
+                if (!is_null($cadenceDistributionChart)) {
+                    $distributionCharts[] = [
+                        'title' => $this->translator->trans('Cadence distribution'),
+                        'data' => Json::encode($cadenceDistributionChart),
+                    ];
+                }
+            }
+
             $activitySplits = $this->activitySplitRepository->findBy(
                 activityId: $activity->getId(),
                 unitSystem: $this->unitSystem
             );
-
-            if (!$activitySplits->isEmpty() && $heartRateStream) {
-                /** @var \App\Domain\Activity\Split\ActivitySplit $activitySplit */
-                $sumSplitMovingTimeInSeconds = 0;
-                foreach ($activitySplits as $activitySplit) {
-                    $movingTimeInSeconds = $activitySplit->getMovingTimeInSeconds();
-                    // Enrich ActivitySplit with average heart rate.
-                    $heartRatesForCurrentSplit = array_slice(
-                        array: $heartRateStream->getData(),
-                        offset: $sumSplitMovingTimeInSeconds,
-                        length: $movingTimeInSeconds
-                    );
-                    if (0 === count($heartRatesForCurrentSplit)) {
-                        continue; // @codeCoverageIgnore
-                    }
-                    $averageHeartRate = (int) round(array_sum($heartRatesForCurrentSplit) / count($heartRatesForCurrentSplit));
-
-                    $activitySplit->enrichWithAverageHeartRate($averageHeartRate);
-                    $sumSplitMovingTimeInSeconds += $movingTimeInSeconds;
-                }
-            }
 
             $profileChart = null;
             $profileChartHeight = 0;

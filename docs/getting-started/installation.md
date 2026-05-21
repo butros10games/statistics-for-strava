@@ -28,7 +28,9 @@ Start off by showing some :heart: and give this repo a star. Then from your comm
 ```yml
 services:
   app:
+    # The Statistics for Strava Docker image is available on Docker Hub and the GitHub Container Registry
     image: robiningelbrecht/strava-statistics:latest
+    # image: ghcr.io/robiningelbrecht/statistics-for-strava:latest
     container_name: statistics-for-strava
     restart: unless-stopped
     volumes:
@@ -68,7 +70,7 @@ services:
     healthcheck:
       test: [ "CMD", "sh", "-c", "test -f /var/www/storage/database/strava.db && echo 'ok' || exit 1" ]
       start_period: 5s
-    entrypoint: ['bin/console', 'app:daemon:run']
+    command: ['bin/console', 'app:daemon:run']
     networks:
       - statistics-for-strava-network
 

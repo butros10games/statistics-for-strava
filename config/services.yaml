@@ -102,7 +102,9 @@ services:
         arguments: [
             '@=app_config("appearance.heatmap.polylineColor", "#fc6719")',
             '@=app_config("appearance.heatmap.tileLayerUrl", "https://tile.openstreetmap.org/{z}/{x}/{y}.png")',
-            '@=app_config("appearance.heatmap.enableGreyScale", true)'
+            '@=app_config("appearance.heatmap.enableGreyScale", true)',
+            '@=app_config("appearance.heatmap.initialCenter", [])',
+            '@=app_config("appearance.heatmap.initialZoom", 12)'
         ]
 
     App\Application\Build\BuildPhotosHtml\DefaultEnabledPhotoFilters:
@@ -210,6 +212,10 @@ services:
     App\Domain\Activity\SportType\SportTypesToImport:
         factory: [ null, 'from' ]
         arguments: ['@=app_config("import.sportTypesToImport")']
+
+    App\Domain\Activity\Stream\ActivitiesExcludedFromPeakPowerOutputs:
+        factory: [ null, 'from' ]
+        arguments: ['@=app_config("metrics.excludeActivitiesFromPeakPowerOutputs", [])']
 
     App\Domain\Athlete\Weight\AthleteWeightHistory:
         factory: [ null, 'fromArray' ]

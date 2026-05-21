@@ -34,7 +34,7 @@
                     </div>
                     <div class="flex flex-wrap gap-2">
                                                     <div class="filter-dropdown">
-                                <button id="dropdownSportTypesButton" data-dropdown-toggle="dropdownSportTypes" data-dropdown-offset-distance="10" data-dropdown-offset-skidding="0" type="button">
+                                <button id="dropdownSportTypesButton" data-dropdown="dropdownSportTypes" data-dropdown-offset-distance="10" data-dropdown-offset-skidding="0" type="button">
                                     <span>Filter on sport type</span>
                                     <svg class="w-2.5 h-2.5 ms-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewbox="0 0 10 6">
                                         <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4"></path>
@@ -76,7 +76,7 @@
                                 </div>
                             </div>
                                                 <div class="filter-dropdown">
-                            <button id="dropdownDateRangeButton" data-dropdown-toggle="dropdownDateRange" type="button">
+                            <button id="dropdownDateRangeButton" data-dropdown="dropdownDateRange" type="button">
                                 <span>Date</span>
                                 <svg class="w-2.5 h-2.5 ms-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewbox="0 0 10 6">
                                     <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4"></path>
@@ -91,10 +91,17 @@
                                     </div>
                                     <a href="#" class="text-strava-orange text-sm text-right underline" data-datatable-filter-clear="start-date">clear</a>
                                 </div>
+                                <div class="hidden lg:flex flex-wrap gap-1.5 p-3" data-date-preset-filter="start-date">
+                                    <a href="#" data-date-preset="this-week" class="text-xs text-gray-500 hover:text-strava-orange border border-gray-200 hover:border-strava-orange rounded-full px-2.5 py-1 transition-colors">This week</a>
+                                    <a href="#" data-date-preset="last-week" class="text-xs text-gray-500 hover:text-strava-orange border border-gray-200 hover:border-strava-orange rounded-full px-2.5 py-1 transition-colors">Last week</a>
+                                    <a href="#" data-date-preset="this-month" class="text-xs text-gray-500 hover:text-strava-orange border border-gray-200 hover:border-strava-orange rounded-full px-2.5 py-1 transition-colors">This month</a>
+                                    <a href="#" data-date-preset="last-month" class="text-xs text-gray-500 hover:text-strava-orange border border-gray-200 hover:border-strava-orange rounded-full px-2.5 py-1 transition-colors">Last month</a>
+                                    <a href="#" data-date-preset="last-30-days" class="text-xs text-gray-500 hover:text-strava-orange border border-gray-200 hover:border-strava-orange rounded-full px-2.5 py-1 transition-colors">Last 30 days</a>
+                                </div>
                             </div>
                         </div>
                                                     <div class="filter-dropdown">
-                                <button id="dropdownCountriesButton" data-dropdown-toggle="dropdownCountries" data-dropdown-offset-distance="10" data-dropdown-offset-skidding="0" type="button">
+                                <button id="dropdownCountriesButton" data-dropdown="dropdownCountries" data-dropdown-offset-distance="10" data-dropdown-offset-skidding="0" type="button">
                                     <span>Country</span>
                                     <svg class="w-2.5 h-2.5 ms-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewbox="0 0 10 6">
                                         <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4"></path>
@@ -116,7 +123,7 @@
                                 </div>
                             </div>
                                                                             <div class="filter-dropdown">
-                                <button id="dropdownGearsButton" data-dropdown-toggle="dropdownGears" data-dropdown-offset-distance="10" data-dropdown-offset-skidding="0" type="button">
+                                <button id="dropdownGearsButton" data-dropdown="dropdownGears" data-dropdown-offset-distance="10" data-dropdown-offset-skidding="0" type="button">
                                     <span>Gear</span>
                                     <svg class="w-2.5 h-2.5 ms-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewbox="0 0 10 6">
                                         <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4"></path>
@@ -164,7 +171,7 @@
                                 </div>
                             </div>
                                                                             <div class="filter-dropdown">
-                                <button id="dropdownDevicesButton" data-dropdown-toggle="dropdownDevices" data-dropdown-offset-distance="10" data-dropdown-offset-skidding="0" type="button">
+                                <button id="dropdownDevicesButton" data-dropdown="dropdownDevices" data-dropdown-offset-distance="10" data-dropdown-offset-skidding="0" type="button">
                                     <span>Device</span>
                                     <svg class="w-2.5 h-2.5 ms-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewbox="0 0 10 6">
                                         <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4"></path>
@@ -212,7 +219,7 @@
                                 </div>
                             </div>
                                                 <div class="filter-dropdown">
-                            <button id="distanceElevationButton" data-dropdown-toggle="dropdownDistanceElevation" data-dropdown-offset-distance="10" data-dropdown-offset-skidding="0" type="button">
+                            <button id="distanceElevationButton" data-dropdown="dropdownDistanceElevation" data-dropdown-offset-distance="10" data-dropdown-offset-skidding="0" type="button">
                                 <span>Distance &amp; Elevation</span>
                                 <svg class="w-2.5 h-2.5 ms-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewbox="0 0 10 6">
                                     <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4"></path>
@@ -272,7 +279,7 @@
                             </div>
                         </div>
                         <div class="filter-dropdown">
-                            <button id="otherButton" data-dropdown-toggle="dropdownOther" data-dropdown-offset-distance="10" data-dropdown-offset-skidding="0" type="button">
+                            <button id="otherButton" data-dropdown="dropdownOther" data-dropdown-offset-distance="10" data-dropdown-offset-skidding="0" type="button">
                                 <span>Other</span>
                                 <svg class="w-2.5 h-2.5 ms-3" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewbox="0 0 10 6">
                                     <path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="m1 1 4 4 4-4"></path>
@@ -349,7 +356,7 @@
                         <thead class="z-10 sticky top-0 text-xs text-gray-700 uppercase bg-gray-50">
                         <tr>
                             <th scope="col" data-datatable-sort="start-date" class="px-2 py-3 cursor-pointer">
-                                <div class="w-18 flex items-center justify-center" title="Date">
+                                <div class="flex items-center justify-center" title="Date">
                                     <svg class="size-7 text-strava-orange" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" width="24" height="24" fill="none" viewbox="0 0 24 24"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 10h16m-8-3V4M7 7V4m10 3V4M5 20h14a1 1 0 0 0 1-1V7a1 1 0 0 0-1-1H5a1 1 0 0 0-1 1v12a1 1 0 0 0 1 1Zm3-7h.01v.01H8V13Zm4 0h.01v.01H12V13Zm4 0h.01v.01H16V13Zm-8 4h.01v.01H8V17Zm4 0h.01v.01H12V17Zm4 0h.01v.01H16V17Z"></path></svg>
                                     <div class="ml-1.5 group sorting-icon" aria-sort="none">
 <svg class="w-2 h-2 group-aria-desc:text-strava-orange" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewbox="0 0 14 8"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="M13 7 7.674 1.3a.91.91 0 0 0-1.348 0L1 7"></path></svg><svg class="w-2 h-2 group-aria-asc:text-strava-orange" aria-hidden="true" xmlns="http://www.w3.org/2000/svg" fill="none" viewbox="0 0 14 8"><path stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" stroke-width="3" d="m1 1 5.326 5.7a.909.909 0 0 0 1.348 0L13 1"></path></svg>
@@ -378,7 +385,7 @@
 </div>
                                 </div>
                                 <div class="pt-0.5 normal-case text-xxs">
-                                                                        <span data-datatable-summable="elevation">2 305</span>m
+                                                                        <span data-datatable-summable="elevation">2&Acirc;&nbsp;305</span>m
                                 </div>
                             </th>
                             <th scope="col" data-datatable-sort="moving-time" class="px-6 py-3 cursor-pointer">
@@ -418,7 +425,7 @@
 </div>
                                 </div>
                                 <div class="pt-0.5 normal-case text-xxs">
-                                    <span data-datatable-summable="calories">7 091</span>kcal
+                                    <span data-datatable-summable="calories">7&Acirc;&nbsp;091</span>kcal
                                 </div>
                             </th>
                             <th scope="col" data-datatable-sort="power" class="px-6 py-3 cursor-pointer">

@@ -20,6 +20,7 @@ import WorkoutEditor from "./features/planned-session/workout-editor";
 import TrainingPlanAnalysisPromptManager from "./features/training-plan/analysis-prompt";
 import MobileSidebarTabs from "./components/mobile-sidebar-tabs";
 import ManualSyncManager from "./features/account/manual-sync";
+import DropdownManager from "./components/dropdown";
 
 const $main = document.querySelector("main");
 
@@ -34,6 +35,7 @@ const modalManager = new ModalManager(router);
 const chartManager = new ChartManager(router, modalManager);
 const leafletMapManager = new LeafletMapManager();
 const tabsManager = new TabsManager();
+const dropdownManager = new DropdownManager();
 const dataTableManager = new DataTableManager();
 const fullscreenManager = new FullscreenManager();
 const scrollTo = new ScrollTo();
@@ -53,9 +55,9 @@ const initElements = (rootNode) => {
     lazyLoad.update();
 
     tabsManager.init(rootNode);
+    dropdownManager.init(rootNode);
     initPopovers();
     initTooltips();
-    initDropdowns();
     initAccordions();
 
     modalManager.init(rootNode);

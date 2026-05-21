@@ -1,4 +1,5 @@
 import {FilterStorage} from "./storage";
+import {DatePreset} from "./date-preset";
 
 export class FilterManager {
     constructor(wrapper) {
@@ -104,7 +105,7 @@ export class FilterManager {
     }
 
     updateDropdownState(activeFilters) {
-        this.wrapper.querySelectorAll('.filter-dropdown [data-dropdown-toggle]').forEach(el => {
+        this.wrapper.querySelectorAll('.filter-dropdown [data-dropdown]').forEach(el => {
             el.classList.remove('active');
         });
 
@@ -114,13 +115,13 @@ export class FilterManager {
                     .querySelector(`[data-datatable-filter="${key}[]"]`)
                     ?.closest('.filter-dropdown');
 
-                const toggle = dropdown?.querySelector('[data-dropdown-toggle]');
+                const toggle = dropdown?.querySelector('[data-dropdown]');
                 if (toggle) toggle.classList.add('active');
                 return;
             }
 
             const dropdown = this.wrapper.querySelector(`[data-dataTable-filter="${key}"]:checked`)?.closest('.filter-dropdown');
-            const toggle = dropdown?.querySelector('[data-dropdown-toggle]');
+            const toggle = dropdown?.querySelector('[data-dropdown]');
             if (toggle) toggle.classList.add('active');
         });
     }
@@ -174,6 +175,17 @@ export class FilterManager {
             }
         });
         FilterStorage.clearAll(tableName);
+    }
+
+    applyDatePreset(presetName, filterName) {
+        const range = DatePreset.resolve(presetName);
+        if (!range) return;
+
+        const fromInput = this.wrapper.querySelector(`input[name="${filterName}[from]"]`);
+        const toInput = this.wrapper.querySelector(`input[name="${filterName}[to]"]`);
+
+        if (fromInput) fromInput.valueAsDate = range.from;
+        if (toInput) toInput.valueAsDate = range.to;
     }
 
     resetOne(name) {

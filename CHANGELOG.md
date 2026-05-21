@@ -1,3 +1,183 @@
+# [v4.7.12](https://github.com/robiningelbrecht/statistics-for-strava/releases/tag/v4.7.12) - 2026-05-14
+
+## What's Changed
+* Fix date column wrapping with non-default date formats by @czdanika in https://github.com/robiningelbrecht/statistics-for-strava/pull/2039
+* Reverted ISSUE #2033: Normalize daily TSS and daily TRIMP by @robiningelbrecht in https://github.com/robiningelbrecht/statistics-for-strava/pull/2034
+
+**Full Changelog**: https://github.com/robiningelbrecht/statistics-for-strava/compare/v4.7.11...v4.7.12
+
+# [v4.7.11](https://github.com/robiningelbrecht/statistics-for-strava/releases/tag/v4.7.11) - 2026-05-13
+
+## New Features
+* Added kilojoules (kJ) to the activity detail page
+
+## Improvements
+* Updated the German (de_DE) ICU translation file
+* Added documentation for installing via HelmForge on Kubernetes
+* Added a new "Current year" rewind option
+* Normalized daily TSS and TRIMP calculations
+
+## Bug fixes
+* Fixed the dropdown menu not closing when clicking a link
+* Fixed GAP calculation issues caused by repeated identical GPS coordinates
+
+## Technical details
+* Update messages+intl-icu.de_DE.yaml by @effectpears in https://github.com/robiningelbrecht/statistics-for-strava/pull/2026
+* docs: add HelmForge Kubernetes install guide by @mberlofa in https://github.com/robiningelbrecht/statistics-for-strava/pull/2024
+* feat: Add YTD rewind option by @paquiro in https://github.com/robiningelbrecht/statistics-for-strava/pull/2029
+* ISSUE #2033: Normalize daily TSS and daily TRIMP by @robiningelbrecht in https://github.com/robiningelbrecht/statistics-for-strava/pull/2034
+* ISSUE #2027: Show kilojoules on activity detail page by @robiningelbrecht in https://github.com/robiningelbrecht/statistics-for-strava/pull/2036
+* ISSUE #2035: We need to close the dropdown menu when clicking a link by @robiningelbrecht in https://github.com/robiningelbrecht/statistics-for-strava/pull/2037
+* fix GAP for repeated moving coordinates by @cgtobi in https://github.com/robiningelbrecht/statistics-for-strava/pull/2031
+
+## New Contributors
+* @mberlofa made their first contribution in https://github.com/robiningelbrecht/statistics-for-strava/pull/2024
+* @paquiro made their first contribution in https://github.com/robiningelbrecht/statistics-for-strava/pull/2029
+
+**Full Changelog**: https://github.com/robiningelbrecht/statistics-for-strava/compare/v4.7.10...v4.7.11
+
+# [v4.7.10](https://github.com/robiningelbrecht/statistics-for-strava/releases/tag/v4.7.10) - 2026-05-07
+
+## Improvements
+* Use non-breaking space as thousands separator to prevent line wrapping
+* Allow to set Zwift level over 100
+* Improve split GAP calculation and values
+
+## Technical details
+* fix: use non-breaking space as thousands separator to prevent line wrapping by @vrkrebs in https://github.com/robiningelbrecht/statistics-for-strava/pull/2015
+* ISSUE #2016: Allow to set Zwift level over 100 by @robiningelbrecht in https://github.com/robiningelbrecht/statistics-for-strava/pull/2017
+* ISSUE #2018: Use docker compose CMD instead of ENTRYPOINT by @robiningelbrecht in https://github.com/robiningelbrecht/statistics-for-strava/pull/2019
+* fix: stabilize split GAP values and add GAP recalculation command by @cgtobi in https://github.com/robiningelbrecht/statistics-for-strava/pull/1997
+
+## New Contributors
+* @vrkrebs made their first contribution in https://github.com/robiningelbrecht/statistics-for-strava/pull/2015
+
+**Full Changelog**: https://github.com/robiningelbrecht/statistics-for-strava/compare/v4.7.9...v4.7.10
+
+# [v4.7.9](https://github.com/robiningelbrecht/statistics-for-strava/releases/tag/v4.7.9) - 2026-05-04
+
+## New features
+* SFS Docker image is now also published on the GitHub Container Registry.
+* Added a Hungarian (hu_HU) translation.
+* Added an option to configure the heatmap to load with a fixed viewport.
+
+```yaml
+appearance:
+  heatmap:
+    # Optional, sets the initial center point of the heatmap as [latitude, longitude].
+    # When set together with initialZoom, the map will use this fixed viewport instead of auto-fitting to your most active area.
+    # 🔥 PRO tip: You can easily get the latitude and longitude by navigating to a location in Google Maps. The coordinates are shown in the URL.
+    # Leave empty to auto-fit.
+    initialCenter: null
+    # initialCenter: [51.05, 3.72]
+    # Optional, sets the initial zoom level of the heatmap (1-18, where 1 is fully zoomed out and 18 is street-level).
+    # Must be used together with initialCenter.
+    initialZoom: null
+    # initialZoom: 12
+```
+
+## Improvements
+* Added winter sports to the Yearly stats chart.
+* Added pre-configured quick links to the date filter options.
+
+## Bug fixes
+* Fixed the incorrect “Best Efforts YTD” label.
+* Fixed an issue where the label of the rightmost data point in weekly stats was partially cut off.
+* Fixed pace rounding in the Segments charts.
+
+## Technical details
+* ISSUE #1996: Update docs with Github container registry reference by @robiningelbrecht in https://github.com/robiningelbrecht/statistics-for-strava/pull/1998
+* Add Hungarian (hu_HU) translation by @czdanika in https://github.com/robiningelbrecht/statistics-for-strava/pull/2002
+* ISSUE #2001: Fixed best efforts YTD label by @robiningelbrecht in https://github.com/robiningelbrecht/statistics-for-strava/pull/2003
+* ISSUE #1999: Weekly stats, data label of rightmost data point is partially cutoff by @robiningelbrecht in https://github.com/robiningelbrecht/statistics-for-strava/pull/2004
+* ISSUE #2000: Pace rounding in Segments charts by @robiningelbrecht in https://github.com/robiningelbrecht/statistics-for-strava/pull/2005
+* ISSUE #2006: Add winter sports to Yearly stats chart by @robiningelbrecht in https://github.com/robiningelbrecht/statistics-for-strava/pull/2007
+* ISSUE #2008: Add pre-configured links to the date filters by @robiningelbrecht in https://github.com/robiningelbrecht/statistics-for-strava/pull/2010
+* ISSUE #2009: Allow to configure heatmap to load on fixed view port by @robiningelbrecht in https://github.com/robiningelbrecht/statistics-for-strava/pull/2011
+
+## New Contributors
+* @czdanika made their first contribution in https://github.com/robiningelbrecht/statistics-for-strava/pull/2002
+
+**Full Changelog**: https://github.com/robiningelbrecht/statistics-for-strava/compare/v4.7.8...v4.7.9
+
+# [v4.7.8](https://github.com/robiningelbrecht/statistics-for-strava/releases/tag/v4.7.8) - 2026-04-28
+
+## Bug fixes
+* ISSUE #1993: An exception has been thrown during the rendering of a template by @robiningelbrecht in https://github.com/robiningelbrecht/statistics-for-strava/pull/1994
+
+**Full Changelog**: https://github.com/robiningelbrecht/statistics-for-strava/compare/v4.7.7...v4.7.8
+
+# [v4.7.7](https://github.com/robiningelbrecht/statistics-for-strava/releases/tag/v4.7.7) - 2026-04-27
+
+## New features
+* Introduced Grade Adjusted Pace (GAP) for running activities
+* Training goal widget allows goals to be configured based on a specific date range
+
+```yaml
+'config': {
+  'goals': {
+    'weekly': [
+      { label: 'Cycling', enabled: true, type: 'distance', unit: 'km', goal: 200,  restrictToDateRange: {from: '2026-01-01', to: '2026-03-31'} }
+    ],
+  },
+}
+```
+
+https://statistics-for-strava-docs.robiningelbrecht.be/#/configuration/dashboard-widgets?id=traininggoals
+
+## Bug fixes
+* Fixed cadence accuracy for running and walking activities by correctly doubling the cadence value where needed.
+
+## Technical details
+* ISSUE #1974: Cadence needs to be doubled for runs and walks by @robiningelbrecht in https://github.com/robiningelbrecht/statistics-for-strava/pull/1978
+* feat(translations): more fr by @christian-vdz in https://github.com/robiningelbrecht/statistics-for-strava/pull/1972
+* ISSUE #1976: Provide GitHub Container Packages as alternative to dock… by @robiningelbrecht in https://github.com/robiningelbrecht/statistics-for-strava/pull/1977
+* ISSUE #1979: Calculate and display Grade Adjusted Pace (GAP) for running activities by @cgtobi https://github.com/robiningelbrecht/statistics-for-strava/pull/1981
+* ISSUE #1984: Move activity split average heart rate calculation to CalculateActivityMetrics pipeline by @robiningelbrecht in https://github.com/robiningelbrecht/statistics-for-strava/pull/1989
+* ISSUE #1988: Training goal based on date range by @robiningelbrecht in https://github.com/robiningelbrecht/statistics-for-strava/pull/1991
+
+## New Contributors
+* @cgtobi made their first contribution in https://github.com/robiningelbrecht/statistics-for-strava/pull/1981
+
+**Full Changelog**: https://github.com/robiningelbrecht/statistics-for-strava/compare/v4.7.6...v4.7.7
+
+# [v4.7.6](https://github.com/robiningelbrecht/statistics-for-strava/releases/tag/v4.7.6) - 2026-04-13
+
+## New features
+* Added a new Cadence Distribution chart to better visualize cadence data
+* Added configuration support to exclude specific activities from Peak Power Outputs calculations.
+
+```yaml
+metrics:
+  # An array of activity ids to exclude from peak power outputs. 
+  # This allows you to blacklist specific activity IDs from the peak power calculation.
+  # ["123456789", "987654321"]
+  excludeActivitiesFromPeakPowerOutputs: []
+```
+
+## Improvements
+* Added French translations (thanks to @christian-vdz).
+* Added zoom/slider controls to the FTP dashboard widget for easier navigation.
+* Improved Athlete Weight History tooltip formatting for clearer and more consistent display.
+
+## Bug fixes
+* Fixed activity sorting issues where ordering by distance and pace could be slightly incorrect.
+* Fixed challenge imports by removing duplicate imported challenges.
+
+## Technical details
+* feat(translations): new fr by @christian-vdz in https://github.com/robiningelbrecht/statistics-for-strava/pull/1951
+* ISSUE #1960: Sorting Activities by Distance and Pace is slightly off by @robiningelbrecht in https://github.com/robiningelbrecht/statistics-for-strava/pull/1961
+* ISSUE #1963: Remove duplicate imported challenges by @robiningelbrecht in https://github.com/robiningelbrecht/statistics-for-strava/pull/1964
+* ISSUE #1958: Zoom/Slider for FTP dashboard widget by @robiningelbrecht in https://github.com/robiningelbrecht/statistics-for-strava/pull/1965
+* ISSUE #1957: Allow excluding specific activities from Peak Power Outputs via config by @robiningelbrecht in https://github.com/robiningelbrecht/statistics-for-strava/pull/1966
+* ISSUE #1959: Distribution Chart - Cadence by @robiningelbrecht in https://github.com/robiningelbrecht/statistics-for-strava/pull/1967
+* ISSUE #1968: AthleteWeightHistoryChart tooltip formatting by @robiningelbrecht in https://github.com/robiningelbrecht/statistics-for-strava/pull/1970
+
+## New Contributors
+* @christian-vdz made their first contribution in https://github.com/robiningelbrecht/statistics-for-strava/pull/1951
+
+**Full Changelog**: https://github.com/robiningelbrecht/statistics-for-strava/compare/v4.7.5...v4.7.6
+
 # [v4.7.5](https://github.com/robiningelbrecht/statistics-for-strava/releases/tag/v4.7.5) - 2026-04-01
 
 ## Improvements

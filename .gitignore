@@ -9,6 +9,8 @@ node_modules
 /src/Entity
 /src/Repository
 .idea
+config/reference.php
+*-poc.html
 
 ###> friendsofphp/php-cs-fixer ###
 /.php-cs-fixer.php
