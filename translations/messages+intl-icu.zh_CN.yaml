@@ -95,6 +95,7 @@ Build: Build
 CTL: CTL
 'CTL (Fitness)': 'CTL (体能)'
 Cadence: 踏频
+'Cadence distribution': 'Cadence distribution'
 Calendar: Calendar
 Calories: 卡路里
 'Calories burned': 燃烧的卡路里
@@ -223,6 +224,7 @@ Email: Email
 'Enable integrations.wellness.enabled in your app config before Garmin sync can run.': 'Enable integrations.wellness.enabled in your app config before Garmin sync can run.'
 Enabled: Enabled
 'End day': 'End day'
+Energy: Energy
 'Enter fullscreen mode': 'Enter fullscreen mode'
 "Enter your email and we'll create a reset link for you": "Enter your email and we'll create a reset link for you"
 Est.: Est.
@@ -260,6 +262,7 @@ Forecast: Forecast
 Fri: 周五
 Friday: 星期五
 'Full-distance triathlon': 'Full-distance triathlon'
+GAP: GAP
 'Garmin sync uses the wellness bridge configuration from your app environment and config files.': 'Garmin sync uses the wellness bridge configuration from your app environment and config files.'
 'Garmin wellness': 'Garmin wellness'
 Gear: 装备
@@ -334,12 +337,15 @@ Key: Key
 Label: Label
 Lap: 圈
 Laps: 圈
+'Last 30 days': 'Last 30 days'
 'Last 7 days': 'Last 7 days'
 'Last activity': 'Last activity'
 'Last effort': 最后努力
 'Last effort date': 'Last effort date'
 'Last imported Garmin day': 'Last imported Garmin day'
 'Last maintenance': 最后维护
+'Last month': 'Last month'
+'Last week': 'Last week'
 'Last {numberOfDays} days': '最近{numberOfDays}天'
 Latest: Latest
 'Latest sync': 'Latest sync'
@@ -482,6 +488,7 @@ Personalization: Personalization
 Phase: Phase
 Photo: 照片
 Photos: 照片
+'Physical Therapy': 'Physical Therapy'
 'Pick which days you do each sport and mark your long sessions.': 'Pick which days you do each sport and mark your long sessions.'
 'Pickle Ball': 匹克球
 Pilates: 普拉提
@@ -773,6 +780,7 @@ Tennis: 网球
 Thinking...: 思考中...
 'This chart summarizes how you train. Each axis reflects a different normalized training habit, so higher values mean stronger emphasis.': 'This chart summarizes how you train. Each axis reflects a different normalized training habit, so higher values mean stronger emphasis.'
 'This feature is currently disabled': 功能当前被禁用
+'This month': 'This month'
 'This plan starts the day after': 'This plan starts the day after'
 'This sets the default for generated running workouts. Individual sessions can still switch to the better format.': 'This sets the default for generated running workouts. Individual sessions can still switch to the better format.'
 'This week': 'This week'
@@ -880,7 +888,6 @@ Workout: 锻炼
 'Workout assistant': 'Workout assistant'
 'Workout preview': 'Workout preview'
 'Workout type': 锻炼类型
-YTD: YTD
 Year: 年
 Yearly: Yearly
 'Yearly stats': 年度统计
@@ -890,7 +897,6 @@ Yoga: 瑜伽
 "You recorded workouts in {numberOfCountriesWithWorkouts} different countries, that's {percentage} of all countries 🌍": '您记录了{numberOfCountriesWithWorkouts}个不同国家/地区的锻炼情况，占所有国家/地区的百分之 {percentage} 🌍'
 'Your PB badge': PB徽章
 'Your Strava badge': Strava徽章
-'Your Strava {year} rewind will be available on the 24th of December.': '您的Strava {year}年回顾将于12月24日上线。'
 'Your Zwift badge': Zwift徽章
 'Your badge(s)': 徽章
 'Your saved planned sessions are now included as their own forecast scenario for the next 7 days.': 'Your saved planned sessions are now included as their own forecast scenario for the next 7 days.'

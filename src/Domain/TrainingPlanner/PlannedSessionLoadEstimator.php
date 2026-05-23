@@ -352,7 +352,7 @@ final class PlannedSessionLoadEstimator
     {
         $athlete = $this->athleteRepository->find();
         $measurementDay = SerializableDateTime::fromDateTimeImmutable($on);
-        $restingHeartRate = $athlete->getRestingHeartRateFormula($measurementDay);
+        $restingHeartRate = $athlete->getRestingHeartRate($measurementDay);
         $maxHeartRate = $athlete->getMaxHeartRate($measurementDay);
         if ($maxHeartRate <= $restingHeartRate) {
             return null;
@@ -580,7 +580,7 @@ final class PlannedSessionLoadEstimator
         }
 
         $athlete = $this->athleteRepository->find();
-        $restingHeartRate = $athlete->getRestingHeartRateFormula($activity->getStartDate());
+        $restingHeartRate = $athlete->getRestingHeartRate($activity->getStartDate());
         $maxHeartRate = $athlete->getMaxHeartRate($activity->getStartDate());
         if ($maxHeartRate <= $restingHeartRate) {
             return null;

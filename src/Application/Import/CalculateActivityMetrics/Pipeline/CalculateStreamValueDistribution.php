@@ -38,8 +38,16 @@ final readonly class CalculateStreamValueDistribution implements CalculateActivi
         foreach ($activityIdsToProcess as $activityId) {
             $activity = $this->activityRepository->find($activityId);
             $sportType = $activity->getSportType();
+            $existingDistributionMetrics = $this->activityStreamMetricRepository->findByActivityIdAndMetricType(
+                $activityId,
+                ActivityStreamMetricType::VALUE_DISTRIBUTION,
+            );
 
             foreach (StreamType::thatSupportDistributionValues() as $streamType) {
+                if ($existingDistributionMetrics->filterOnStreamType($streamType) instanceof ActivityStreamMetric) {
+                    continue;
+                }
+
                 $stream = null;
                 try {
                     $stream = $this->activityStreamRepository->findOneByActivityAndStreamType(

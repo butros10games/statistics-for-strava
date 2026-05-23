@@ -6,6 +6,7 @@ namespace App\Application\Build\BuildMonthlyStatsHtml;
 
 use App\Domain\Activity\ActivityType;
 use App\Domain\Activity\EnrichedActivities;
+use App\Domain\Activity\SportType\SportTypes;
 use App\Domain\Calendar\Calendar;
 use App\Domain\Calendar\FindMonthlyStats\FindMonthlyStats;
 use App\Domain\Calendar\FindMonthlyStats\FindMonthlyStatsResponse;
@@ -144,6 +145,7 @@ final readonly class BuildMonthlyStatsHtmlCommandHandler implements CommandHandl
             'monthly-stats.html',
             $this->twig->load('html/calendar/monthly-stats.html.twig')->render($this->buildMonthlyStatsPageViewData(
                 month: $currentMonth,
+                    allMonths: $allMonths,
                 firstMonthId: $firstMonthId,
                 lastMonthId: $lastMonthId,
                 monthlyStats: $monthlyStats,
@@ -179,6 +181,7 @@ final readonly class BuildMonthlyStatsHtmlCommandHandler implements CommandHandl
                 'monthly-stats/month-'.$month->getId().'.html',
                 $this->twig->load('html/calendar/monthly-stats.html.twig')->render($this->buildMonthlyStatsPageViewData(
                     month: $month,
+                    allMonths: $allMonths,
                     firstMonthId: $firstMonthId,
                     lastMonthId: $lastMonthId,
                     monthlyStats: $monthlyStats,
@@ -273,6 +276,7 @@ final readonly class BuildMonthlyStatsHtmlCommandHandler implements CommandHandl
      */
     private function buildMonthlyStatsPageViewData(
         Month $month,
+        Months $allMonths,
         string $firstMonthId,
         string $lastMonthId,
         FindMonthlyStatsResponse $monthlyStats,
@@ -302,6 +306,10 @@ final readonly class BuildMonthlyStatsHtmlCommandHandler implements CommandHandl
     ): array {
         return [
             'challenges' => $allChallenges,
+            'months' => $allMonths,
+            'monthlyStatistics' => $monthlyStats,
+            'sportTypes' => SportTypes::all(),
+            'totals' => $monthlyStats->getTotals(),
             'currentMonthStatistics' => $monthlyStats->getForMonth($month),
             'currentMonthPlannedSessions' => $plannedSessionsByMonth[$month->getId()] ?? [],
             'currentMonthRaceEvents' => $raceEventsByMonth[$month->getId()] ?? [],

@@ -416,7 +416,7 @@ final class PlannedSessionLoadEstimatorTest extends ContainerTestCase
     private function calculateExpectedLoad(int $averageHeartRate, int $movingTimeInSeconds, SerializableDateTime $on): float
     {
         $athlete = $this->athleteRepository->find();
-        $restingHeartRate = $athlete->getRestingHeartRateFormula($on);
+        $restingHeartRate = $athlete->getRestingHeartRate($on);
         $maxHeartRate = $athlete->getMaxHeartRate($on);
         $intensity = ($averageHeartRate - $restingHeartRate) / ($maxHeartRate - $restingHeartRate);
         $intensity = max(0.0, min(1.5, $intensity));

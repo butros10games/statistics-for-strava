@@ -31,6 +31,11 @@ final class SFSChatHistory extends BaseInMemoryChatHistory
             return;
         }
 
+        $normalizedContent = trim($content);
+        if ('' === $normalizedContent || '0' === $normalizedContent) {
+            return;
+        }
+
         $this->commandBus->dispatch(new AddChatMessage(
             message: $content,
             messageRole: MessageRole::from($message->getRole()),

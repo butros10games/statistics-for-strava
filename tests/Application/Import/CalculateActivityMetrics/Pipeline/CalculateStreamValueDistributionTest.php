@@ -143,6 +143,60 @@ class CalculateStreamValueDistributionTest extends ContainerTestCase
         yield 'imperial' => [UnitSystem::IMPERIAL];
     }
 
+    public function testProcessSkipsExistingDistributionMetricsForPartiallyProcessedActivities(): void
+    {
+        $output = new SpyOutput();
+        $activityId = ActivityId::fromUnprefixed(42);
+        $activityRepository = $this->getContainer()->get(ActivityRepository::class);
+        $streamRepository = $this->getContainer()->get(ActivityStreamRepository::class);
+        $metricRepository = $this->getContainer()->get(ActivityStreamMetricRepository::class);
+
+        $activityRepository->add(ActivityWithRawData::fromState(
+            ActivityBuilder::fromDefaults()
+                ->withActivityId($activityId)
+                ->withSportType(SportType::RIDE)
+                ->withStartDateTime(SerializableDateTime::fromString('2021-03-02'))
+                ->build(),
+            [],
+        ));
+
+        $streamRepository->add(
+            ActivityStreamBuilder::fromDefaults()
+                ->withActivityId($activityId)
+                ->withStreamType(StreamType::WATTS)
+                ->withData([100, 150, 150, 200])
+                ->build()
+        );
+        $streamRepository->add(
+            ActivityStreamBuilder::fromDefaults()
+                ->withActivityId($activityId)
+                ->withStreamType(StreamType::HEART_RATE)
+                ->withData([120, 121, 121, 122])
+                ->build()
+        );
+
+        $metricRepository->add(ActivityStreamMetric::create(
+            activityId: $activityId,
+            streamType: StreamType::WATTS,
+            metricType: ActivityStreamMetricType::VALUE_DISTRIBUTION,
+            data: [100 => 1, 150 => 2, 200 => 1],
+        ));
+
+        $this->calculateStreamValueDistribution->process($output);
+
+        $metrics = $metricRepository->findByActivityIdAndMetricType($activityId, ActivityStreamMetricType::VALUE_DISTRIBUTION);
+
+        $this->assertCount(4, $metrics);
+        $this->assertSame([100 => 1, 150 => 2, 200 => 1], $metrics->filterOnStreamType(StreamType::WATTS)?->getData());
+        $this->assertSame([120 => 1, 121 => 2, 122 => 1], $metrics->filterOnStreamType(StreamType::HEART_RATE)?->getData());
+        $this->assertSame([], $metrics->filterOnStreamType(StreamType::CADENCE)?->getData());
+        $this->assertSame([], $metrics->filterOnStreamType(StreamType::VELOCITY)?->getData());
+
+        $this->calculateStreamValueDistribution->process(new SpyOutput());
+
+        $this->assertCount(4, $metricRepository->findByActivityIdAndMetricType($activityId, ActivityStreamMetricType::VALUE_DISTRIBUTION));
+    }
+
     #[\Override]
     protected function setUp(): void
     {

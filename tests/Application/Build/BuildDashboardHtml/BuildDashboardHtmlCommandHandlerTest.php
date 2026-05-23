@@ -46,6 +46,7 @@ class BuildDashboardHtmlCommandHandlerTest extends BuildAppFilesTestCase
                 elevation: Meter::from(0),
                 startingCoordinate: null,
                 calories: 0,
+                kilojoules: null,
                 averagePower: null,
                 maxPower: null,
                 averageSpeed: KmPerHour::from(30),

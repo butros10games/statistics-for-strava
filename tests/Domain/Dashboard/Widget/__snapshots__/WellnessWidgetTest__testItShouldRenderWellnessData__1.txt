@@ -77,9 +77,9 @@
     <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
         <div class="rounded-lg border border-gray-100 bg-gray-50 p-4">
             <div class="text-sm text-gray-500">Steps</div>
-            <div class="mt-1 text-2xl font-semibold text-gray-900">9 876</div>
+            <div class="mt-1 text-2xl font-semibold text-gray-900">9 876</div>
             <div class="text-xs text-gray-500 mt-1">
-                30d avg: 11 111
+                30d avg: 11 111
             </div>
         </div>
         <div class="rounded-lg border border-gray-100 bg-gray-50 p-4">

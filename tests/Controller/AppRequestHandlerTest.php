@@ -74,7 +74,7 @@ final class AppRequestHandlerTest extends WebTestCase
         $this->client->request('GET', '/');
 
         self::assertResponseIsSuccessful();
-        self::assertStringContainsString('Tempo | Ada Lovelace', (string) $this->client->getResponse()->getContent());
+        self::assertStringContainsString('Statistics for Strava | Ada Lovelace', (string) $this->client->getResponse()->getContent());
         self::assertStringContainsString('id="js-loaded-content"', (string) $this->client->getResponse()->getContent());
     }
 }
