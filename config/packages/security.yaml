@@ -24,6 +24,7 @@ security:
                 target: /login
 
     access_control:
+        - { path: ^/healthz$, roles: PUBLIC_ACCESS }
         - { path: ^/strava/webhook, roles: PUBLIC_ACCESS }
         - { path: ^/(login|register|reset-password|verify-email), roles: PUBLIC_ACCESS }
         - { path: ^/assets, roles: PUBLIC_ACCESS }
