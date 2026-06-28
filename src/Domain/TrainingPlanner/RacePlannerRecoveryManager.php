@@ -56,6 +56,7 @@ final readonly class RacePlannerRecoveryManager
             $planningContext['existingBlocks'],
             $planningContext['existingSessions'],
         );
+        $linkedTrainingPlan = $planningContext['linkedTrainingPlan'];
 
         foreach ($missingRecoveryBlocks as $proposedTrainingBlock) {
             $this->trainingBlockRepository->upsert(TrainingBlock::create(
@@ -90,7 +91,10 @@ final readonly class RacePlannerRecoveryManager
                 linkStatus: PlannedSessionLinkStatus::UNLINKED,
                 createdAt: $now,
                 updatedAt: $now,
+                ownerUserId: $linkedTrainingPlan?->getOwnerUserId(),
                 workoutSteps: $this->mapWorkoutStepsForPlannedSession($proposedSession->getWorkoutSteps()),
+                sessionSource: $linkedTrainingPlan instanceof TrainingPlan ? PlannedSessionSource::TRAINING_PLAN : PlannedSessionSource::RACE_PLANNER,
+                sourceTrainingPlanId: $linkedTrainingPlan?->getId(),
             ));
         }
 
@@ -306,7 +310,7 @@ final readonly class RacePlannerRecoveryManager
     }
 
     /**
-     * @return array{proposal: TrainingPlanProposal, existingBlocks: list<TrainingBlock>, existingSessions: list<PlannedSession>}
+     * @return array{proposal: TrainingPlanProposal, existingBlocks: list<TrainingBlock>, existingSessions: list<PlannedSession>, linkedTrainingPlan: ?TrainingPlan}
      */
     private function buildPlanningContext(RaceEvent $targetRace, SerializableDateTime $now): array
     {
@@ -357,6 +361,7 @@ final readonly class RacePlannerRecoveryManager
             ),
             'existingBlocks' => $existingBlocks,
             'existingSessions' => $existingSessions,
+            'linkedTrainingPlan' => $linkedTrainingPlan,
         ];
     }
 

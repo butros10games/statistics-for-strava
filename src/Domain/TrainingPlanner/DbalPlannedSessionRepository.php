@@ -28,16 +28,19 @@ final readonly class DbalPlannedSessionRepository extends DbalRepository impleme
         $ownerUserId = $this->resolveOwnerUserId($plannedSession->getOwnerUserId());
 
         $sql = 'INSERT INTO PlannedSession (
-                    plannedSessionId, ownerUserId, day, activityType, title, notes, targetLoad, targetDurationInSeconds,
-                    targetIntensity, templateActivityId, workoutSteps, estimationSource, linkedActivityId, linkStatus,
-                    createdAt, updatedAt
+                    plannedSessionId, ownerUserId, sessionSource, sourceTrainingPlanId, protectedFromPlanMutation,
+                    day, activityType, title, notes, targetLoad, targetDurationInSeconds, targetIntensity,
+                    templateActivityId, workoutSteps, estimationSource, linkedActivityId, linkStatus, createdAt, updatedAt
                 ) VALUES (
-                    :plannedSessionId, :ownerUserId, :day, :activityType, :title, :notes, :targetLoad, :targetDurationInSeconds,
-                    :targetIntensity, :templateActivityId, :workoutSteps, :estimationSource, :linkedActivityId, :linkStatus,
-                    :createdAt, :updatedAt
+                    :plannedSessionId, :ownerUserId, :sessionSource, :sourceTrainingPlanId, :protectedFromPlanMutation,
+                    :day, :activityType, :title, :notes, :targetLoad, :targetDurationInSeconds, :targetIntensity,
+                    :templateActivityId, :workoutSteps, :estimationSource, :linkedActivityId, :linkStatus, :createdAt, :updatedAt
                 )
                 ON CONFLICT(`plannedSessionId`) DO UPDATE SET
                     ownerUserId = excluded.ownerUserId,
+                    sessionSource = excluded.sessionSource,
+                    sourceTrainingPlanId = excluded.sourceTrainingPlanId,
+                    protectedFromPlanMutation = excluded.protectedFromPlanMutation,
                     day = excluded.day,
                     activityType = excluded.activityType,
                     title = excluded.title,
@@ -56,6 +59,9 @@ final readonly class DbalPlannedSessionRepository extends DbalRepository impleme
         $this->connection->executeStatement($sql, [
             'plannedSessionId' => (string) $plannedSession->getId(),
             'ownerUserId' => $ownerUserId?->__toString(),
+            'sessionSource' => $plannedSession->getSessionSource()->value,
+            'sourceTrainingPlanId' => $plannedSession->getSourceTrainingPlanId()?->__toString(),
+            'protectedFromPlanMutation' => $plannedSession->isProtectedFromPlanMutation() ? 1 : 0,
             'day' => $plannedSession->getDay(),
             'activityType' => $plannedSession->getActivityType()->value,
             'title' => $plannedSession->getTitle(),
@@ -179,6 +185,9 @@ final readonly class DbalPlannedSessionRepository extends DbalRepository impleme
             updatedAt: SerializableDateTime::fromString($result['updatedAt']),
             ownerUserId: null === ($result['ownerUserId'] ?? null) ? null : AppUserId::fromString((string) $result['ownerUserId']),
             workoutSteps: Json::decode((string) ($result['workoutSteps'] ?? '[]')),
+            sessionSource: PlannedSessionSource::from((string) ($result['sessionSource'] ?? PlannedSessionSource::MANUAL->value)),
+            sourceTrainingPlanId: null === ($result['sourceTrainingPlanId'] ?? null) ? null : TrainingPlanId::fromString((string) $result['sourceTrainingPlanId']),
+            protectedFromPlanMutation: (bool) ($result['protectedFromPlanMutation'] ?? false),
         );
     }
 

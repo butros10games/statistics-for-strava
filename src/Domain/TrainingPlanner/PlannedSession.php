@@ -14,6 +14,7 @@ use Doctrine\ORM\Mapping as ORM;
 #[ORM\Table(name: 'PlannedSession')]
 #[ORM\Index(name: 'PlannedSession_day', columns: ['day'])]
 #[ORM\Index(name: 'PlannedSession_linkedActivityId', columns: ['linkedActivityId'])]
+#[ORM\Index(name: 'PlannedSession_sourceTrainingPlanId', columns: ['sourceTrainingPlanId'])]
 final readonly class PlannedSession
 {
     /**
@@ -24,6 +25,12 @@ final readonly class PlannedSession
         private PlannedSessionId $plannedSessionId,
         #[ORM\Column(type: 'string', nullable: true)]
         private ?AppUserId $ownerUserId,
+        #[ORM\Column(type: 'string', options: ['default' => 'manual'])]
+        private PlannedSessionSource $sessionSource,
+        #[ORM\Column(type: 'string', nullable: true)]
+        private ?TrainingPlanId $sourceTrainingPlanId,
+        #[ORM\Column(type: 'boolean', options: ['default' => false])]
+        private bool $protectedFromPlanMutation,
         #[ORM\Column(type: 'datetime_immutable')]
         private SerializableDateTime $day,
         #[ORM\Column(type: 'string')]
@@ -76,10 +83,16 @@ final readonly class PlannedSession
         SerializableDateTime $updatedAt,
         ?AppUserId $ownerUserId = null,
         array $workoutSteps = [],
+        PlannedSessionSource $sessionSource = PlannedSessionSource::MANUAL,
+        ?TrainingPlanId $sourceTrainingPlanId = null,
+        bool $protectedFromPlanMutation = false,
     ): self {
         return new self(
             plannedSessionId: $plannedSessionId,
             ownerUserId: $ownerUserId,
+            sessionSource: $sessionSource,
+            sourceTrainingPlanId: PlannedSessionSource::TRAINING_PLAN === $sessionSource ? $sourceTrainingPlanId : null,
+            protectedFromPlanMutation: $protectedFromPlanMutation,
             day: $day->setTime(0, 0),
             activityType: $activityType,
             title: self::normalizeNullableString($title),
@@ -105,6 +118,42 @@ final readonly class PlannedSession
     public function getOwnerUserId(): ?AppUserId
     {
         return $this->ownerUserId;
+    }
+
+    public function getSessionSource(): PlannedSessionSource
+    {
+        return $this->sessionSource;
+    }
+
+    public function getSourceTrainingPlanId(): ?TrainingPlanId
+    {
+        return $this->sourceTrainingPlanId;
+    }
+
+    public function isProtectedFromPlanMutation(): bool
+    {
+        return $this->protectedFromPlanMutation;
+    }
+
+    public function isGenerated(): bool
+    {
+        return PlannedSessionSource::MANUAL !== $this->sessionSource;
+    }
+
+    public function isGeneratedByTrainingPlan(TrainingPlanId $trainingPlanId): bool
+    {
+        return PlannedSessionSource::TRAINING_PLAN === $this->sessionSource
+            && $this->sourceTrainingPlanId instanceof TrainingPlanId
+            && (string) $this->sourceTrainingPlanId === (string) $trainingPlanId;
+    }
+
+    public function isReplaceableByTrainingPlan(TrainingPlanId $trainingPlanId, SerializableDateTime $fromDay): bool
+    {
+        return $this->day >= $fromDay->setTime(0, 0)
+            && $this->isGeneratedByTrainingPlan($trainingPlanId)
+            && !$this->protectedFromPlanMutation
+            && !$this->linkedActivityId instanceof ActivityId
+            && PlannedSessionLinkStatus::UNLINKED === $this->linkStatus;
     }
 
     public function getDay(): SerializableDateTime
@@ -213,6 +262,9 @@ final readonly class PlannedSession
             updatedAt: $updatedAt,
             ownerUserId: $this->ownerUserId,
             workoutSteps: $this->workoutSteps,
+            sessionSource: $this->sessionSource,
+            sourceTrainingPlanId: $this->sourceTrainingPlanId,
+            protectedFromPlanMutation: $this->protectedFromPlanMutation,
         );
     }
 
@@ -235,6 +287,9 @@ final readonly class PlannedSession
             updatedAt: $updatedAt,
             ownerUserId: $this->ownerUserId,
             workoutSteps: $this->workoutSteps,
+            sessionSource: $this->sessionSource,
+            sourceTrainingPlanId: $this->sourceTrainingPlanId,
+            protectedFromPlanMutation: $this->protectedFromPlanMutation,
         );
     }
 
@@ -257,6 +312,9 @@ final readonly class PlannedSession
             updatedAt: $updatedAt,
             ownerUserId: $this->ownerUserId,
             workoutSteps: $this->workoutSteps,
+            sessionSource: $this->sessionSource,
+            sourceTrainingPlanId: $this->sourceTrainingPlanId,
+            protectedFromPlanMutation: $this->protectedFromPlanMutation,
         );
     }
 
