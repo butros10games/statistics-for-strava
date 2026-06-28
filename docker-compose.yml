@@ -28,7 +28,7 @@ services:
             - 'statistics-for-strava-node-modules:/var/www/node_modules'
         env_file: '.env.local'
         healthcheck:
-          test: ["CMD", "curl", "-f", "http://localhost:2019/metrics"]
+          test: ["CMD", "curl", "-f", "http://localhost:8080/healthz"]
           start_period: 60s
         environment:
           - TZ=Europe/Brussels
