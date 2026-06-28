@@ -39,46 +39,12 @@ final class TrainingLoadPersonalizationAdvisor
                     ActivityTypeRecoveryFingerprintProfile::NEEDS_BUFFER => [
                         $readinessAdjustment -= 4,
                         $forecastLoadFactor += 0.08,
-                        $messages[] = sprintf('%s usually asks for a bigger recovery buffer for you.', $primaryFingerprint->getActivityType()->trans(new class implements \Symfony\Contracts\Translation\TranslatorInterface {
-                            public function setLocale(string $locale): void
-                            {
-                            }
-
-                            public function getLocale(): string
-                            {
-                                return 'en';
-                            }
-
-                            /**
-                             * @param array<string, mixed> $parameters
-                             */
-                            public function trans(?string $id, array $parameters = [], ?string $domain = null, ?string $locale = null): string
-                            {
-                                return (string) $id;
-                            }
-                        })),
+                        $messages[] = sprintf('%s usually asks for a bigger recovery buffer for you.', $this->activityTypeLabel($primaryFingerprint->getActivityType())),
                     ],
                     ActivityTypeRecoveryFingerprintProfile::BOUNCES_BACK => [
                         $readinessAdjustment += 3,
                         $forecastLoadFactor -= 0.05,
-                        $messages[] = sprintf('%s tends to land well for you the next day.', $primaryFingerprint->getActivityType()->trans(new class implements \Symfony\Contracts\Translation\TranslatorInterface {
-                            public function setLocale(string $locale): void
-                            {
-                            }
-
-                            public function getLocale(): string
-                            {
-                                return 'en';
-                            }
-
-                            /**
-                             * @param array<string, mixed> $parameters
-                             */
-                            public function trans(?string $id, array $parameters = [], ?string $domain = null, ?string $locale = null): string
-                            {
-                                return (string) $id;
-                            }
-                        })),
+                        $messages[] = sprintf('%s tends to land well for you the next day.', $this->activityTypeLabel($primaryFingerprint->getActivityType())),
                     ],
                     default => null,
                 };
@@ -123,6 +89,25 @@ final class TrainingLoadPersonalizationAdvisor
             headline: 'Personalized recovery lens',
             summary: implode(' ', array_unique($messages)),
         );
+    }
+
+    private function activityTypeLabel(ActivityType $activityType): string
+    {
+        return match ($activityType) {
+            ActivityType::RIDE => 'Cycling',
+            ActivityType::RUN => 'Running',
+            ActivityType::WALK => 'Walking',
+            ActivityType::WATER_SPORTS => 'Water Sports',
+            ActivityType::WINTER_SPORTS => 'Winter Sports',
+            ActivityType::SKATING => 'Skating',
+            ActivityType::RACQUET_PADDLE_SPORTS => 'Racquet & Paddle Sports',
+            ActivityType::FITNESS => 'Fitness',
+            ActivityType::MIND_BODY_SPORTS => 'Mind & Body Sports',
+            ActivityType::OUTDOOR_SPORTS => 'Outdoor Sports',
+            ActivityType::TEAM_SPORTS => 'Team Sports',
+            ActivityType::ADAPTIVE_INCLUSIVE_SPORTS => 'Adaptive & Inclusive Sports',
+            ActivityType::OTHER => 'Other',
+        };
     }
 
     /**
