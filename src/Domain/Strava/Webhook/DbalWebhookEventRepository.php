@@ -12,14 +12,21 @@ final readonly class DbalWebhookEventRepository extends DbalRepository implement
 {
     public function add(WebhookEvent $webhookEvent): void
     {
-        $sql = 'INSERT INTO WebhookEvent (objectId, objectType, aspectType, payload) 
-                VALUES (:objectId, :objectType, :aspectType, :payload)
-                ON CONFLICT(`objectId`) DO NOTHING;';
+        $sql = 'INSERT INTO WebhookEvent (
+                    eventId, objectId, objectType, aspectType, ownerAthleteId, appUserId, payload
+                ) VALUES (
+                    :eventId, :objectId, :objectType, :aspectType, :ownerAthleteId, :appUserId, :payload
+                )
+                ON CONFLICT(`eventId`) DO UPDATE SET
+                    payload = excluded.payload;';
 
         $this->connection->executeStatement($sql, [
+            'eventId' => $webhookEvent->getEventId(),
             'objectId' => $webhookEvent->getObjectId(),
             'objectType' => $webhookEvent->getObjectType(),
             'aspectType' => $webhookEvent->getAspectType()->value,
+            'ownerAthleteId' => $webhookEvent->getOwnerAthleteId(),
+            'appUserId' => $webhookEvent->getAppUserId(),
             'payload' => Json::encode($webhookEvent->getPayload()),
         ]);
     }
@@ -31,7 +38,9 @@ final readonly class DbalWebhookEventRepository extends DbalRepository implement
         $queryBuilder = $this->connection
             ->createQueryBuilder()
             ->select('*')
-            ->from('WebhookEvent');
+            ->from('WebhookEvent')
+            ->orderBy('objectId', 'ASC')
+            ->addOrderBy('aspectType', 'ASC');
 
         $webhookEvents = array_map(
             fn (array $result): WebhookEvent => WebhookEvent::create(
@@ -39,16 +48,24 @@ final readonly class DbalWebhookEventRepository extends DbalRepository implement
                 objectType: $result['objectType'],
                 aspectType: WebhookAspectType::from($result['aspectType']),
                 payload: Json::decode($result['payload']),
+                ownerAthleteId: $result['ownerAthleteId'],
+                appUserId: $result['appUserId'],
             ),
             $queryBuilder->executeQuery()->fetchAllAssociative()
         );
 
-        $this->connection->executeStatement('DELETE FROM WebhookEvent WHERE objectId IN (:objectIds)',
+        if ([] === $webhookEvents) {
+            $this->connection->commit();
+
+            return [];
+        }
+
+        $this->connection->executeStatement('DELETE FROM WebhookEvent WHERE eventId IN (:eventIds)',
             [
-                'objectIds' => array_map(fn (WebhookEvent $webhookEvent): string => $webhookEvent->getObjectId(), $webhookEvents),
+                'eventIds' => array_map(fn (WebhookEvent $webhookEvent): string => $webhookEvent->getEventId(), $webhookEvents),
             ],
             [
-                'objectIds' => ArrayParameterType::STRING,
+                'eventIds' => ArrayParameterType::STRING,
             ]
         );
 

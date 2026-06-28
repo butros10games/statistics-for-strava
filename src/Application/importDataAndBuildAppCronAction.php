@@ -88,24 +88,28 @@ final readonly class importDataAndBuildAppCronAction implements RunnableCronActi
                 return;
             }
 
-            $activityIdsToDelete = ActivityIds::empty();
-            $createOrUpdateActivityIds = ActivityIds::empty();
+            /** @var array<string, ActivityId> $activityIdsToDelete */
+            $activityIdsToDelete = [];
+            /** @var array<string, ActivityId> $createOrUpdateActivityIds */
+            $createOrUpdateActivityIds = [];
             foreach ($webhookEvents as $webhookEvent) {
                 $activityId = ActivityId::fromUnprefixed($webhookEvent->getObjectId());
+                $activityIdKey = (string) $activityId;
                 if (WebhookAspectType::DELETE === $webhookEvent->getAspectType()) {
-                    $activityIdsToDelete->add($activityId);
-                } else {
-                    $createOrUpdateActivityIds->add($activityId);
+                    $activityIdsToDelete[$activityIdKey] = $activityId;
+                    unset($createOrUpdateActivityIds[$activityIdKey]);
+                } elseif (!isset($activityIdsToDelete[$activityIdKey])) {
+                    $createOrUpdateActivityIds[$activityIdKey] ??= $activityId;
                 }
             }
 
-            if (!$activityIdsToDelete->isEmpty()) {
-                $this->activityRepository->markActivitiesForDeletion($activityIdsToDelete);
+            if ([] !== $activityIdsToDelete) {
+                $this->activityRepository->markActivitiesForDeletion(ActivityIds::fromArray($activityIdsToDelete));
             }
 
             $this->doRun(
                 output: $output,
-                restrictToActivityIds: $createOrUpdateActivityIds
+                restrictToActivityIds: ActivityIds::fromArray($createOrUpdateActivityIds)
             );
         } finally {
             $this->mutex->releaseLock();

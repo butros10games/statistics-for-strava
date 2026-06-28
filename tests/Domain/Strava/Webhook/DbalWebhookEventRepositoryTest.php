@@ -17,26 +17,47 @@ class DbalWebhookEventRepositoryTest extends ContainerTestCase
 
     public function testAddAndGrab(): void
     {
-        $event = WebhookEvent::create(
+        $createEvent = WebhookEvent::create(
             objectId: '1',
             objectType: 'activity',
             aspectType: WebhookAspectType::CREATE,
-            payload: [],
+            payload: ['original' => true],
+            ownerAthleteId: '123',
+            appUserId: 'user-one',
         );
 
-        $this->webhookEventRepository->add($event);
-        $this->webhookEventRepository->add($event);
-
-        $event = WebhookEvent::create(
-            objectId: '2',
+        $this->webhookEventRepository->add($createEvent);
+        $this->webhookEventRepository->add(WebhookEvent::create(
+            objectId: '1',
             objectType: 'activity',
-            aspectType: WebhookAspectType::UPDATE,
-            payload: [],
+            aspectType: WebhookAspectType::CREATE,
+            payload: ['latest' => true],
+            ownerAthleteId: '123',
+            appUserId: 'user-one',
+        ));
+
+        $deleteEvent = WebhookEvent::create(
+            objectId: '1',
+            objectType: 'activity',
+            aspectType: WebhookAspectType::DELETE,
+            payload: ['deleted' => true],
+            ownerAthleteId: '123',
+            appUserId: 'user-one',
         );
 
-        $this->webhookEventRepository->add($event);
+        $this->webhookEventRepository->add($deleteEvent);
 
-        $this->assertNotEmpty($this->webhookEventRepository->grab());
+        $this->assertEquals([
+            WebhookEvent::create(
+                objectId: '1',
+                objectType: 'activity',
+                aspectType: WebhookAspectType::CREATE,
+                payload: ['latest' => true],
+                ownerAthleteId: '123',
+                appUserId: 'user-one',
+            ),
+            $deleteEvent,
+        ], $this->webhookEventRepository->grab());
         $this->assertEmpty($this->webhookEventRepository->grab());
     }
 

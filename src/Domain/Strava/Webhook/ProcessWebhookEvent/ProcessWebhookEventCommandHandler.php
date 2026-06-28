@@ -32,11 +32,14 @@ final readonly class ProcessWebhookEventCommandHandler implements CommandHandler
             throw new \RuntimeException(sprintf('Aspect type "%s" not supported', $payload['aspect_type']));
         }
 
-        $connection = isset($payload['owner_id'])
-            ? $this->stravaConnectionRepository->findByAthleteId((string) $payload['owner_id'])
+        $ownerAthleteId = $this->extractOwnerAthleteId($payload);
+        $connection = null !== $ownerAthleteId
+            ? $this->stravaConnectionRepository->findByAthleteId($ownerAthleteId)
             : null;
+        $appUserId = null;
         if ($connection instanceof \App\Domain\Strava\Connection\AppUserStravaConnection) {
-            $payload['app_user_id'] = (string) $connection->getAppUserId();
+            $appUserId = (string) $connection->getAppUserId();
+            $payload['app_user_id'] = $appUserId;
         }
 
         $this->webhookEventRepository->add(WebhookEvent::create(
@@ -44,6 +47,21 @@ final readonly class ProcessWebhookEventCommandHandler implements CommandHandler
             objectType: $payload['object_type'],
             aspectType: $aspectType,
             payload: $payload,
+            ownerAthleteId: $ownerAthleteId,
+            appUserId: $appUserId,
         ));
+    }
+
+    /**
+     * @param array<string, mixed> $payload
+     */
+    private function extractOwnerAthleteId(array $payload): ?string
+    {
+        $ownerAthleteId = $payload['owner_id'] ?? $payload['object_owner_id'] ?? null;
+        if (null === $ownerAthleteId || '' === trim((string) $ownerAthleteId)) {
+            return null;
+        }
+
+        return trim((string) $ownerAthleteId);
     }
 }
