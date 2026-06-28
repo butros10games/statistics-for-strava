@@ -68,37 +68,36 @@ final class Utf8HtmlDriver implements Driver
 
     private static function repairUtf8Entities(string $htmlValue): string
     {
-        if (mb_check_encoding($htmlValue, 'UTF-8')) {
-            $literalBytePattern = '[\x{0080}-\x{00BF}\x{00C2}\x{00C3}\x{00E2}\x{00EF}\x{00F0}]';
-            $byteEntityPattern = '(?:&#(?:12[8-9]|1[3-9][0-9]|2[0-4][0-9]|25[0-5]);|&(?:'.implode('|', array_keys(self::BYTE_ENTITY_MAP)).');)';
-            $bytePattern = sprintf('(?:%s|%s)', $literalBytePattern, $byteEntityPattern);
+        // Match DOMDocument's mixed mojibake output without requiring the full document to be valid UTF-8.
+        $literalBytePattern = '(?:\xC2[\x80-\xBF]|\xC3[\x82\x83\xA2\xAF\xB0])';
+        $byteEntityPattern = '(?:&#(?:12[8-9]|1[3-9][0-9]|2[0-4][0-9]|25[0-5]);|&(?:'.implode('|', array_keys(self::BYTE_ENTITY_MAP)).');)';
+        $bytePattern = sprintf('(?:%s|%s)', $literalBytePattern, $byteEntityPattern);
 
-            $htmlValue = (string) preg_replace_callback(
-                sprintf('/(?:%s){2,}/u', $bytePattern),
-                static function (array $matches) use ($literalBytePattern): string {
-                    preg_match_all(sprintf('/&#([0-9]+);|&([a-z]+);|(%s)/u', $literalBytePattern), (string) $matches[0], $byteMatches, PREG_SET_ORDER);
+        $htmlValue = (string) preg_replace_callback(
+            sprintf('/(?:%s){2,}/', $bytePattern),
+            static function (array $matches) use ($literalBytePattern): string {
+                preg_match_all(sprintf('/&#([0-9]+);|&([a-z]+);|(%s)/', $literalBytePattern), (string) $matches[0], $byteMatches, PREG_SET_ORDER);
 
-                    $bytes = '';
-                    foreach ($byteMatches as $byteMatch) {
-                        $byte = match (true) {
-                            isset($byteMatch[1]) && '' !== $byteMatch[1] => (int) $byteMatch[1],
-                            isset($byteMatch[2]) && '' !== $byteMatch[2] => self::BYTE_ENTITY_MAP[$byteMatch[2]] ?? null,
-                            isset($byteMatch[3]) && '' !== $byteMatch[3] => mb_ord((string) $byteMatch[3], 'UTF-8'),
-                            default => null,
-                        };
+                $bytes = '';
+                foreach ($byteMatches as $byteMatch) {
+                    $byte = match (true) {
+                        isset($byteMatch[1]) && '' !== $byteMatch[1] => (int) $byteMatch[1],
+                        isset($byteMatch[2]) && '' !== $byteMatch[2] => self::BYTE_ENTITY_MAP[$byteMatch[2]] ?? null,
+                        isset($byteMatch[3]) && '' !== $byteMatch[3] => self::decodeLiteralByte((string) $byteMatch[3]),
+                        default => null,
+                    };
 
-                        if (!is_int($byte) || $byte < 128 || $byte > 255) {
-                            return (string) $matches[0];
-                        }
-
-                        $bytes .= chr($byte);
+                    if (!is_int($byte) || $byte < 128 || $byte > 255) {
+                        return (string) $matches[0];
                     }
 
-                    return mb_check_encoding($bytes, 'UTF-8') ? $bytes : (string) $matches[0];
-                },
-                $htmlValue
-            );
-        }
+                    $bytes .= chr($byte);
+                }
+
+                return mb_check_encoding($bytes, 'UTF-8') ? $bytes : (string) $matches[0];
+            },
+            $htmlValue
+        );
 
         $htmlValue = (string) preg_replace_callback(
             '/&#([0-9]+);/',
@@ -138,5 +137,30 @@ final class Utf8HtmlDriver implements Driver
             static fn (array $matches): string => sprintf(' %s="%s"', $matches[1], str_replace('"', '&quot;', (string) $matches[2])),
             $htmlValue
         );
+    }
+
+    private static function decodeLiteralByte(string $literalByte): ?int
+    {
+        $bytes = array_map(ord(...), str_split($literalByte));
+        if (2 !== count($bytes)) {
+            return null;
+        }
+
+        if (0xC2 === $bytes[0] && $bytes[1] >= 0x80 && $bytes[1] <= 0xBF) {
+            return $bytes[1];
+        }
+
+        if (0xC3 !== $bytes[0]) {
+            return null;
+        }
+
+        return match ($bytes[1]) {
+            0x82 => 0xC2,
+            0x83 => 0xC3,
+            0xA2 => 0xE2,
+            0xAF => 0xEF,
+            0xB0 => 0xF0,
+            default => null,
+        };
     }
 }
