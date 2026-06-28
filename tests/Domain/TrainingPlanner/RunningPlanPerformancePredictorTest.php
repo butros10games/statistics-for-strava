@@ -62,6 +62,24 @@ final class RunningPlanPerformancePredictorTest extends TestCase
         self::assertLessThan(255, $prediction->getProjectedThresholdPaceInSeconds());
         self::assertGreaterThan(0, $prediction->getProjectedGainInSecondsPerKm());
         self::assertSame('High confidence', $prediction->getConfidenceLabel());
+        self::assertSame(RunningPlanPerformancePredictor::MODEL_VERSION, $prediction->getModelVersion());
+        self::assertGreaterThanOrEqual(0, $prediction->getConfidenceScore());
+        self::assertLessThanOrEqual(100, $prediction->getConfidenceScore());
+        self::assertNotEmpty($prediction->getConfidenceFactors());
+        self::assertCount(count($prediction->getConfidenceFactors()), $prediction->getConfidenceReasons());
+
+        foreach ($prediction->getConfidenceFactors() as $confidenceFactor) {
+            self::assertNotSame('', $confidenceFactor->getKey());
+            self::assertNotSame('', $confidenceFactor->getLabel());
+            self::assertGreaterThanOrEqual(0, $confidenceFactor->getScore());
+            self::assertLessThanOrEqual(100, $confidenceFactor->getScore());
+            self::assertNotSame('', $confidenceFactor->getReason());
+        }
+
+        $projectedThresholdPaceRange = $prediction->getProjectedThresholdPaceRange();
+        self::assertSame($prediction->getProjectedThresholdPaceInSeconds(), $projectedThresholdPaceRange->getExpectedPaceInSeconds());
+        self::assertLessThanOrEqual($projectedThresholdPaceRange->getExpectedPaceInSeconds(), $projectedThresholdPaceRange->getOptimisticPaceInSeconds());
+        self::assertLessThanOrEqual($projectedThresholdPaceRange->getConservativePaceInSeconds(), $projectedThresholdPaceRange->getExpectedPaceInSeconds());
         self::assertCount(3, $prediction->getBenchmarkPredictions());
         self::assertSame('Half marathon', $prediction->getBenchmarkPredictions()[0]->getLabel());
         self::assertLessThan(
@@ -126,6 +144,66 @@ final class RunningPlanPerformancePredictorTest extends TestCase
         );
 
         self::assertNull($predictor->predict($trainingPlan, $this->createProposal()));
+    }
+
+    public function testConfidenceScoreRespondsToInputStrength(): void
+    {
+        $predictor = new RunningPlanPerformancePredictor();
+
+        $strongPrediction = $predictor->predict(
+            $this->createTrainingPlanForTrustMetadata(),
+            $this->createStructuredProposal(16, 4, 2, true),
+        );
+        $weakPrediction = $predictor->predict(
+            $this->createTrainingPlanForTrustMetadata(
+                discipline: TrainingPlanDiscipline::CYCLING,
+                trainingFocus: TrainingFocus::SWIM,
+                performanceMetrics: ['runningThresholdPace' => 255],
+            ),
+            $this->createStructuredProposal(4, 1, 0, false),
+        );
+
+        self::assertNotNull($strongPrediction);
+        self::assertNotNull($weakPrediction);
+        self::assertGreaterThan($weakPrediction->getConfidenceScore(), $strongPrediction->getConfidenceScore());
+        self::assertGreaterThanOrEqual(80, $strongPrediction->getConfidenceScore());
+        self::assertLessThan(80, $weakPrediction->getConfidenceScore());
+    }
+
+    public function testProjectedThresholdPaceRangeIsBoundedAndNarrowsWithConfidence(): void
+    {
+        $predictor = new RunningPlanPerformancePredictor();
+
+        $strongPrediction = $predictor->predict(
+            $this->createTrainingPlanForTrustMetadata(),
+            $this->createStructuredProposal(16, 4, 2, true),
+        );
+        $weakPrediction = $predictor->predict(
+            $this->createTrainingPlanForTrustMetadata(
+                discipline: TrainingPlanDiscipline::CYCLING,
+                trainingFocus: TrainingFocus::SWIM,
+                performanceMetrics: ['runningThresholdPace' => 255],
+            ),
+            $this->createStructuredProposal(4, 1, 0, false),
+        );
+
+        self::assertNotNull($strongPrediction);
+        self::assertNotNull($weakPrediction);
+
+        foreach ([$strongPrediction, $weakPrediction] as $prediction) {
+            $range = $prediction->getProjectedThresholdPaceRange();
+
+            self::assertLessThanOrEqual($range->getExpectedPaceInSeconds(), $range->getOptimisticPaceInSeconds());
+            self::assertSame($prediction->getProjectedThresholdPaceInSeconds(), $range->getExpectedPaceInSeconds());
+            self::assertLessThanOrEqual($range->getConservativePaceInSeconds(), $range->getExpectedPaceInSeconds());
+            self::assertLessThanOrEqual($prediction->getCurrentThresholdPaceInSeconds(), $range->getConservativePaceInSeconds());
+            self::assertGreaterThanOrEqual(150, $range->getOptimisticPaceInSeconds());
+        }
+
+        self::assertGreaterThan(
+            $strongPrediction->getProjectedThresholdPaceRange()->getSpreadInSeconds(),
+            $weakPrediction->getProjectedThresholdPaceRange()->getSpreadInSeconds(),
+        );
     }
 
     public function testPredictDistinguishesShortAndLongPlans(): void
@@ -390,6 +468,34 @@ final class RunningPlanPerformancePredictorTest extends TestCase
                     ],
                 ),
             ],
+        );
+    }
+
+    /**
+     * @param array<string, mixed>|null $performanceMetrics
+     */
+    private function createTrainingPlanForTrustMetadata(
+        ?TrainingPlanDiscipline $discipline = TrainingPlanDiscipline::RUNNING,
+        ?TrainingFocus $trainingFocus = TrainingFocus::RUN,
+        ?array $performanceMetrics = null,
+    ): TrainingPlan {
+        return TrainingPlan::create(
+            trainingPlanId: TrainingPlanId::random(),
+            type: TrainingPlanType::TRAINING,
+            startDay: SerializableDateTime::fromString('2026-07-06 00:00:00'),
+            endDay: SerializableDateTime::fromString('2026-11-29 00:00:00'),
+            targetRaceEventId: null,
+            title: 'Run block',
+            notes: null,
+            createdAt: SerializableDateTime::fromString('2026-04-01 08:00:00'),
+            updatedAt: SerializableDateTime::fromString('2026-04-01 08:00:00'),
+            discipline: $discipline,
+            performanceMetrics: $performanceMetrics ?? [
+                'runningThresholdPace' => 255,
+                'weeklyRunningVolume' => 48.0,
+            ],
+            targetRaceProfile: RaceEventProfile::HALF_MARATHON,
+            trainingFocus: $trainingFocus,
         );
     }
 
