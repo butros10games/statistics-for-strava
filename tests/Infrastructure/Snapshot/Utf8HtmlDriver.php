@@ -89,6 +89,12 @@ final class Utf8HtmlDriver implements Driver
 
     private static function repairUtf8Entities(string $htmlValue): string
     {
+        $htmlValue = (string) preg_replace_callback(
+            '/[\x{0080}-\x{00BF}\x{00C2}\x{00C3}\x{00E2}\x{00EF}\x{00F0}]/u',
+            static fn (array $matches): string => sprintf('&#%d;', mb_ord((string) $matches[0], 'UTF-8')),
+            $htmlValue
+        );
+
         $byteEntityPattern = '(?:&#(?:12[8-9]|1[3-9][0-9]|2[0-4][0-9]|25[0-5]);|&(?:'.implode('|', array_keys(self::BYTE_ENTITY_MAP)).');)';
 
         $htmlValue = (string) preg_replace_callback(
