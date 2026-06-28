@@ -20,6 +20,8 @@ use App\Infrastructure\ValueObject\Time\SerializableDateTime;
 
 final class RunningPlanPerformancePredictor
 {
+    public const MODEL_VERSION = RunningPlanPerformancePrediction::DEFAULT_MODEL_VERSION;
+
     /**
      * @param list<PlannedSession> $existingSessions
      */
@@ -59,12 +61,14 @@ final class RunningPlanPerformancePredictor
             );
             $guidanceThresholdPaceInSeconds = $trajectoryThresholdPaceInSeconds;
         }
+        $confidenceFactors = $this->buildConfidenceFactors($trainingPlan, $proposal, $adherenceSnapshot);
+        $confidenceScore = $this->resolveConfidenceScore($confidenceFactors);
 
         return new RunningPlanPerformancePrediction(
             currentThresholdPaceInSeconds: $currentThresholdPaceInSeconds,
             projectedThresholdPaceInSeconds: $projectedThresholdPaceInSeconds,
             trajectoryThresholdPaceInSeconds: $trajectoryThresholdPaceInSeconds,
-            confidenceLabel: $this->resolveConfidenceLabel($trainingPlan, $proposal),
+            confidenceLabel: $this->resolveConfidenceLabel($confidenceScore),
             benchmarkPredictions: $this->buildBenchmarkPredictions(
                 profile: $trainingPlan->getTargetRaceProfile() ?? $proposal->getTargetRace()->getProfile(),
                 currentThresholdPaceInSeconds: $currentThresholdPaceInSeconds,
@@ -76,6 +80,14 @@ final class RunningPlanPerformancePredictor
                 projectedThresholdPaceInSeconds: $guidanceThresholdPaceInSeconds,
             ),
             adherenceSnapshot: $adherenceSnapshot,
+            modelVersion: self::MODEL_VERSION,
+            confidenceScore: $confidenceScore,
+            confidenceFactors: $confidenceFactors,
+            projectedThresholdPaceRange: $this->buildProjectedThresholdPaceRange(
+                currentThresholdPaceInSeconds: $currentThresholdPaceInSeconds,
+                projectedThresholdPaceInSeconds: $projectedThresholdPaceInSeconds,
+                confidenceScore: $confidenceScore,
+            ),
         );
     }
 
@@ -471,39 +483,251 @@ final class RunningPlanPerformancePredictor
         return $projectedThresholdPaces;
     }
 
-    private function resolveConfidenceLabel(TrainingPlan $trainingPlan, TrainingPlanProposal $proposal): string
-    {
-        $score = 2; // threshold pace present
+    /**
+     * @return list<RunningPlanConfidenceFactor>
+     */
+    private function buildConfidenceFactors(
+        TrainingPlan $trainingPlan,
+        TrainingPlanProposal $proposal,
+        ?RunningPlanAdherenceSnapshot $adherenceSnapshot,
+    ): array {
         $performanceMetrics = $trainingPlan->getPerformanceMetrics();
+        $weeklyRunningVolume = is_array($performanceMetrics)
+            && isset($performanceMetrics['weeklyRunningVolume'])
+            && is_numeric($performanceMetrics['weeklyRunningVolume'])
+            ? (float) $performanceMetrics['weeklyRunningVolume']
+            : null;
         $runningStructure = $this->summarizeRunningStructure($proposal);
 
-        if (is_array($performanceMetrics)
-            && isset($performanceMetrics['weeklyRunningVolume'])
-            && is_numeric($performanceMetrics['weeklyRunningVolume'])) {
-            ++$score;
+        return [
+            new RunningPlanConfidenceFactor(
+                key: 'baseline-threshold-pace',
+                label: 'Baseline threshold pace',
+                score: 94,
+                reason: 'A current running threshold pace is available and inside the supported 150-600s/km range.',
+                weight: 1.2,
+            ),
+            $this->buildBaselineVolumeConfidenceFactor($weeklyRunningVolume),
+            $this->buildTrainingSpecificityConfidenceFactor($trainingPlan),
+            $this->buildPlanDurationConfidenceFactor($runningStructure['effectiveRunningWeeks']),
+            $this->buildRunFrequencyConfidenceFactor($runningStructure['averageRunSessionsPerWeek']),
+            $this->buildQualityDistributionConfidenceFactor(
+                averageKeyRunsPerWeek: $runningStructure['averageKeyRunsPerWeek'],
+                averageLongRunsPerWeek: $runningStructure['averageLongRunsPerWeek'],
+            ),
+            $this->buildPhaseSpecificityConfidenceFactor($runningStructure['phaseQualityScore']),
+            $this->buildAdherenceConfidenceFactor($adherenceSnapshot),
+        ];
+    }
+
+    private function buildBaselineVolumeConfidenceFactor(?float $weeklyRunningVolume): RunningPlanConfidenceFactor
+    {
+        if (null === $weeklyRunningVolume) {
+            return new RunningPlanConfidenceFactor(
+                key: 'baseline-volume',
+                label: 'Baseline running volume',
+                score: 52,
+                reason: 'Weekly running volume is missing, so load tolerance is inferred from the plan only.',
+                weight: 1.0,
+            );
         }
 
-        if ($runningStructure['effectiveRunningWeeks'] >= 8) {
-            ++$score;
+        $score = match (true) {
+            $weeklyRunningVolume < 15.0 => 62,
+            $weeklyRunningVolume < 25.0 => 74,
+            $weeklyRunningVolume < 60.0 => 88,
+            $weeklyRunningVolume < 80.0 => 82,
+            default => 76,
+        };
+
+        return new RunningPlanConfidenceFactor(
+            key: 'baseline-volume',
+            label: 'Baseline running volume',
+            score: $score,
+            reason: sprintf('Weekly running volume is %.1fkm, so planned work can be compared with recent load.', $weeklyRunningVolume),
+            weight: 1.0,
+        );
+    }
+
+    private function buildTrainingSpecificityConfidenceFactor(TrainingPlan $trainingPlan): RunningPlanConfidenceFactor
+    {
+        $discipline = $trainingPlan->getDiscipline();
+        $trainingFocus = $trainingPlan->getTrainingFocus();
+        $score = match (true) {
+            TrainingPlanDiscipline::RUNNING === $discipline && TrainingFocus::RUN === $trainingFocus => 94,
+            TrainingPlanDiscipline::TRIATHLON === $discipline && TrainingFocus::RUN === $trainingFocus => 84,
+            TrainingPlanDiscipline::RUNNING === $discipline => 82,
+            TrainingPlanDiscipline::TRIATHLON === $discipline => 72,
+            !$discipline instanceof TrainingPlanDiscipline && !$trainingFocus instanceof TrainingFocus => 58,
+            default => 46,
+        };
+
+        return new RunningPlanConfidenceFactor(
+            key: 'training-specificity',
+            label: 'Run specificity',
+            score: $score,
+            reason: sprintf(
+                'Plan discipline is %s and focus is %s.',
+                strtolower($discipline?->value ?? 'unspecified'),
+                strtolower($trainingFocus?->value ?? 'unspecified'),
+            ),
+            weight: 1.0,
+        );
+    }
+
+    private function buildPlanDurationConfidenceFactor(int $effectiveRunningWeeks): RunningPlanConfidenceFactor
+    {
+        $score = match (true) {
+            $effectiveRunningWeeks >= 16 => 92,
+            $effectiveRunningWeeks >= 12 => 86,
+            $effectiveRunningWeeks >= 8 => 78,
+            $effectiveRunningWeeks >= 4 => 58,
+            $effectiveRunningWeeks > 0 => 44,
+            default => 35,
+        };
+
+        return new RunningPlanConfidenceFactor(
+            key: 'plan-duration',
+            label: 'Plan duration',
+            score: $score,
+            reason: sprintf('The proposal includes %d running weeks with at least one run session.', $effectiveRunningWeeks),
+            weight: 1.0,
+        );
+    }
+
+    private function buildRunFrequencyConfidenceFactor(float $averageRunSessionsPerWeek): RunningPlanConfidenceFactor
+    {
+        $score = match (true) {
+            $averageRunSessionsPerWeek >= 4.0 => 88,
+            $averageRunSessionsPerWeek >= 3.0 => 82,
+            $averageRunSessionsPerWeek >= 2.0 => 70,
+            $averageRunSessionsPerWeek >= 1.0 => 60,
+            $averageRunSessionsPerWeek > 0.0 => 48,
+            default => 35,
+        };
+
+        return new RunningPlanConfidenceFactor(
+            key: 'run-frequency',
+            label: 'Run frequency',
+            score: $score,
+            reason: sprintf('The proposal averages %.1f run sessions per running week.', $averageRunSessionsPerWeek),
+            weight: 0.85,
+        );
+    }
+
+    private function buildQualityDistributionConfidenceFactor(
+        float $averageKeyRunsPerWeek,
+        float $averageLongRunsPerWeek,
+    ): RunningPlanConfidenceFactor {
+        $score = match (true) {
+            $averageKeyRunsPerWeek >= 1.0 && $averageLongRunsPerWeek >= 0.75 => 90,
+            $averageKeyRunsPerWeek >= 0.75 && $averageLongRunsPerWeek > 0.0 => 84,
+            $averageKeyRunsPerWeek > 0.0 && $averageLongRunsPerWeek > 0.0 => 78,
+            $averageKeyRunsPerWeek > 0.0 => 72,
+            $averageLongRunsPerWeek > 0.0 => 66,
+            default => 58,
+        };
+
+        return new RunningPlanConfidenceFactor(
+            key: 'quality-distribution',
+            label: 'Workout mix',
+            score: $score,
+            reason: sprintf(
+                'The proposal averages %.1f key runs and %.1f long runs per running week.',
+                $averageKeyRunsPerWeek,
+                $averageLongRunsPerWeek,
+            ),
+            weight: 0.75,
+        );
+    }
+
+    private function buildPhaseSpecificityConfidenceFactor(float $phaseQualityScore): RunningPlanConfidenceFactor
+    {
+        $boundedPhaseQualityScore = max(0.76, min(1.08, $phaseQualityScore));
+        $score = (int) round(55 + ((($boundedPhaseQualityScore - 0.76) / 0.32) * 35));
+
+        return new RunningPlanConfidenceFactor(
+            key: 'phase-specificity',
+            label: 'Phase specificity',
+            score: $score,
+            reason: sprintf('The weighted phase specificity score is %.2f.', $phaseQualityScore),
+            weight: 0.65,
+        );
+    }
+
+    private function buildAdherenceConfidenceFactor(?RunningPlanAdherenceSnapshot $adherenceSnapshot): RunningPlanConfidenceFactor
+    {
+        if (!$adherenceSnapshot instanceof RunningPlanAdherenceSnapshot) {
+            return new RunningPlanConfidenceFactor(
+                key: 'adherence-trajectory',
+                label: 'Completed-session trajectory',
+                score: 68,
+                reason: 'No historical completed-session trajectory is available yet; the projection is plan-based.',
+                weight: 0.0,
+            );
         }
 
-        if ($runningStructure['averageRunSessionsPerWeek'] >= 3.0) {
-            ++$score;
+        $score = (int) round(58 + (37 * $adherenceSnapshot->getAdherenceScore()));
+
+        return new RunningPlanConfidenceFactor(
+            key: 'adherence-trajectory',
+            label: 'Completed-session trajectory',
+            score: $score,
+            reason: sprintf(
+                'Completed run adherence is %d%% across %d planned run sessions.',
+                (int) round($adherenceSnapshot->getAdherenceScore() * 100),
+                $adherenceSnapshot->getPlannedRunSessionCount(),
+            ),
+            weight: 0.7,
+        );
+    }
+
+    /**
+     * @param list<RunningPlanConfidenceFactor> $confidenceFactors
+     */
+    private function resolveConfidenceScore(array $confidenceFactors): int
+    {
+        $weightedScore = 0.0;
+        $weightTotal = 0.0;
+
+        foreach ($confidenceFactors as $confidenceFactor) {
+            if ($confidenceFactor->getWeight() <= 0.0) {
+                continue;
+            }
+
+            $weightedScore += $confidenceFactor->getWeightedScore();
+            $weightTotal += $confidenceFactor->getWeight();
         }
 
-        if (TrainingPlanDiscipline::RUNNING === $trainingPlan->getDiscipline()) {
-            ++$score;
+        if ($weightTotal <= 0.0) {
+            return 50;
         }
 
-        if (TrainingFocus::RUN === $trainingPlan->getTrainingFocus()) {
-            ++$score;
-        }
+        return max(0, min(100, (int) round($weightedScore / $weightTotal)));
+    }
 
+    private function resolveConfidenceLabel(int $confidenceScore): string
+    {
         return match (true) {
-            $score >= 6 => 'High confidence',
-            $score >= 4 => 'Medium confidence',
+            $confidenceScore >= 80 => 'High confidence',
+            $confidenceScore >= 58 => 'Medium confidence',
             default => 'Low confidence',
         };
+    }
+
+    private function buildProjectedThresholdPaceRange(
+        int $currentThresholdPaceInSeconds,
+        int $projectedThresholdPaceInSeconds,
+        int $confidenceScore,
+    ): RunningPlanProjectedThresholdPaceRange {
+        $uncertaintyInSeconds = (int) round(4 + (((100 - $confidenceScore) / 100) * 22));
+        $uncertaintyInSeconds = max(4, min(26, $uncertaintyInSeconds));
+
+        return new RunningPlanProjectedThresholdPaceRange(
+            optimisticPaceInSeconds: max(150, $projectedThresholdPaceInSeconds - $uncertaintyInSeconds),
+            expectedPaceInSeconds: $projectedThresholdPaceInSeconds,
+            conservativePaceInSeconds: min($currentThresholdPaceInSeconds, $projectedThresholdPaceInSeconds + $uncertaintyInSeconds),
+        );
     }
 
     /**
