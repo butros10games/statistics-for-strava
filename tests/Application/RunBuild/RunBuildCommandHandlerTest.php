@@ -88,7 +88,7 @@ class RunBuildCommandHandlerTest extends ContainerTestCase
             ->willReturn(true);
 
         $handler = new RunBuildCommandHandler(
-            commandBus: new class() implements CommandBus {
+            commandBus: new class implements CommandBus {
                 public function dispatch(Command $command): void
                 {
                     if ($command instanceof BuildDashboardHtml) {

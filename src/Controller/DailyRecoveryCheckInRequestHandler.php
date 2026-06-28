@@ -61,8 +61,8 @@ final readonly class DailyRecoveryCheckInRequestHandler
         $latestRecoveryCheckInOverall = $this->repository->findLatest();
 
         return new Response($this->twig->render('html/dashboard/recovery-check-in.html.twig', [
-            'latestRecoveryCheckIn' => null === $latestRecoveryCheckIn ? null : $this->toViewRecord($latestRecoveryCheckIn),
-            'latestRecoveryCheckInOverall' => null === $latestRecoveryCheckInOverall ? null : $this->toViewRecord($latestRecoveryCheckInOverall),
+            'latestRecoveryCheckIn' => $latestRecoveryCheckIn instanceof DailyRecoveryCheckIn ? $this->toViewRecord($latestRecoveryCheckIn) : null,
+            'latestRecoveryCheckInOverall' => $latestRecoveryCheckInOverall instanceof DailyRecoveryCheckIn ? $this->toViewRecord($latestRecoveryCheckInOverall) : null,
             'recoveryCheckInDefaultDay' => $today->format('Y-m-d'),
             'recoveryCheckInFormDefaults' => $this->recoveryCheckInFormDefaults($latestRecoveryCheckIn),
             'redirectTo' => $redirectTo,
@@ -94,7 +94,7 @@ final readonly class DailyRecoveryCheckInRequestHandler
      */
     private function recoveryCheckInFormDefaults(?DailyRecoveryCheckIn $latestRecoveryCheckIn): array
     {
-        if (null !== $latestRecoveryCheckIn) {
+        if ($latestRecoveryCheckIn instanceof DailyRecoveryCheckIn) {
             return [
                 'fatigue' => $latestRecoveryCheckIn->getFatigue(),
                 'soreness' => $latestRecoveryCheckIn->getSoreness(),

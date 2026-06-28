@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Application\Build\BuildRacePlannerHtml;
 
 use App\Domain\Activity\ActivityType;
+use App\Domain\Calendar\Week;
 use App\Domain\TrainingPlanner\AdaptivePlanningContextBuilder;
 use App\Domain\TrainingPlanner\PlanGenerator\PlanAdaptationRecommendation;
 use App\Domain\TrainingPlanner\PlanGenerator\PlanAdaptationRecommendationType;
@@ -18,11 +19,11 @@ use App\Domain\TrainingPlanner\Prediction\RunningPlanPerformancePrediction;
 use App\Domain\TrainingPlanner\Prediction\RunningPlanPerformancePredictor;
 use App\Domain\TrainingPlanner\Prediction\RunningRaceBenchmarkPrediction;
 use App\Domain\TrainingPlanner\RaceEvent;
-use App\Domain\TrainingPlanner\RaceEventsByIdMapBuilder;
 use App\Domain\TrainingPlanner\RaceEventFamily;
 use App\Domain\TrainingPlanner\RaceEventPriority;
 use App\Domain\TrainingPlanner\RaceEventProfile;
 use App\Domain\TrainingPlanner\RaceEventRepository;
+use App\Domain\TrainingPlanner\RaceEventsByIdMapBuilder;
 use App\Domain\TrainingPlanner\RaceEventType;
 use App\Domain\TrainingPlanner\RacePlannerConfiguration;
 use App\Domain\TrainingPlanner\RacePlannerExistingBlockSelector;
@@ -34,7 +35,6 @@ use App\Domain\TrainingPlanner\TrainingPlan;
 use App\Domain\TrainingPlanner\TrainingPlanDiscipline;
 use App\Domain\TrainingPlanner\TrainingPlanRepository;
 use App\Domain\TrainingPlanner\TrainingPlanType;
-use App\Domain\Calendar\Week;
 use App\Infrastructure\CQRS\Command\Command;
 use App\Infrastructure\CQRS\Command\CommandHandler;
 use App\Infrastructure\Serialization\Json;
@@ -131,7 +131,7 @@ final readonly class BuildRacePlannerHtmlCommandHandler implements CommandHandle
             ? $reusableExistingBlocks
             : $this->trainingBlockRepository->findByDateRange($dateRange);
         $existingSessions = $this->plannedSessionRepository->findByDateRange($dateRange);
-        $predictionSessions = null !== $linkedTrainingPlan
+        $predictionSessions = $linkedTrainingPlan instanceof TrainingPlan
             ? $this->plannedSessionRepository->findByDateRange(DateRange::fromDates(
                 $linkedTrainingPlan->getStartDay()->setTime(0, 0),
                 $planningEndDay,
@@ -180,7 +180,7 @@ final readonly class BuildRacePlannerHtmlCommandHandler implements CommandHandle
             $existingBlocks,
             $existingSessions,
         );
-        $linkedTrainingPlanNeedsSync = null !== $linkedTrainingPlan
+        $linkedTrainingPlanNeedsSync = $linkedTrainingPlan instanceof TrainingPlan
             && (
                 TrainingPlanType::RACE !== $linkedTrainingPlan->getType()
                 || $linkedTrainingPlan->getStartDay()->format('Y-m-d') !== $effectivePlanStartDay->format('Y-m-d')
@@ -202,7 +202,7 @@ final readonly class BuildRacePlannerHtmlCommandHandler implements CommandHandle
                 'raceEventsById' => $raceEventsById,
                 'raceEventCountdownDaysById' => $raceEventCountdownDaysById,
                 'planStartDayInputValue' => $effectivePlanStartDay->format('Y-m-d'),
-                'hasCustomPlanStartDay' => !$plannerUsesExistingBlocks && null !== $configuredPlanStartDay,
+                'hasCustomPlanStartDay' => !$plannerUsesExistingBlocks && $configuredPlanStartDay instanceof SerializableDateTime,
                 'plannerUsesExistingBlocks' => $plannerUsesExistingBlocks,
                 'recoverySaveSummary' => $recoverySaveSummary,
                 'linkedTrainingPlan' => $linkedTrainingPlan,
@@ -244,11 +244,11 @@ final readonly class BuildRacePlannerHtmlCommandHandler implements CommandHandle
         $plannerRoute = sprintf('/race-planner/plan-%s', $plan->getId());
         $planRaces = $this->loadRacesForPlan($plan);
         $raceEventsById = $this->raceEventsByIdMapBuilder->build($planRaces);
-        $linkedRace = null === $plan->getTargetRaceEventId()
-            ? null
-            : $this->raceEventRepository->findById($plan->getTargetRaceEventId());
+        $linkedRace = $plan->getTargetRaceEventId() instanceof \App\Domain\TrainingPlanner\RaceEventId
+            ? $this->raceEventRepository->findById($plan->getTargetRaceEventId())
+            : null;
         $targetRace = $linkedRace ?? $this->findPrimaryPlanRace($planRaces) ?? $this->createSyntheticTargetRace($plan, $now);
-        $usesSyntheticTarget = null === $linkedRace && !in_array($targetRace, $planRaces, true);
+        $usesSyntheticTarget = !$linkedRace instanceof RaceEvent && !in_array($targetRace, $planRaces, true);
         $allPlannerRaces = $planRaces;
 
         if ($usesSyntheticTarget) {
@@ -331,7 +331,7 @@ final readonly class BuildRacePlannerHtmlCommandHandler implements CommandHandle
             'linkedTrainingPlan' => $plan,
             'linkedTrainingPlanNeedsSync' => false,
             'plannerRoute' => $plannerRoute,
-            'plannerSupportsRaceActions' => null !== $linkedRace,
+            'plannerSupportsRaceActions' => $linkedRace instanceof RaceEvent,
             'isPlanPreview' => true,
         ];
     }
@@ -420,7 +420,7 @@ final readonly class BuildRacePlannerHtmlCommandHandler implements CommandHandle
                 'createdAt' => $plan->getCreatedAt()->format('Y-m-d H:i:s'),
                 'updatedAt' => $plan->getUpdatedAt()->format('Y-m-d H:i:s'),
             ],
-            'targetRace' => null === $targetRace ? null : $this->mapRaceEventForExport($targetRace),
+            'targetRace' => $targetRace instanceof RaceEvent ? $this->mapRaceEventForExport($targetRace) : null,
             'racesInPlanWindow' => array_map($this->mapRaceEventForExport(...), $raceEvents),
             'existingBlocks' => array_map($this->mapTrainingBlockForExport(...), $existingBlocks),
             'plannedSessions' => array_map(
@@ -432,14 +432,14 @@ final readonly class BuildRacePlannerHtmlCommandHandler implements CommandHandle
                 ),
                 $existingSessions,
             ),
-            'proposal' => null === $proposal ? null : $this->mapTrainingPlanProposalForExport($proposal),
+            'proposal' => $proposal instanceof \App\Domain\TrainingPlanner\PlanGenerator\TrainingPlanProposal ? $this->mapTrainingPlanProposalForExport($proposal) : null,
             'recommendations' => array_map($this->mapPlanRecommendationForExport(...), $recommendations),
             'runningPerformancePrediction' => $context['runningPerformancePrediction'] ?? null,
-            'recoverySaveSummary' => null === $recoverySaveSummary ? null : [
+            'recoverySaveSummary' => $recoverySaveSummary instanceof \App\Domain\TrainingPlanner\RacePlannerRecoverySaveSummary ? [
                 'missingRecoveryBlockCount' => $recoverySaveSummary->getMissingRecoveryBlockCount(),
                 'missingRecoverySessionCount' => $recoverySaveSummary->getMissingRecoverySessionCount(),
                 'hasAnythingToSave' => $recoverySaveSummary->hasAnythingToSave(),
-            ],
+            ] : null,
         ];
     }
 
@@ -562,9 +562,9 @@ final readonly class BuildRacePlannerHtmlCommandHandler implements CommandHandle
             'title' => $recommendation->getTitle(),
             'body' => $recommendation->getBody(),
             'severity' => $recommendation->getSeverity()->value,
-            'suggestedBlock' => null === $recommendation->getSuggestedBlock()
-                ? null
-                : $this->mapProposedTrainingBlockForExport($recommendation->getSuggestedBlock()),
+            'suggestedBlock' => $recommendation->getSuggestedBlock() instanceof \App\Domain\TrainingPlanner\PlanGenerator\ProposedTrainingBlock
+                ? $this->mapProposedTrainingBlockForExport($recommendation->getSuggestedBlock())
+                : null,
         ];
     }
 
@@ -620,8 +620,8 @@ final readonly class BuildRacePlannerHtmlCommandHandler implements CommandHandle
     }
 
     /**
-        * @param list<TrainingBlock> $existingBlocks
-        *
+     * @param list<TrainingBlock> $existingBlocks
+     *
      * @return list<PlanAdaptationRecommendation>
      */
     private function buildDevelopmentPlanPreviewRecommendations(TrainingPlan $plan, array $existingBlocks): array
@@ -654,7 +654,7 @@ final readonly class BuildRacePlannerHtmlCommandHandler implements CommandHandle
         array $existingSessions,
         SerializableDateTime $referenceDate,
     ): ?array {
-        if (null === $trainingPlan) {
+        if (!$trainingPlan instanceof TrainingPlan) {
             return null;
         }
 
@@ -717,7 +717,7 @@ final readonly class BuildRacePlannerHtmlCommandHandler implements CommandHandle
                         ),
                     ]
                     : null,
-                null !== $prediction->getAdherenceSnapshot()
+                $prediction->getAdherenceSnapshot() instanceof \App\Domain\TrainingPlanner\Prediction\RunningPlanAdherenceSnapshot
                     ? [
                         'label' => 'Completed run work',
                         'value' => $this->formatAdherenceSummary($prediction),
@@ -732,15 +732,15 @@ final readonly class BuildRacePlannerHtmlCommandHandler implements CommandHandle
                     'value' => $this->formatTrainingPlanContext($trainingPlan),
                 ],
             ])),
-            'basisNote' => null === $prediction->getAdherenceSnapshot()
-                ? 'Directional estimate only — this currently shows your ideal full-plan potential if you execute the planned running work well. A trajectory forecast appears once planned run sessions are linked to completed activities.'
-                : 'Directional estimate only — trajectory uses completed linked run sessions scheduled before today, while projected threshold still shows your ideal full-plan potential if you execute the remaining running work well. Neither is a guaranteed race result.',
+            'basisNote' => $prediction->getAdherenceSnapshot() instanceof \App\Domain\TrainingPlanner\Prediction\RunningPlanAdherenceSnapshot
+                ? 'Directional estimate only — trajectory uses completed linked run sessions scheduled before today, while projected threshold still shows your ideal full-plan potential if you execute the remaining running work well. Neither is a guaranteed race result.'
+                : 'Directional estimate only — this currently shows your ideal full-plan potential if you execute the planned running work well. A trajectory forecast appears once planned run sessions are linked to completed activities.',
         ];
     }
 
     private function formatTrajectoryStatusLabel(RunningPlanPerformancePrediction $prediction): ?string
     {
-        if (null === $prediction->getAdherenceSnapshot()) {
+        if (!$prediction->getAdherenceSnapshot() instanceof \App\Domain\TrainingPlanner\Prediction\RunningPlanAdherenceSnapshot) {
             return null;
         }
 
@@ -750,7 +750,7 @@ final readonly class BuildRacePlannerHtmlCommandHandler implements CommandHandle
     private function formatAdherenceSummary(RunningPlanPerformancePrediction $prediction): string
     {
         $adherenceSnapshot = $prediction->getAdherenceSnapshot();
-        if (null === $adherenceSnapshot) {
+        if (!$adherenceSnapshot instanceof \App\Domain\TrainingPlanner\Prediction\RunningPlanAdherenceSnapshot) {
             return 'No completed run sessions yet';
         }
 
@@ -776,9 +776,9 @@ final readonly class BuildRacePlannerHtmlCommandHandler implements CommandHandle
             $plan->getEndDay()->setTime(23, 59, 59),
         ));
 
-        if (null !== $plan->getTargetRaceEventId()) {
+        if ($plan->getTargetRaceEventId() instanceof \App\Domain\TrainingPlanner\RaceEventId) {
             $linkedRace = $this->raceEventRepository->findById($plan->getTargetRaceEventId());
-            if (null !== $linkedRace) {
+            if ($linkedRace instanceof RaceEvent) {
                 $races[(string) $linkedRace->getId()] = $linkedRace;
             }
         }
@@ -845,8 +845,8 @@ final readonly class BuildRacePlannerHtmlCommandHandler implements CommandHandle
     private function isDevelopmentPlanPreview(TrainingPlan $plan, ?RaceEvent $linkedRace = null): bool
     {
         return TrainingPlanType::TRAINING === $plan->getType()
-            && null === $plan->getTargetRaceEventId()
-            && null === $linkedRace;
+            && !$plan->getTargetRaceEventId() instanceof \App\Domain\TrainingPlanner\RaceEventId
+            && !$linkedRace instanceof RaceEvent;
     }
 
     private function inferPlanPreviewProfile(TrainingPlan $plan): RaceEventProfile

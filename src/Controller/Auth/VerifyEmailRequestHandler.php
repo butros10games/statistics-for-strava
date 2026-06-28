@@ -21,10 +21,10 @@ final readonly class VerifyEmailRequestHandler
     }
 
     #[Route(path: '/verify-email/{token}', name: 'app_verify_email', methods: ['GET'])]
-    public function handle(string $token): Response
+    public function handle(string $token): RedirectResponse
     {
         $user = $this->appUserRepository->findByEmailVerificationToken($token);
-        if (null !== $user) {
+        if ($user instanceof \App\Domain\Auth\AppUser) {
             $this->appUserRepository->save($user->markEmailVerified($this->clock->getCurrentDateTimeImmutable()));
         }
 

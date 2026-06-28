@@ -141,7 +141,7 @@ final class PlannedSessionLoadEstimator
     private function estimateFromTemplate(PlannedSession $plannedSession): ?float
     {
         $templateActivityId = $plannedSession->getTemplateActivityId();
-        if (null === $templateActivityId) {
+        if (!$templateActivityId instanceof \App\Domain\Activity\ActivityId) {
             return null;
         }
 
@@ -183,7 +183,7 @@ final class PlannedSessionLoadEstimator
     {
         $targetDurationInSeconds = $plannedSession->getTargetDurationInSeconds();
         $targetIntensity = $plannedSession->getTargetIntensity();
-        if (null === $targetDurationInSeconds || $targetDurationInSeconds <= 0 || null === $targetIntensity) {
+        if (null === $targetDurationInSeconds || $targetDurationInSeconds <= 0 || !$targetIntensity instanceof PlannedSessionIntensity) {
             return null;
         }
 
@@ -376,9 +376,9 @@ final class PlannedSessionLoadEstimator
             return null;
         }
 
-        $sessionIntensityMultiplier = null === $plannedSession->getTargetIntensity()
-            ? null
-            : $this->getIntensityMultiplier($plannedSession->getTargetIntensity());
+        $sessionIntensityMultiplier = $plannedSession->getTargetIntensity() instanceof PlannedSessionIntensity
+            ? $this->getIntensityMultiplier($plannedSession->getTargetIntensity())
+            : null;
         $stepType = PlannedSessionStepType::tryFrom($workoutStep['type']) ?? PlannedSessionStepType::INTERVAL;
         $defaultMultiplier = match ($stepType) {
             PlannedSessionStepType::RECOVERY => 0.65,
@@ -470,7 +470,10 @@ final class PlannedSessionLoadEstimator
             }
 
             $load = $this->estimateActivityLoad($activity);
-            if (null === $load || $load <= 0) {
+            if (null === $load) {
+                continue;
+            }
+            if ($load <= 0) {
                 continue;
             }
 
@@ -479,7 +482,10 @@ final class PlannedSessionLoadEstimator
                 'pace' => $activity->getPaceInSecPerKm()->toFloat(),
                 default => null,
             };
-            if (!is_numeric($effort) || $effort <= 0) {
+            if (!is_numeric($effort)) {
+                continue;
+            }
+            if ($effort <= 0) {
                 continue;
             }
 
@@ -555,7 +561,10 @@ final class PlannedSessionLoadEstimator
             }
 
             $load = $this->estimateActivityLoad($activity);
-            if (null === $load || $load <= 0) {
+            if (null === $load) {
+                continue;
+            }
+            if ($load <= 0) {
                 continue;
             }
 

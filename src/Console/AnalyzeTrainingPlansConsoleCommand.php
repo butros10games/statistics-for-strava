@@ -63,7 +63,7 @@ final class AnalyzeTrainingPlansConsoleCommand extends Command
         if ([] === $scenarios) {
             if ('json' === $format) {
                 $output->writeln((string) json_encode([
-                    'generatedAt' => (new \DateTimeImmutable())->format(DATE_ATOM),
+                    'generatedAt' => new \DateTimeImmutable()->format(DATE_ATOM),
                     'scenarioCount' => 0,
                     'aggregates' => [],
                     'reports' => [],
@@ -94,7 +94,7 @@ final class AnalyzeTrainingPlansConsoleCommand extends Command
         }
 
         $payload = [
-            'generatedAt' => (new \DateTimeImmutable())->format(DATE_ATOM),
+            'generatedAt' => new \DateTimeImmutable()->format(DATE_ATOM),
             'scenarioCount' => count($reports),
             'aggregates' => $this->buildAggregatePayload($reports),
             'reports' => array_map(
@@ -167,7 +167,7 @@ final class AnalyzeTrainingPlansConsoleCommand extends Command
     }
 
     /**
-     * @param list<\App\Domain\TrainingPlanner\Analysis\TrainingPlanQualityReport> $reports
+     * @param list<TrainingPlanQualityReport> $reports
      *
      * @return array<string, mixed>
      */

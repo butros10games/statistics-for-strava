@@ -7,8 +7,8 @@ namespace App\Tests\Domain\TrainingPlanner;
 use App\Domain\TrainingPlanner\RaceEvent;
 use App\Domain\TrainingPlanner\RaceEventId;
 use App\Domain\TrainingPlanner\RaceEventPriority;
-use App\Domain\TrainingPlanner\RaceEventType;
 use App\Domain\TrainingPlanner\RaceEventsByIdMapBuilder;
+use App\Domain\TrainingPlanner\RaceEventType;
 use App\Infrastructure\ValueObject\Time\SerializableDateTime;
 use PHPUnit\Framework\TestCase;
 
@@ -19,7 +19,7 @@ final class RaceEventsByIdMapBuilderTest extends TestCase
         $firstRace = $this->createRaceEvent('2023-10-19 00:00:00', 'Local 10K');
         $secondRace = $this->createRaceEvent('2023-11-12 00:00:00', 'A-race');
 
-        $indexed = (new RaceEventsByIdMapBuilder())->build([$firstRace, $secondRace]);
+        $indexed = new RaceEventsByIdMapBuilder()->build([$firstRace, $secondRace]);
 
         self::assertSame($firstRace, $indexed[(string) $firstRace->getId()]);
         self::assertSame($secondRace, $indexed[(string) $secondRace->getId()]);

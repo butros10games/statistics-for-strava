@@ -145,13 +145,15 @@ final readonly class DbalTrainingPlanRepository extends DbalRepository implement
     {
         return TrainingPlan::create(
             trainingPlanId: TrainingPlanId::fromString($result['trainingPlanId']),
-            ownerUserId: null === ($result['ownerUserId'] ?? null) ? null : AppUserId::fromString((string) $result['ownerUserId']),
             type: TrainingPlanType::from($result['type']),
             startDay: SerializableDateTime::fromString($result['startDay']),
             endDay: SerializableDateTime::fromString($result['endDay']),
             targetRaceEventId: null === $result['targetRaceEventId'] ? null : RaceEventId::fromString((string) $result['targetRaceEventId']),
             title: $result['title'],
             notes: $result['notes'],
+            createdAt: SerializableDateTime::fromString($result['createdAt']),
+            updatedAt: SerializableDateTime::fromString($result['updatedAt']),
+            ownerUserId: null === ($result['ownerUserId'] ?? null) ? null : AppUserId::fromString((string) $result['ownerUserId']),
             discipline: is_string($result['discipline'] ?? null) ? TrainingPlanDiscipline::from($result['discipline']) : null,
             sportSchedule: isset($result['sportSchedule']) ? json_decode((string) $result['sportSchedule'], true) : null,
             performanceMetrics: isset($result['performanceMetrics']) ? json_decode((string) $result['performanceMetrics'], true) : null,
@@ -161,15 +163,13 @@ final readonly class DbalTrainingPlanRepository extends DbalRepository implement
             runningWorkoutTargetMode: is_string($result['runningWorkoutTargetMode'] ?? null) ? RunningWorkoutTargetMode::tryFrom($result['runningWorkoutTargetMode']) : null,
             runHillSessionsEnabled: (bool) ($result['runHillSessionsEnabled'] ?? false),
             visibility: isset($result['visibility']) && is_string($result['visibility']) ? TrainingPlanVisibility::from($result['visibility']) : TrainingPlanVisibility::FRIENDS,
-            createdAt: SerializableDateTime::fromString($result['createdAt']),
-            updatedAt: SerializableDateTime::fromString($result['updatedAt']),
         );
     }
 
     private function applyOwnerScope(QueryBuilder $queryBuilder, ?AppUserId $ownerUserId): void
     {
         $ownerUserId = $this->resolveOwnerUserId($ownerUserId);
-        if (null === $ownerUserId) {
+        if (!$ownerUserId instanceof AppUserId) {
             return;
         }
 

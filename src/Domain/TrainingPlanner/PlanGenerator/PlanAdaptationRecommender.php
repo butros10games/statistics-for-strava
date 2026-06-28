@@ -21,8 +21,8 @@ final readonly class PlanAdaptationRecommender
      * @param list<PlannedSession>      $existingSessions
      * @param list<RaceEvent>           $upcomingRaces
      * @param array<string, float|null> $plannedSessionEstimatesById
-      * @param list<PlannedSession>      $planWindowSessions
-      * @param array<string, float|null> $planWindowSessionEstimatesById
+     * @param list<PlannedSession>      $planWindowSessions
+     * @param array<string, float|null> $planWindowSessionEstimatesById
      *
      * @return list<PlanAdaptationRecommendation>
      */
@@ -44,7 +44,7 @@ final readonly class PlanAdaptationRecommender
             $recommendations,
             $this->checkBlockCoverage($targetRace, $existingBlocks, $rules, $now),
             $this->checkBRaceAdaptations($targetRace, $existingBlocks, $upcomingRaces, $rules),
-            $this->checkLoadProgression($existingSessions, $plannedSessionEstimatesById, $readinessContext, $rules),
+            $this->checkLoadProgression($readinessContext, $rules),
             $this->checkTaperTiming($targetRace, $existingBlocks, $rules, $now),
             $this->checkUpcomingWeekCoverage(
                 blocks: $existingBlocks,
@@ -101,7 +101,7 @@ final readonly class PlanAdaptationRecommender
 
         $linkedBlocks = array_filter(
             $existingBlocks,
-            static fn (TrainingBlock $block): bool => null !== $block->getTargetRaceEventId()
+            static fn (TrainingBlock $block): bool => $block->getTargetRaceEventId() instanceof \App\Domain\TrainingPlanner\RaceEventId
                 && (string) $block->getTargetRaceEventId() === (string) $targetRace->getId(),
         );
 
@@ -178,7 +178,7 @@ final readonly class PlanAdaptationRecommender
             $daysBeforeARace = (int) $bRace->getDay()->diff($raceDay)->days;
             $bRaceBlock = $this->findBlockForDay($existingBlocks, $bRace->getDay());
 
-            if (null !== $bRaceBlock && TrainingBlockPhase::TAPER === $bRaceBlock->getPhase()) {
+            if ($bRaceBlock instanceof TrainingBlock && TrainingBlockPhase::TAPER === $bRaceBlock->getPhase()) {
                 $recommendations[] = PlanAdaptationRecommendation::create(
                     type: PlanAdaptationRecommendationType::ADJUST_FOR_B_RACE,
                     title: sprintf('B-race falls in taper (%s)', $bRace->getTitle() ?? 'B-race'),
@@ -212,7 +212,7 @@ final readonly class PlanAdaptationRecommender
         foreach ($cRaces as $cRace) {
             $cRaceBlock = $this->findBlockForDay($existingBlocks, $cRace->getDay());
 
-            if (null !== $cRaceBlock && TrainingBlockPhase::PEAK === $cRaceBlock->getPhase()) {
+            if ($cRaceBlock instanceof TrainingBlock && TrainingBlockPhase::PEAK === $cRaceBlock->getPhase()) {
                 $recommendations[] = PlanAdaptationRecommendation::create(
                     type: PlanAdaptationRecommendationType::ADJUST_FOR_B_RACE,
                     title: sprintf('C-race during peak (%s)', $cRace->getTitle() ?? 'C-race'),
@@ -229,24 +229,18 @@ final readonly class PlanAdaptationRecommender
     }
 
     /**
-     * @param list<PlannedSession>      $existingSessions
-     * @param array<string, float|null> $plannedSessionEstimatesById
-     *
      * @return list<PlanAdaptationRecommendation>
      */
     private function checkLoadProgression(
-        array $existingSessions,
-        array $plannedSessionEstimatesById,
         ?RaceReadinessContext $readinessContext,
         RaceProfileTrainingRules $rules,
     ): array {
         $recommendations = [];
 
-        if (null === $readinessContext) {
+        if (!$readinessContext instanceof RaceReadinessContext) {
             return $recommendations;
         }
 
-        $weeklyEstimatedLoad = $readinessContext->getEstimatedLoad();
         $hardSessionCount = $readinessContext->getHardSessionCount();
         $sessionCount = $readinessContext->getSessionCount();
 
@@ -277,7 +271,7 @@ final readonly class PlanAdaptationRecommender
         }
 
         $readinessScore = $readinessContext->getReadinessScore();
-        if (null !== $readinessScore && in_array($readinessScore->getStatus(), [ReadinessStatus::CAUTION, ReadinessStatus::NEEDS_RECOVERY], true) && $hardSessionCount >= 2) {
+        if ($readinessScore instanceof \App\Domain\Dashboard\Widget\TrainingLoad\ReadinessScore && in_array($readinessScore->getStatus(), [ReadinessStatus::CAUTION, ReadinessStatus::NEEDS_RECOVERY], true) && $hardSessionCount >= 2) {
             $recommendations[] = PlanAdaptationRecommendation::create(
                 type: PlanAdaptationRecommendationType::INSERT_RECOVERY,
                 title: 'Readiness is compromised',
@@ -304,17 +298,9 @@ final readonly class PlanAdaptationRecommender
         $raceDay = $targetRace->getDay();
         $daysToRace = max(0, (int) $now->diff($raceDay)->days);
         $idealTaperStartDays = $rules->getTaperWeeks() * 7;
-
-        $taperBlock = null;
-        foreach ($existingBlocks as $block) {
-            if (TrainingBlockPhase::TAPER === $block->getPhase()
-                && null !== $block->getTargetRaceEventId()
-                && (string) $block->getTargetRaceEventId() === (string) $targetRace->getId()) {
-                $taperBlock = $block;
-
-                break;
-            }
-        }
+        $taperBlock = array_find($existingBlocks, fn (TrainingBlock $block): bool => TrainingBlockPhase::TAPER === $block->getPhase()
+            && $block->getTargetRaceEventId() instanceof \App\Domain\TrainingPlanner\RaceEventId
+            && (string) $block->getTargetRaceEventId() === (string) $targetRace->getId());
 
         if (null === $taperBlock) {
             return $recommendations;
@@ -467,5 +453,4 @@ final readonly class PlanAdaptationRecommender
 
         return $recommendations;
     }
-
 }

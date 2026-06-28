@@ -25,7 +25,7 @@ final readonly class RacePlannerExistingBlockSelector
 
         $linkedBlocks = array_values(array_filter(
             $blocks,
-            static fn (TrainingBlock $block): bool => null !== $block->getTargetRaceEventId()
+            static fn (TrainingBlock $block): bool => $block->getTargetRaceEventId() instanceof RaceEventId
                 && (string) $block->getTargetRaceEventId() === (string) $targetRace->getId(),
         ));
 
@@ -35,9 +35,9 @@ final readonly class RacePlannerExistingBlockSelector
 
         $anchorBlock = $this->findFallbackAnchorBlock($blocks, $targetRace->getDay());
 
-        return null === $anchorBlock
-            ? []
-            : $this->expandContiguousWindow([$anchorBlock], $blocks, $targetRace->getDay(), $planningEndDay);
+        return $anchorBlock instanceof TrainingBlock
+            ? $this->expandContiguousWindow([$anchorBlock], $blocks, $targetRace->getDay(), $planningEndDay)
+            : [];
     }
 
     /**

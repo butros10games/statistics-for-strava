@@ -4,7 +4,6 @@ declare(strict_types=1);
 
 namespace App\Domain\TrainingPlanner;
 
-use App\Domain\Activity\Activity;
 use App\Domain\Activity\ActivityRepository;
 use App\Domain\Activity\ActivityType;
 use App\Domain\Calendar\Week;

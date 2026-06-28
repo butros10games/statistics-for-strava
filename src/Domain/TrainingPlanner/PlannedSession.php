@@ -206,13 +206,13 @@ final readonly class PlannedSession
             targetDurationInSeconds: $this->targetDurationInSeconds,
             targetIntensity: $this->targetIntensity,
             templateActivityId: $this->templateActivityId,
-            workoutSteps: $this->workoutSteps,
             estimationSource: $this->estimationSource,
             linkedActivityId: $linkedActivityId,
             linkStatus: PlannedSessionLinkStatus::SUGGESTED,
             createdAt: $this->createdAt,
             updatedAt: $updatedAt,
             ownerUserId: $this->ownerUserId,
+            workoutSteps: $this->workoutSteps,
         );
     }
 
@@ -228,13 +228,13 @@ final readonly class PlannedSession
             targetDurationInSeconds: $this->targetDurationInSeconds,
             targetIntensity: $this->targetIntensity,
             templateActivityId: $this->templateActivityId,
-            workoutSteps: $this->workoutSteps,
             estimationSource: $this->estimationSource,
             linkedActivityId: $linkedActivityId,
             linkStatus: PlannedSessionLinkStatus::LINKED,
             createdAt: $this->createdAt,
             updatedAt: $updatedAt,
             ownerUserId: $this->ownerUserId,
+            workoutSteps: $this->workoutSteps,
         );
     }
 
@@ -250,13 +250,13 @@ final readonly class PlannedSession
             targetDurationInSeconds: $this->targetDurationInSeconds,
             targetIntensity: $this->targetIntensity,
             templateActivityId: $this->templateActivityId,
-            workoutSteps: $this->workoutSteps,
             estimationSource: $this->estimationSource,
             linkedActivityId: null,
             linkStatus: PlannedSessionLinkStatus::UNLINKED,
             createdAt: $this->createdAt,
             updatedAt: $updatedAt,
             ownerUserId: $this->ownerUserId,
+            workoutSteps: $this->workoutSteps,
         );
     }
 
@@ -439,9 +439,7 @@ final readonly class PlannedSession
     {
         $targetType = PlannedSessionStepTargetType::tryFrom((string) ($workoutStep['targetType'] ?? ''));
         if (PlannedSessionStepTargetType::HEART_RATE === $targetType) {
-            return null !== $workoutStep['durationInSeconds']
-                ? $workoutStep['durationInSeconds']
-                : null;
+            return $workoutStep['durationInSeconds'] ?? null;
         }
 
         if (null !== $workoutStep['durationInSeconds'] && $workoutStep['durationInSeconds'] > 0) {
@@ -500,7 +498,7 @@ final readonly class PlannedSession
             return trim($value);
         }
 
-        return sprintf('workout-item-%d-%s', $index, substr(md5((string) $index.serialize($value)), 0, 8));
+        return sprintf('workout-item-%d-%s', $index, substr(md5($index.serialize($value)), 0, 8));
     }
 
     /**

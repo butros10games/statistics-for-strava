@@ -92,13 +92,13 @@ final readonly class TrainingLoadWidget implements Widget
             activityTypeRecoveryFingerprints: $activityTypeRecoveryFingerprints,
             recentActivityDaySamples: array_slice($activityDaySamples, -7),
         );
-        $readinessScore = null === $baseReadinessScore ? null : ReadinessScore::of(
+        $readinessScore = $baseReadinessScore instanceof ReadinessScore ? ReadinessScore::of(
             max(0, min(100, $baseReadinessScore->getValue() + $trainingLoadPersonalization->getReadinessAdjustment()))
-        );
-        $readinessAssessment = null === $baseReadinessAssessment || null === $readinessScore
+        ) : null;
+        $readinessAssessment = !$baseReadinessAssessment instanceof ReadinessAssessment || !$readinessScore instanceof ReadinessScore
             ? null
             : $baseReadinessAssessment->withScore($readinessScore);
-        if (null !== $readinessAssessment && 0 !== $trainingLoadPersonalization->getReadinessAdjustment()) {
+        if ($readinessAssessment instanceof ReadinessAssessment && 0 !== $trainingLoadPersonalization->getReadinessAdjustment()) {
             $readinessAssessment = $readinessAssessment->withFactor(ReadinessFactor::create(
                 ReadinessFactor::KEY_PERSONALIZATION,
                 'Personalized recovery lens',
@@ -144,7 +144,7 @@ final readonly class TrainingLoadWidget implements Widget
             )
             : null;
 
-        if (null !== $plannedSessionForecastProjection) {
+        if ($plannedSessionForecastProjection instanceof TrainingLoadForecastProjection) {
             array_unshift($trainingLoadForecastScenarios, [
                 'key' => 'planned-sessions',
                 'label' => 'Planned sessions',
@@ -250,7 +250,7 @@ final readonly class TrainingLoadWidget implements Widget
             static fn (array $record): bool => $record['day'] >= $from->format('Y-m-d'),
         ));
 
-        $lastRecord = [] === $filteredRecords ? null : $filteredRecords[array_key_last($filteredRecords)];
+        $lastRecord = [] === $filteredRecords ? null : array_last($filteredRecords);
 
         return new FindWellnessMetricsResponse(
             records: $filteredRecords,
@@ -288,7 +288,10 @@ final readonly class TrainingLoadWidget implements Widget
         $totalLoadPerDay = [];
         foreach ($this->enrichedActivities->findAll() as $activity) {
             $day = $activity->getStartDate()->format('Y-m-d');
-            if ($day < $fromDay || $day > $toDay) {
+            if ($day < $fromDay) {
+                continue;
+            }
+            if ($day > $toDay) {
                 continue;
             }
 

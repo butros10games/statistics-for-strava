@@ -54,7 +54,7 @@ final readonly class AppUserStravaConnection
             appUserId: $appUserId,
             stravaAthleteId: trim($stravaAthleteId),
             refreshToken: trim($refreshToken),
-            scopes: array_values(array_unique(array_filter(array_map('trim', $scopes), static fn (string $scope): bool => '' !== $scope))),
+            scopes: array_values(array_unique(array_filter(array_map(trim(...), $scopes), static fn (string $scope): bool => '' !== $scope))),
             accessTokenExpiresAt: $accessTokenExpiresAt,
             tokenRefreshedAt: $updatedAt,
             webhookCorrelationKey: null === $webhookCorrelationKey ? null : trim($webhookCorrelationKey),

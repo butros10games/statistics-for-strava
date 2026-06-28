@@ -113,7 +113,7 @@ final readonly class DbalTrainingSessionRepository extends DbalRepository implem
             $this->applyNullableEqualityFilter($queryBuilder, $column, $value);
         }
 
-        if (null !== $excludeTrainingSessionId) {
+        if ($excludeTrainingSessionId instanceof TrainingSessionId) {
             $queryBuilder
                 ->andWhere('trainingSessionId != :excludeTrainingSessionId')
                 ->setParameter('excludeTrainingSessionId', (string) $excludeTrainingSessionId);
@@ -137,25 +137,25 @@ final readonly class DbalTrainingSessionRepository extends DbalRepository implem
             ->andWhere('activityType = :activityType')
             ->setParameter('activityType', $activityType->value);
 
-        if (null !== $criteria?->getSessionPhase()) {
+        if ($criteria?->getSessionPhase() instanceof TrainingBlockPhase) {
             $queryBuilder
                 ->andWhere('sessionPhase = :sessionPhase')
                 ->setParameter('sessionPhase', $criteria->getSessionPhase()->value);
         }
 
-        if (null !== $criteria?->getSessionObjective()) {
+        if ($criteria?->getSessionObjective() instanceof TrainingSessionObjective) {
             $queryBuilder
                 ->andWhere('sessionObjective = :sessionObjective')
                 ->setParameter('sessionObjective', $criteria->getSessionObjective()->value);
         }
 
-        if (null !== $criteria?->getSessionSource()) {
+        if ($criteria?->getSessionSource() instanceof TrainingSessionSource) {
             $queryBuilder
                 ->andWhere('sessionSource = :sessionSource')
                 ->setParameter('sessionSource', $criteria->getSessionSource()->value);
         }
 
-        if (null !== $criteria?->getTargetIntensity()) {
+        if ($criteria?->getTargetIntensity() instanceof PlannedSessionIntensity) {
             $queryBuilder
                 ->andWhere('targetIntensity = :targetIntensity')
                 ->setParameter('targetIntensity', $criteria->getTargetIntensity()->value);
@@ -219,14 +219,14 @@ final readonly class DbalTrainingSessionRepository extends DbalRepository implem
             targetDurationInSeconds: null === $result['targetDurationInSeconds'] ? null : (int) $result['targetDurationInSeconds'],
             targetIntensity: null === $result['targetIntensity'] ? null : PlannedSessionIntensity::from($result['targetIntensity']),
             templateActivityId: null === $result['templateActivityId'] ? null : ActivityId::fromString($result['templateActivityId']),
-            workoutSteps: Json::decode((string) ($result['workoutSteps'] ?? '[]')),
             estimationSource: PlannedSessionEstimationSource::from($result['estimationSource']),
-            sessionSource: is_string($result['sessionSource'] ?? null) ? TrainingSessionSource::from($result['sessionSource']) : TrainingSessionSource::PLANNED_SESSION,
-            sessionPhase: is_string($result['sessionPhase'] ?? null) ? TrainingBlockPhase::from($result['sessionPhase']) : null,
-            sessionObjective: is_string($result['sessionObjective'] ?? null) ? TrainingSessionObjective::from($result['sessionObjective']) : null,
             lastPlannedOn: null === $result['lastPlannedOn'] ? null : SerializableDateTime::fromString($result['lastPlannedOn']),
             createdAt: SerializableDateTime::fromString($result['createdAt']),
             updatedAt: SerializableDateTime::fromString($result['updatedAt']),
+            workoutSteps: Json::decode((string) ($result['workoutSteps'] ?? '[]')),
+            sessionSource: is_string($result['sessionSource'] ?? null) ? TrainingSessionSource::from($result['sessionSource']) : TrainingSessionSource::PLANNED_SESSION,
+            sessionPhase: is_string($result['sessionPhase'] ?? null) ? TrainingBlockPhase::from($result['sessionPhase']) : null,
+            sessionObjective: is_string($result['sessionObjective'] ?? null) ? TrainingSessionObjective::from($result['sessionObjective']) : null,
         );
     }
 

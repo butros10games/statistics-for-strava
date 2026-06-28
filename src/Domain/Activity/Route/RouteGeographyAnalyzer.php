@@ -26,12 +26,12 @@ final readonly class RouteGeographyAnalyzer
         $geosOpPath = $this->resolveGeosOpPath();
         $this->engine = null === $geosOpPath ? null : new GeosOpEngine($geosOpPath);
         $this->reader = new GeoJsonReader();
-        $this->countriesGeometry = null === $this->engine ? [] : $this->buildCountriesGeometry();
+        $this->countriesGeometry = $this->engine instanceof GeosOpEngine ? $this->buildCountriesGeometry() : [];
     }
 
     public function isAvailable(): bool
     {
-        return null !== $this->engine;
+        return $this->engine instanceof GeosOpEngine;
     }
 
     /**
@@ -63,7 +63,7 @@ final readonly class RouteGeographyAnalyzer
     public function analyzeForPolyline(EncodedPolyline $polyline): array
     {
         $passedCountries = [];
-        if (null === $this->engine) {
+        if (!$this->engine instanceof GeosOpEngine) {
             return $passedCountries;
         }
 

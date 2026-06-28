@@ -12,15 +12,15 @@ use App\Domain\Calendar\FindMonthlyStats\FindMonthlyStatsResponse;
 use App\Domain\Calendar\Month;
 use App\Domain\Calendar\Months;
 use App\Domain\Calendar\Week;
-use App\Domain\Challenge\Challenges;
 use App\Domain\Challenge\ChallengeRepository;
-use App\Domain\TrainingPlanner\PlannedSessionEstimatedLoadMapBuilder;
-use App\Domain\TrainingPlanner\PlannedSession;
-use App\Domain\TrainingPlanner\PlannedSessionRepository;
+use App\Domain\Challenge\Challenges;
 use App\Domain\TrainingPlanner\CurrentTrainingBlockResolver;
+use App\Domain\TrainingPlanner\PlannedSession;
+use App\Domain\TrainingPlanner\PlannedSessionEstimatedLoadMapBuilder;
+use App\Domain\TrainingPlanner\PlannedSessionRepository;
 use App\Domain\TrainingPlanner\RaceEvent;
-use App\Domain\TrainingPlanner\RaceEventsByIdMapBuilder;
 use App\Domain\TrainingPlanner\RaceEventRepository;
+use App\Domain\TrainingPlanner\RaceEventsByIdMapBuilder;
 use App\Domain\TrainingPlanner\TrainingBlock;
 use App\Domain\TrainingPlanner\TrainingBlockRepository;
 use App\Infrastructure\CQRS\Command\Command;
@@ -64,24 +64,24 @@ final readonly class BuildMonthlyStatsHtmlCommandHandler implements CommandHandl
         $latestTrainingBlock = $this->trainingBlockRepository->findLatest();
 
         $startDate = $allActivities->getFirstActivityStartDate();
-        if (null !== $earliestPlannedSession && $earliestPlannedSession->getDay() < $startDate) {
+        if ($earliestPlannedSession instanceof PlannedSession && $earliestPlannedSession->getDay() < $startDate) {
             $startDate = $earliestPlannedSession->getDay();
         }
-        if (null !== $earliestRaceEvent && $earliestRaceEvent->getDay() < $startDate) {
+        if ($earliestRaceEvent instanceof RaceEvent && $earliestRaceEvent->getDay() < $startDate) {
             $startDate = $earliestRaceEvent->getDay();
         }
-        if (null !== $earliestTrainingBlock && $earliestTrainingBlock->getStartDay() < $startDate) {
+        if ($earliestTrainingBlock instanceof TrainingBlock && $earliestTrainingBlock->getStartDay() < $startDate) {
             $startDate = $earliestTrainingBlock->getStartDay();
         }
 
         $endDate = $now;
-        if (null !== $latestPlannedSession && $latestPlannedSession->getDay() > $endDate) {
+        if ($latestPlannedSession instanceof PlannedSession && $latestPlannedSession->getDay() > $endDate) {
             $endDate = $latestPlannedSession->getDay();
         }
-        if (null !== $latestRaceEvent && $latestRaceEvent->getDay() > $endDate) {
+        if ($latestRaceEvent instanceof RaceEvent && $latestRaceEvent->getDay() > $endDate) {
             $endDate = $latestRaceEvent->getDay();
         }
-        if (null !== $latestTrainingBlock && $latestTrainingBlock->getEndDay() > $endDate) {
+        if ($latestTrainingBlock instanceof TrainingBlock && $latestTrainingBlock->getEndDay() > $endDate) {
             $endDate = $latestTrainingBlock->getEndDay();
         }
 
@@ -247,8 +247,6 @@ final readonly class BuildMonthlyStatsHtmlCommandHandler implements CommandHandl
     }
 
     /**
-    * @param FindMonthlyStatsResponse                                             $monthlyStats
-    * @param Challenges                                                           $allChallenges
      * @param array<string, list<PlannedSession>>                                  $plannedSessionsByMonth
      * @param array<string, list<RaceEvent>>                                       $raceEventsByMonth
      * @param array<string, list<TrainingBlock>>                                   $trainingBlocksByMonth
@@ -494,5 +492,4 @@ final readonly class BuildMonthlyStatsHtmlCommandHandler implements CommandHandl
                 && $trainingBlock->getStartDay() <= $week->getTo(),
         ));
     }
-
 }

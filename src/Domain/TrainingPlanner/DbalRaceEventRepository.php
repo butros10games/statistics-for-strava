@@ -183,7 +183,6 @@ final readonly class DbalRaceEventRepository extends DbalRepository implements R
 
         return RaceEvent::create(
             raceEventId: RaceEventId::fromString($result['raceEventId']),
-            ownerUserId: null === ($result['ownerUserId'] ?? null) ? null : AppUserId::fromString((string) $result['ownerUserId']),
             day: SerializableDateTime::fromString($result['day']),
             type: RaceEventType::from($result['type']),
             title: $result['title'],
@@ -193,13 +192,14 @@ final readonly class DbalRaceEventRepository extends DbalRepository implements R
             targetFinishTimeInSeconds: null === $result['targetFinishTimeInSeconds'] ? null : (int) $result['targetFinishTimeInSeconds'],
             createdAt: SerializableDateTime::fromString($result['createdAt']),
             updatedAt: SerializableDateTime::fromString($result['updatedAt']),
+            ownerUserId: null === ($result['ownerUserId'] ?? null) ? null : AppUserId::fromString((string) $result['ownerUserId']),
         );
     }
 
     private function applyOwnerScope(QueryBuilder $queryBuilder, ?AppUserId $ownerUserId): void
     {
         $ownerUserId = $this->resolveOwnerUserId($ownerUserId);
-        if (null === $ownerUserId) {
+        if (!$ownerUserId instanceof AppUserId) {
             return;
         }
 

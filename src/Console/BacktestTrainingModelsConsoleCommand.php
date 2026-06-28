@@ -445,12 +445,15 @@ final class BacktestTrainingModelsConsoleCommand extends Command
             }
 
             $estimate = $estimator->estimate($plannedSession);
-            if (null === $estimate) {
+            if (!$estimate instanceof \App\Domain\TrainingPlanner\PlannedSessionLoadEstimate) {
                 continue;
             }
 
             $offset = (int) $evaluationDay->diff($plannedSession->getDay())->days;
-            if ($offset < 1 || $offset > self::PLANNER_FORECAST_HORIZON_DAYS) {
+            if ($offset < 1) {
+                continue;
+            }
+            if ($offset > self::PLANNER_FORECAST_HORIZON_DAYS) {
                 continue;
             }
 

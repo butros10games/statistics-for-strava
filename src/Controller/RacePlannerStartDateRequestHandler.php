@@ -30,7 +30,7 @@ final readonly class RacePlannerStartDateRequestHandler
     }
 
     #[Route(path: '/race-planner/start-date', methods: ['POST'])]
-    public function handle(Request $request): Response
+    public function handle(Request $request): RedirectResponse
     {
         $now = $this->clock->getCurrentDateTimeImmutable();
         $requestedPlanStartDay = trim($request->request->getString('planStartDay'));

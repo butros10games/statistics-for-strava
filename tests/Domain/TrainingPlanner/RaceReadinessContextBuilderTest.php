@@ -9,11 +9,9 @@ use App\Domain\Dashboard\Widget\TrainingLoad\ReadinessScore;
 use App\Domain\Dashboard\Widget\TrainingLoad\TrainingLoadForecastProjection;
 use App\Domain\Dashboard\Widget\TrainingLoad\TrainingMetrics;
 use App\Domain\TrainingPlanner\PlannedSessionIntensity;
-use App\Domain\TrainingPlanner\RaceEvent;
 use App\Domain\TrainingPlanner\RaceEventId;
 use App\Domain\TrainingPlanner\RaceEventType;
 use App\Domain\TrainingPlanner\RaceReadinessContextBuilder;
-use App\Domain\TrainingPlanner\TrainingBlock;
 use App\Domain\TrainingPlanner\TrainingBlockPhase;
 use App\Infrastructure\ValueObject\Time\SerializableDateTime;
 use PHPUnit\Framework\TestCase;
@@ -230,5 +228,4 @@ final class RaceReadinessContextBuilderTest extends TestCase
         self::assertSame('West Friesland', $context->getTargetRace()?->getTitle());
         self::assertSame(66, $context->getTargetRaceCountdownDays());
     }
-
 }

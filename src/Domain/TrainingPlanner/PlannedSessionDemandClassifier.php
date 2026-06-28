@@ -15,7 +15,7 @@ final class PlannedSessionDemandClassifier
     public static function isHard(PlannedSession $plannedSession, array $plannedSessionEstimatesById): bool
     {
         $targetIntensity = $plannedSession->getTargetIntensity();
-        if (null !== $targetIntensity) {
+        if ($targetIntensity instanceof PlannedSessionIntensity) {
             return PlannedSessionIntensity::HARD === $targetIntensity || PlannedSessionIntensity::RACE === $targetIntensity;
         }
 

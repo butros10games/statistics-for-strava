@@ -116,14 +116,14 @@ final readonly class TrainingSession
             targetDurationInSeconds: $plannedSession->getTargetDurationInSeconds(),
             targetIntensity: $plannedSession->getTargetIntensity(),
             templateActivityId: $plannedSession->getTemplateActivityId(),
-            workoutSteps: $plannedSession->getWorkoutSteps(),
             estimationSource: $plannedSession->getEstimationSource(),
-            sessionSource: TrainingSessionSource::PLANNED_SESSION,
-            sessionPhase: self::inferSessionPhase($plannedSession->getTitle(), $plannedSession->getNotes(), $plannedSession->getTargetIntensity()),
-            sessionObjective: self::inferSessionObjective($plannedSession->getTitle(), $plannedSession->getNotes(), $plannedSession->getTargetIntensity()),
             lastPlannedOn: $plannedSession->getDay(),
             createdAt: $existingTrainingSession?->getCreatedAt() ?? $plannedSession->getCreatedAt(),
             updatedAt: $plannedSession->getUpdatedAt(),
+            workoutSteps: $plannedSession->getWorkoutSteps(),
+            sessionSource: TrainingSessionSource::PLANNED_SESSION,
+            sessionPhase: self::inferSessionPhase($plannedSession->getTitle(), $plannedSession->getNotes(), $plannedSession->getTargetIntensity()),
+            sessionObjective: self::inferSessionObjective($plannedSession->getTitle(), $plannedSession->getNotes(), $plannedSession->getTargetIntensity()),
         );
     }
 
@@ -223,8 +223,8 @@ final readonly class TrainingSession
     public function withPersistedIdentity(self $persistedTrainingSession, bool $preserveExistingSourcePlannedSessionId = false): self
     {
         $lastPlannedOn = match (true) {
-            null === $this->getLastPlannedOn() => $persistedTrainingSession->getLastPlannedOn(),
-            null === $persistedTrainingSession->getLastPlannedOn() => $this->getLastPlannedOn(),
+            !$this->getLastPlannedOn() instanceof SerializableDateTime => $persistedTrainingSession->getLastPlannedOn(),
+            !$persistedTrainingSession->getLastPlannedOn() instanceof SerializableDateTime => $this->getLastPlannedOn(),
             $this->getLastPlannedOn()->isAfter($persistedTrainingSession->getLastPlannedOn()) => $this->getLastPlannedOn(),
             default => $persistedTrainingSession->getLastPlannedOn(),
         };
@@ -244,14 +244,14 @@ final readonly class TrainingSession
             targetDurationInSeconds: $this->getTargetDurationInSeconds(),
             targetIntensity: $this->getTargetIntensity(),
             templateActivityId: $this->getTemplateActivityId(),
-            workoutSteps: $this->getWorkoutSteps(),
             estimationSource: $this->getEstimationSource(),
-            sessionSource: $this->getSessionSource(),
-            sessionPhase: $this->getSessionPhase(),
-            sessionObjective: $this->getSessionObjective(),
             lastPlannedOn: $lastPlannedOn,
             createdAt: $persistedTrainingSession->getCreatedAt(),
             updatedAt: $updatedAt,
+            workoutSteps: $this->getWorkoutSteps(),
+            sessionSource: $this->getSessionSource(),
+            sessionPhase: $this->getSessionPhase(),
+            sessionObjective: $this->getSessionObjective(),
         );
     }
 
@@ -344,12 +344,6 @@ final readonly class TrainingSession
      */
     private static function containsAny(string $haystack, array $needles): bool
     {
-        foreach ($needles as $needle) {
-            if (str_contains($haystack, $needle)) {
-                return true;
-            }
-        }
-
-        return false;
+        return array_any($needles, fn (string $needle): bool => str_contains($haystack, $needle));
     }
 }

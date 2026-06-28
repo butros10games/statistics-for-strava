@@ -69,7 +69,7 @@ final readonly class FirstRegisteredUserDataAssigner
 
     private function claimLegacyStravaConnection(AppUser $appUser, string $payload): void
     {
-        if (null !== $this->stravaConnectionRepository->findByUserId($appUser->getId())) {
+        if ($this->stravaConnectionRepository->findByUserId($appUser->getId()) instanceof AppUserStravaConnection) {
             return;
         }
 

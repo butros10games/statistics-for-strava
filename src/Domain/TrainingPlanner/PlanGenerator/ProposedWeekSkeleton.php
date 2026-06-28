@@ -117,18 +117,18 @@ final readonly class ProposedWeekSkeleton
 
     public function hasRaceEffortSession(): bool
     {
-        return null !== $this->findRaceEffortSession();
+        return $this->findRaceEffortSession() instanceof ProposedSession;
     }
 
     public function getRaceSummaryLabel(): ?string
     {
         $raceSession = $this->findRaceEffortSession();
-        if (null === $raceSession) {
+        if (!$raceSession instanceof ProposedSession) {
             return null;
         }
 
-        $raceType = trim((string) ($raceSession->getNotes() ?? ''));
-        $raceTitle = trim((string) ($raceSession->getTitle() ?? ''));
+        $raceType = trim($raceSession->getNotes() ?? '');
+        $raceTitle = trim($raceSession->getTitle() ?? '');
 
         if ('' === $raceType) {
             return '' === $raceTitle ? null : $raceTitle;

@@ -94,7 +94,7 @@ final readonly class RacePlannerUpcomingSessionRegenerator
             return true;
         }
 
-        return null !== $plannedSession->getLinkedActivityId();
+        return $plannedSession->getLinkedActivityId() instanceof \App\Domain\Activity\ActivityId;
     }
 
     /**
@@ -113,10 +113,12 @@ final readonly class RacePlannerUpcomingSessionRegenerator
         foreach ($proposal->getProposedBlocks() as $proposedTrainingBlock) {
             foreach ($proposedTrainingBlock->getWeekSkeletons() as $weekSkeleton) {
                 foreach ($weekSkeleton->getSessions() as $proposedSession) {
-                    if ($proposedSession->getDay() < $regenerationStartDay || $proposedSession->getDay() > $regenerationEndDay) {
+                    if ($proposedSession->getDay() < $regenerationStartDay) {
                         continue;
                     }
-
+                    if ($proposedSession->getDay() > $regenerationEndDay) {
+                        continue;
+                    }
                     if ($this->hasConflictingPreservedSession($preservedSessions, $proposedSession)) {
                         continue;
                     }
@@ -311,10 +313,8 @@ final readonly class RacePlannerUpcomingSessionRegenerator
      */
     private function countRunSessionsOnDay(array $sessions, SerializableDateTime $day): int
     {
-        return count(array_filter($sessions, static function (PlannedSession|ProposedSession $session) use ($day): bool {
-            return $session->getDay()->format('Y-m-d') === $day->format('Y-m-d')
-                && ActivityType::RUN === $session->getActivityType();
-        }));
+        return count(array_filter($sessions, static fn (PlannedSession|ProposedSession $session): bool => $session->getDay()->format('Y-m-d') === $day->format('Y-m-d')
+            && ActivityType::RUN === $session->getActivityType()));
     }
 
     /**

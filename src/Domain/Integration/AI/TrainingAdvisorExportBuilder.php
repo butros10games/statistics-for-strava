@@ -22,16 +22,16 @@ use App\Domain\Dashboard\Widget\TrainingLoad\WellnessReadinessCalculator;
 use App\Domain\Dashboard\Widget\Wellness\FindWellnessMetrics\FindWellnessMetricsResponse;
 use App\Domain\Ftp\FtpHistory;
 use App\Domain\Performance\PerformanceAnchor\PerformanceAnchorHistory;
+use App\Domain\TrainingPlanner\CurrentTrainingBlockResolver;
 use App\Domain\TrainingPlanner\PlannedSession;
 use App\Domain\TrainingPlanner\PlannedSessionEstimatedLoadMapBuilder;
 use App\Domain\TrainingPlanner\PlannedSessionForecastBuilder;
 use App\Domain\TrainingPlanner\PlannedSessionLoadEstimate;
 use App\Domain\TrainingPlanner\PlannedSessionLoadEstimator;
 use App\Domain\TrainingPlanner\PlannedSessionRepository;
-use App\Domain\TrainingPlanner\CurrentTrainingBlockResolver;
 use App\Domain\TrainingPlanner\RaceEvent;
-use App\Domain\TrainingPlanner\RaceEventsByIdMapBuilder;
 use App\Domain\TrainingPlanner\RaceEventRepository;
+use App\Domain\TrainingPlanner\RaceEventsByIdMapBuilder;
 use App\Domain\TrainingPlanner\RaceReadinessContext;
 use App\Domain\TrainingPlanner\RaceReadinessContextBuilder;
 use App\Domain\TrainingPlanner\TrainingBlock;
@@ -197,7 +197,7 @@ final readonly class TrainingAdvisorExportBuilder
                     ],
                 ],
                 'projection' => $this->buildForecastProjection($plannedSessionProjection),
-                'items' => array_map(fn (PlannedSession $plannedSession): array => $this->mapPlannedSession($plannedSession), $plannedSessions),
+                'items' => array_map($this->mapPlannedSession(...), $plannedSessions),
             ],
         ];
     }
@@ -265,10 +265,12 @@ final readonly class TrainingAdvisorExportBuilder
         $filtered = [];
 
         foreach ($activities as $activity) {
-            if ($activity->getStartDate() < $dateRange->getFrom() || $activity->getStartDate() > $dateRange->getTill()) {
+            if ($activity->getStartDate() < $dateRange->getFrom()) {
                 continue;
             }
-
+            if ($activity->getStartDate() > $dateRange->getTill()) {
+                continue;
+            }
             $filtered[] = $activity;
         }
 
@@ -314,7 +316,7 @@ final readonly class TrainingAdvisorExportBuilder
             $this->dailyWellnessRepository->findByDateRange($dateRange, WellnessSource::GARMIN),
         ));
 
-        $lastRecord = [] === $records ? null : $records[array_key_last($records)];
+        $lastRecord = [] === $records ? null : array_last($records);
 
         return new FindWellnessMetricsResponse(
             records: $records,
@@ -336,7 +338,7 @@ final readonly class TrainingAdvisorExportBuilder
             'weeklyTrimp' => $trainingMetrics->getWeeklyTrimp(),
             'monotony' => $trainingMetrics->getCurrentMonotony(),
             'strain' => $trainingMetrics->getCurrentStrain(),
-            'tsb' => null === $currentTsb ? null : [
+            'tsb' => $currentTsb instanceof TSB ? [
                 'value' => $currentTsb->getValue(),
                 'status' => [
                     'key' => $currentTsb->getStatus()->name,
@@ -344,8 +346,8 @@ final readonly class TrainingAdvisorExportBuilder
                     'description' => $currentTsb->getStatus()->transDescription($this->translator),
                     'range' => $currentTsb->getStatus()->getRange(),
                 ],
-            ],
-            'acRatio' => null === $currentAcRatio ? null : [
+            ] : null,
+            'acRatio' => $currentAcRatio instanceof AcRatio ? [
                 'value' => $currentAcRatio->getValue(),
                 'status' => [
                     'key' => $currentAcRatio->getStatus()->name,
@@ -353,7 +355,7 @@ final readonly class TrainingAdvisorExportBuilder
                     'description' => $currentAcRatio->getStatus()->transDescription($this->translator),
                     'range' => $currentAcRatio->getStatus()->getRange(),
                 ],
-            ],
+            ] : null,
         ];
     }
 
@@ -403,7 +405,7 @@ final readonly class TrainingAdvisorExportBuilder
      */
     private function buildReadinessSummary(?ReadinessAssessment $readinessAssessment): ?array
     {
-        if (null === $readinessAssessment) {
+        if (!$readinessAssessment instanceof ReadinessAssessment) {
             return null;
         }
 
@@ -433,7 +435,7 @@ final readonly class TrainingAdvisorExportBuilder
         $primaryTrainingBlock = $raceReadinessContext->getPrimaryTrainingBlock();
 
         return [
-            'targetRace' => null === $targetRace ? null : [
+            'targetRace' => $targetRace instanceof RaceEvent ? [
                 'id' => (string) $targetRace->getId(),
                 'day' => $targetRace->getDay()->format('Y-m-d'),
                 'type' => $targetRace->getType()->value,
@@ -441,17 +443,17 @@ final readonly class TrainingAdvisorExportBuilder
                 'profile' => $targetRace->getProfile()->value,
                 'title' => $targetRace->getTitle(),
                 'priority' => $targetRace->getPriority()->value,
-            ],
+            ] : null,
             'countdownDays' => $raceReadinessContext->getTargetRaceCountdownDays(),
             'hasRaceEventInWindow' => $raceReadinessContext->hasRaceEventInContextWindow(),
-            'trainingBlock' => null === $primaryTrainingBlock ? null : [
+            'trainingBlock' => $primaryTrainingBlock instanceof TrainingBlock ? [
                 'id' => (string) $primaryTrainingBlock->getId(),
                 'phase' => $primaryTrainingBlock->getPhase()->value,
                 'title' => $primaryTrainingBlock->getTitle(),
                 'focus' => $primaryTrainingBlock->getFocus(),
                 'notes' => $primaryTrainingBlock->getNotes(),
                 'durationInDays' => $primaryTrainingBlock->getDurationInDays(),
-            ],
+            ] : null,
             'plannerSummary' => [
                 'sessionCount' => $raceReadinessContext->getSessionCount(),
                 'distinctSessionDayCount' => $raceReadinessContext->getDistinctSessionDayCount(),
@@ -470,7 +472,7 @@ final readonly class TrainingAdvisorExportBuilder
                     $raceReadinessContext->getActivityTypeSummaries(),
                 ),
             ],
-            'readiness' => null === $readinessScore ? null : $this->buildReadinessScoreSummary($readinessScore),
+            'readiness' => $readinessScore instanceof ReadinessScore ? $this->buildReadinessScoreSummary($readinessScore) : null,
             'forecast' => $this->buildRaceReadinessForecastSummary(
                 $raceReadinessContext->getForecastConfidence(),
                 $raceReadinessContext->getForecastDaysUntilTsbHealthy(),
@@ -503,16 +505,16 @@ final readonly class TrainingAdvisorExportBuilder
         ?int $daysUntilTsbHealthy,
         ?int $daysUntilAcRatioHealthy,
     ): ?array {
-        if (null === $forecastConfidence && null === $daysUntilTsbHealthy && null === $daysUntilAcRatioHealthy) {
+        if (!$forecastConfidence instanceof TrainingLoadForecastConfidence && null === $daysUntilTsbHealthy && null === $daysUntilAcRatioHealthy) {
             return null;
         }
 
         return [
-            'confidence' => null === $forecastConfidence ? null : [
+            'confidence' => $forecastConfidence instanceof TrainingLoadForecastConfidence ? [
                 'key' => $forecastConfidence->value,
                 'label' => $forecastConfidence->trans($this->translator),
                 'description' => $forecastConfidence->transDescription($this->translator),
-            ],
+            ] : null,
             'daysUntilTsbHealthy' => $daysUntilTsbHealthy,
             'daysUntilAcRatioHealthy' => $daysUntilAcRatioHealthy,
         ];
@@ -550,7 +552,7 @@ final readonly class TrainingAdvisorExportBuilder
 
     /**
      * @param list<array{day: string, stepsCount: ?int, sleepDurationInSeconds: ?int, sleepScore: ?int, hrv: ?float}> $records
-     * @param 'stepsCount'|'sleepDurationInSeconds'|'sleepScore'|'hrv' $key
+     * @param 'stepsCount'|'sleepDurationInSeconds'|'sleepScore'|'hrv'                                                $key
      */
     private function averageMetric(array $records, string $key): ?float
     {

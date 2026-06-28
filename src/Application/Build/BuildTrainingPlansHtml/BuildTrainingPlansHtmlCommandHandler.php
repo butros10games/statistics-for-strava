@@ -5,8 +5,8 @@ declare(strict_types=1);
 namespace App\Application\Build\BuildTrainingPlansHtml;
 
 use App\Domain\TrainingPlanner\RaceEvent;
-use App\Domain\TrainingPlanner\RaceEventsByIdMapBuilder;
 use App\Domain\TrainingPlanner\RaceEventRepository;
+use App\Domain\TrainingPlanner\RaceEventsByIdMapBuilder;
 use App\Domain\TrainingPlanner\TrainingPlan;
 use App\Domain\TrainingPlanner\TrainingPlanRepository;
 use App\Domain\TrainingPlanner\TrainingPlanType;
@@ -43,9 +43,9 @@ final readonly class BuildTrainingPlansHtmlCommandHandler implements CommandHand
             static fn (RaceEvent $raceEvent): bool => $raceEvent->getDay() >= $now && !isset($linkedRaceEventIds[(string) $raceEvent->getId()]),
         ));
         $latestPlan = $this->findLatestPlan($plans);
-        $nextSuggestedStartDay = null === $latestPlan
-            ? $now
-            : $latestPlan->getEndDay()->modify('+1 day')->setTime(0, 0);
+        $nextSuggestedStartDay = $latestPlan instanceof TrainingPlan
+            ? $latestPlan->getEndDay()->modify('+1 day')->setTime(0, 0)
+            : $now;
 
         $this->buildStorage->write(
             'training-plans.html',
@@ -71,7 +71,7 @@ final readonly class BuildTrainingPlansHtmlCommandHandler implements CommandHand
         $earliestRaceEvent = $this->raceEventRepository->findEarliest();
         $latestRaceEvent = $this->raceEventRepository->findLatest();
 
-        if (null === $earliestRaceEvent || null === $latestRaceEvent) {
+        if (!$earliestRaceEvent instanceof RaceEvent || !$latestRaceEvent instanceof RaceEvent) {
             return [];
         }
 
@@ -221,7 +221,10 @@ final readonly class BuildTrainingPlansHtmlCommandHandler implements CommandHand
             'longRunDays' => 'Long run',
         ] as $key => $label) {
             $days = $sportSchedule[$key] ?? null;
-            if (!is_array($days) || [] === $days) {
+            if (!is_array($days)) {
+                continue;
+            }
+            if ([] === $days) {
                 continue;
             }
 

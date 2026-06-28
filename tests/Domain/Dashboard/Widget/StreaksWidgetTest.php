@@ -12,6 +12,7 @@ use App\Domain\Dashboard\Widget\WidgetConfiguration;
 use App\Infrastructure\ValueObject\Time\SerializableDateTime;
 use App\Tests\ContainerTestCase;
 use App\Tests\Domain\Activity\ActivityBuilder;
+use App\Tests\Infrastructure\Snapshot\Utf8HtmlDriver;
 use Spatie\Snapshots\MatchesSnapshots;
 
 class StreaksWidgetTest extends ContainerTestCase
@@ -41,11 +42,12 @@ class StreaksWidgetTest extends ContainerTestCase
         ));
         $configuration = WidgetConfiguration::empty()->add('sportTypesToInclude', ['Ride']);
 
-        $this->assertMatchesHtmlSnapshot(
+        $this->assertMatchesSnapshot(
             $this->widget->render(
                 now: SerializableDateTime::fromString('2025-12-31'),
                 configuration: $configuration
-            )
+            ),
+            new Utf8HtmlDriver()
         );
     }
 

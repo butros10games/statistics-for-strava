@@ -19,6 +19,7 @@ use App\Infrastructure\ValueObject\String\KernelProjectDir;
 use App\Infrastructure\ValueObject\Time\SerializableDateTime;
 use App\Tests\ContainerTestCase;
 use App\Tests\Infrastructure\CQRS\Command\Bus\SpyCommandBus;
+use App\Tests\Infrastructure\Snapshot\Utf8HtmlDriver;
 use App\Tests\Infrastructure\Time\Clock\PausedClock;
 use League\Flysystem\FilesystemOperator;
 use NeuronAI\Agent\Agent;
@@ -61,7 +62,7 @@ class AIChatRequestHandlerTest extends ContainerTestCase
             $this->getContainer()->get(KernelProjectDir::class)->getForTestSuite('app-configs/config-ai-enabled')
         );
 
-        $this->assertMatchesHtmlSnapshot($requestHandler->handle()->getContent());
+        $this->assertMatchesSnapshot($requestHandler->handle()->getContent(), new Utf8HtmlDriver());
     }
 
     public function testHandleNoIndexFound(): void
@@ -74,7 +75,7 @@ class AIChatRequestHandlerTest extends ContainerTestCase
             $this->getContainer()->get(KernelProjectDir::class)->getForTestSuite('app-configs/config-ai-enabled')
         );
 
-        $this->assertMatchesHtmlSnapshot($requestHandler->handle()->getContent());
+        $this->assertMatchesSnapshot($requestHandler->handle()->getContent(), new Utf8HtmlDriver());
     }
 
     public function testHandleAINotEnabled(): void
@@ -89,7 +90,7 @@ class AIChatRequestHandlerTest extends ContainerTestCase
             $this->getContainer()->get(KernelProjectDir::class)->getForTestSuite('app-configs/config-ai-disabled')
         );
 
-        $this->assertMatchesHtmlSnapshot($requestHandler->handle()->getContent());
+        $this->assertMatchesSnapshot($requestHandler->handle()->getContent(), new Utf8HtmlDriver());
     }
 
     public function testClearChat(): void

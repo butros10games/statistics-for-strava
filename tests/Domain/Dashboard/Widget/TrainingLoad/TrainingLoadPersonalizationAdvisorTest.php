@@ -22,7 +22,7 @@ final class TrainingLoadPersonalizationAdvisorTest extends TestCase
     public function testItAppliesBoundedPersonalizationForCostlyRecentActivityType(): void
     {
         $context = $this->buildContext();
-        $personalization = (new TrainingLoadPersonalizationAdvisor())->build(
+        $personalization = new TrainingLoadPersonalizationAdvisor()->build(
             analyticsContext: $context,
             correlationInsights: [
                 new TrainingLoadCorrelationInsight(

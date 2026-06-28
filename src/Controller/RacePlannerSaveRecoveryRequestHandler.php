@@ -31,7 +31,7 @@ final readonly class RacePlannerSaveRecoveryRequestHandler
     }
 
     #[Route(path: '/race-planner/save-recovery', methods: ['POST'])]
-    public function handle(Request $request): Response
+    public function handle(Request $request): RedirectResponse
     {
         $raceEventId = trim($request->request->getString('raceEventId'));
         if ('' === $raceEventId) {
@@ -39,7 +39,7 @@ final readonly class RacePlannerSaveRecoveryRequestHandler
         }
 
         $targetRace = $this->raceEventRepository->findById(RaceEventId::fromString($raceEventId));
-        if (null === $targetRace) {
+        if (!$targetRace instanceof \App\Domain\TrainingPlanner\RaceEvent) {
             return $this->createRedirectResponse($request);
         }
 

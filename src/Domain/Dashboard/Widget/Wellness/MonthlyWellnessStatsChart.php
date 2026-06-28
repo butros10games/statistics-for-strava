@@ -55,8 +55,8 @@ final readonly class MonthlyWellnessStatsChart
             $monthlyBuckets[$monthKey] ??= $this->createEmptyBucket();
             $monthlyBuckets[$monthKey] = $this->addRecordToBucket($monthlyBuckets[$monthKey], $record);
 
-            $firstDate = null === $firstDate || $date < $firstDate ? $date : $firstDate;
-            $lastDate = null === $lastDate || $date > $lastDate ? $date : $lastDate;
+            $firstDate = !$firstDate instanceof \DateTimeImmutable || $date < $firstDate ? $date : $firstDate;
+            $lastDate = !$lastDate instanceof \DateTimeImmutable || $date > $lastDate ? $date : $lastDate;
         }
 
         $firstYear = (int) $firstDate->format('Y');

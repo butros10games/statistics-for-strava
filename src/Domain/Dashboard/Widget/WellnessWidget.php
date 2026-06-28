@@ -86,7 +86,6 @@ final readonly class WellnessWidget implements Widget
                 labels: $labels,
                 values: array_map(static fn (?int $value): ?int => $value, array_column($records, 'stepsCount')),
                 color: '#2563EB',
-                unit: 'steps',
                 translator: $this->translator,
             )->build()),
             'sleepTrendChart' => Json::encode(WellnessTrendChart::create(
@@ -97,7 +96,6 @@ final readonly class WellnessWidget implements Widget
                     array_column($records, 'sleepDurationInSeconds')
                 ),
                 color: '#7C3AED',
-                unit: 'h',
                 translator: $this->translator,
             )->build()),
             'hrvTrendChart' => Json::encode(WellnessTrendChart::create(
@@ -105,7 +103,6 @@ final readonly class WellnessWidget implements Widget
                 labels: $labels,
                 values: array_map(static fn (?float $value): ?float => null === $value ? null : round($value, 1), array_column($records, 'hrv')),
                 color: '#059669',
-                unit: 'ms',
                 translator: $this->translator,
             )->build()),
             'latestRecoveryCheckIn' => $latestRecoveryCheckIn,

@@ -122,13 +122,7 @@ final class PerformanceAnchorHistory implements SupportsAITooling
      */
     private static function containsExplicitTypeKeys(array $values): bool
     {
-        foreach (PerformanceAnchorType::cases() as $type) {
-            if (array_key_exists($type->value, $values) || array_key_exists($type->getLegacyKey(), $values)) {
-                return true;
-            }
-        }
-
-        return false;
+        return array_any(PerformanceAnchorType::cases(), fn (PerformanceAnchorType $type): bool => array_key_exists((string) $type->value, $values) || array_key_exists($type->getLegacyKey(), $values));
     }
 
     /**

@@ -82,7 +82,10 @@ final class TrainingLoadCorrelationInsightsAnalyzer
 
             $x = $xExtractor($current, $next);
             $y = $yExtractor($current, $next);
-            if (null === $x || null === $y) {
+            if (null === $x) {
+                continue;
+            }
+            if (null === $y) {
                 continue;
             }
 

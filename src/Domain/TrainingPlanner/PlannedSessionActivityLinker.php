@@ -31,7 +31,7 @@ final readonly class PlannedSessionActivityLinker
     public function syncUpTo(SerializableDateTime $until): void
     {
         $earliestPlannedSession = $this->plannedSessionRepository->findEarliest();
-        if (null === $earliestPlannedSession) {
+        if (!$earliestPlannedSession instanceof PlannedSession) {
             return;
         }
 
@@ -88,7 +88,7 @@ final readonly class PlannedSessionActivityLinker
                     ))
                 );
 
-                if (null === $matchedActivity) {
+                if (!$matchedActivity instanceof Activity) {
                     if (null !== $plannedSession->getLinkedActivityId() || PlannedSessionLinkStatus::UNLINKED !== $plannedSession->getLinkStatus()) {
                         $this->plannedSessionRepository->upsert($plannedSession->withoutLink($updatedAt));
                     }
@@ -162,11 +162,13 @@ final readonly class PlannedSessionActivityLinker
 
         foreach ($sessionsForDay as $plannedSession) {
             $linkedActivityId = $plannedSession->getLinkedActivityId()?->__toString();
-            if (
-                PlannedSessionLinkStatus::LINKED !== $plannedSession->getLinkStatus()
-                || null === $linkedActivityId
-                || !isset($activityIdsForDay[$linkedActivityId])
-            ) {
+            if (PlannedSessionLinkStatus::LINKED !== $plannedSession->getLinkStatus()) {
+                continue;
+            }
+            if (null === $linkedActivityId) {
+                continue;
+            }
+            if (!isset($activityIdsForDay[$linkedActivityId])) {
                 continue;
             }
 

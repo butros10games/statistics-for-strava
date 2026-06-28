@@ -36,7 +36,7 @@ final class BackfillTrainingSessionLibraryConsoleCommand extends Command
         $earliestPlannedSession = $this->plannedSessionRepository->findEarliest();
         $latestPlannedSession = $this->plannedSessionRepository->findLatest();
 
-        if (null === $earliestPlannedSession || null === $latestPlannedSession) {
+        if (!$earliestPlannedSession instanceof \App\Domain\TrainingPlanner\PlannedSession || !$latestPlannedSession instanceof \App\Domain\TrainingPlanner\PlannedSession) {
             $io->success('No planned sessions found, so there is nothing to backfill.');
 
             return Command::SUCCESS;

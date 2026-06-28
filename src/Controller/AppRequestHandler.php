@@ -34,7 +34,7 @@ final readonly class AppRequestHandler
     #[Route(path: '/{wildcard?}', requirements: ['wildcard' => '.*'], methods: ['GET'], priority: -10)]
     public function handle(): Response
     {
-        if (null === $this->currentAppUser->get()) {
+        if (!$this->currentAppUser->get() instanceof \App\Domain\Auth\AppUser) {
             return new RedirectResponse('/login', Response::HTTP_FOUND);
         }
 

@@ -28,7 +28,7 @@ final readonly class PlannedSessionForecastBuilder
 
         foreach ($this->plannedSessionRepository->findByDateRange(DateRange::fromDates($from, $till)) as $plannedSession) {
             $estimate = $this->plannedSessionLoadEstimator->estimate($plannedSession);
-            if (null === $estimate) {
+            if (!$estimate instanceof PlannedSessionLoadEstimate) {
                 continue;
             }
 
@@ -44,7 +44,10 @@ final readonly class PlannedSessionForecastBuilder
             }
 
             $dayOffset = (int) $today->diff($estimate->getDay())->format('%a');
-            if ($dayOffset < 1 || $dayOffset > $horizon) {
+            if ($dayOffset < 1) {
+                continue;
+            }
+            if ($dayOffset > $horizon) {
                 continue;
             }
 
@@ -60,6 +63,6 @@ final readonly class PlannedSessionForecastBuilder
     private function isCompletedForToday(PlannedSession $plannedSession): bool
     {
         return PlannedSessionLinkStatus::LINKED === $plannedSession->getLinkStatus()
-            && null !== $plannedSession->getLinkedActivityId();
+            && $plannedSession->getLinkedActivityId() instanceof \App\Domain\Activity\ActivityId;
     }
 }

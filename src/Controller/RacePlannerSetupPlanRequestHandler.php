@@ -47,7 +47,7 @@ final readonly class RacePlannerSetupPlanRequestHandler
     }
 
     #[Route(path: '/race-planner/setup-plan', methods: ['POST'])]
-    public function handle(Request $request): Response
+    public function handle(Request $request): RedirectResponse
     {
         $raceEventId = trim($request->request->getString('raceEventId'));
         $now = $this->clock->getCurrentDateTimeImmutable();
@@ -57,7 +57,7 @@ final readonly class RacePlannerSetupPlanRequestHandler
         }
 
         $targetRace = $this->raceEventRepository->findById(\App\Domain\TrainingPlanner\RaceEventId::fromString($raceEventId));
-        if (null === $targetRace) {
+        if (!$targetRace instanceof \App\Domain\TrainingPlanner\RaceEvent) {
             return new RedirectResponse($this->resolveRedirectTarget($request), Response::HTTP_FOUND);
         }
 

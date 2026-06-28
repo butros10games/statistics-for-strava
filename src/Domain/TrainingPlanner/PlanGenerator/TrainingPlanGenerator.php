@@ -37,7 +37,7 @@ final readonly class TrainingPlanGenerator
     }
 
     /**
-     * @param list<RaceEvent>      $allRaceEvents     all upcoming race events, sorted by day ASC
+     * @param list<RaceEvent>      $allRaceEvents    all upcoming race events, sorted by day ASC
      * @param list<TrainingBlock>  $existingBlocks
      * @param list<PlannedSession> $existingSessions
      */
@@ -129,7 +129,7 @@ final readonly class TrainingPlanGenerator
 
         $predictor = $this->runningPlanPerformancePredictor ?? new RunningPlanPerformancePredictor();
         $prediction = $predictor->predict($linkedTrainingPlan, $proposal, $existingSessions, $referenceDate);
-        if (null === $prediction) {
+        if (!$prediction instanceof \App\Domain\TrainingPlanner\Prediction\RunningPlanPerformancePrediction) {
             return $proposedBlocks;
         }
 
@@ -639,7 +639,7 @@ final readonly class TrainingPlanGenerator
             adaptivePlanningContext: $adaptivePlanningContext,
         );
 
-        if (null !== $recoveryTail) {
+        if ($recoveryTail instanceof ProposedTrainingBlock) {
             $proposedBlocks[] = $recoveryTail;
         }
 
@@ -671,7 +671,7 @@ final readonly class TrainingPlanGenerator
             return null;
         }
 
-        $latestExistingBlockEndDay = $existingBlocks[array_key_last($existingBlocks)]->getEndDay()->setTime(0, 0);
+        $latestExistingBlockEndDay = array_last($existingBlocks)->getEndDay()->setTime(0, 0);
         if ($latestExistingBlockEndDay < $raceDay->modify('-7 days')) {
             return null;
         }
@@ -939,12 +939,12 @@ final readonly class TrainingPlanGenerator
             );
         }
 
-        $sessionsPerWeek = $this->resolveSessionCount($rules, $phase, $loadMultiplier, $isCycleRecoveryWeek, $linkedTrainingPlan, $adaptivePlanningContext);
+        $sessionsPerWeek = $this->resolveSessionCount($rules, $phase, $isCycleRecoveryWeek, $linkedTrainingPlan, $adaptivePlanningContext);
         $disciplines = $this->resolveDisciplineDistribution($rules, $sessionsPerWeek, $linkedTrainingPlan);
         $sessions = [];
         $preferredSlotIndex = 0;
 
-        if (null !== $weekRace) {
+        if ($weekRace instanceof RaceEvent) {
             $raceDay = $weekRace->getDay();
             $sessions[] = ProposedSession::create(
                 day: $raceDay,
@@ -1044,7 +1044,7 @@ final readonly class TrainingPlanGenerator
             $workoutSteps = [];
 
             $sessionDay = $this->resolveSessionDay($weekStart, $preferredSlotIndex, $sessions, $activityType, $isLongSession, $linkedTrainingPlan, $isKey);
-            if (null === $sessionDay) {
+            if (!$sessionDay instanceof SerializableDateTime) {
                 break;
             }
 
@@ -1099,7 +1099,7 @@ final readonly class TrainingPlanGenerator
         );
 
         if ($rules->needsBrickSessions() && !$isCycleRecoveryWeek && !in_array($phase, [TrainingBlockPhase::BASE, TrainingBlockPhase::TAPER, TrainingBlockPhase::RECOVERY], true)) {
-            $sessions = $this->addBrickSessionIfMissing($sessions, $weekStart);
+            $sessions = $this->addBrickSessionIfMissing($sessions);
         }
 
         $this->sortProposedSessions($sessions);
@@ -1277,12 +1277,10 @@ final readonly class TrainingPlanGenerator
      */
     private function countRunSessionsByIntensity(array $sessions, PlannedSessionIntensity $intensity): int
     {
-        return count(array_filter($sessions, function (ProposedSession $session) use ($intensity): bool {
-            return ActivityType::RUN === $session->getActivityType()
-                && $intensity === $session->getTargetIntensity()
-                && !$session->isBrickSession()
-                && !$this->isLongSessionTitle($session->getTitle());
-        }));
+        return count(array_filter($sessions, fn (ProposedSession $session): bool => ActivityType::RUN === $session->getActivityType()
+            && $intensity === $session->getTargetIntensity()
+            && !$session->isBrickSession()
+            && !$this->isLongSessionTitle($session->getTitle())));
     }
 
     /**
@@ -1290,15 +1288,13 @@ final readonly class TrainingPlanGenerator
      */
     private function resolveDoubleRunAnchorSession(array $sessions, PlannedSessionIntensity $anchorIntensity): ?ProposedSession
     {
-        $candidates = array_values(array_filter($sessions, function (ProposedSession $session) use ($sessions, $anchorIntensity): bool {
-            return ActivityType::RUN === $session->getActivityType()
-                && $anchorIntensity === $session->getTargetIntensity()
-                && !$session->isBrickSession()
-                && !$this->isLongSessionTitle($session->getTitle())
-                && !$this->isSecondaryRunTitle($session->getTitle())
-                && 1 === $this->countSessionsOnDay($sessions, $session->getDay())
-                && 1 === $this->countRunSessionsOnDay($sessions, $session->getDay());
-        }));
+        $candidates = array_values(array_filter($sessions, fn (ProposedSession $session): bool => ActivityType::RUN === $session->getActivityType()
+            && $anchorIntensity === $session->getTargetIntensity()
+            && !$session->isBrickSession()
+            && !$this->isLongSessionTitle($session->getTitle())
+            && !$this->isSecondaryRunTitle($session->getTitle())
+            && 1 === $this->countSessionsOnDay($sessions, $session->getDay())
+            && 1 === $this->countRunSessionsOnDay($sessions, $session->getDay())));
 
         if ([] === $candidates) {
             return null;
@@ -1431,9 +1427,7 @@ final readonly class TrainingPlanGenerator
             return $carry;
         }, []));
 
-        usort($prioritizedDisciplines, function (ActivityType $left, ActivityType $right) use ($linkedTrainingPlan): int {
-            return $this->resolveHardDisciplineWeight($right, $linkedTrainingPlan) <=> $this->resolveHardDisciplineWeight($left, $linkedTrainingPlan);
-        });
+        usort($prioritizedDisciplines, fn (ActivityType $left, ActivityType $right): int => $this->resolveHardDisciplineWeight($right, $linkedTrainingPlan) <=> $this->resolveHardDisciplineWeight($left, $linkedTrainingPlan));
 
         $hardSessionActivities = [];
         while (count($hardSessionActivities) < $maxHardSessions) {
@@ -1491,6 +1485,7 @@ final readonly class TrainingPlanGenerator
             }
 
             unset($disciplines[$index]);
+
             return array_values($disciplines);
         }
 
@@ -1719,7 +1714,7 @@ final readonly class TrainingPlanGenerator
             RaceEventFamily::OTHER => $this->buildRunTaperSessions($targetRace, $weekStart, $weekEnd, $weekInBlock, $blockDurationWeeks, $isRaceWeek),
         };
 
-        if (null !== $weekRace && !$isRaceWeek) {
+        if ($weekRace instanceof RaceEvent && !$isRaceWeek) {
             if ([] !== $sessions) {
                 array_pop($sessions);
             }
@@ -2203,6 +2198,7 @@ final readonly class TrainingPlanGenerator
     /**
      * @param list<ProposedSession>      $sessions
      * @param list<array<string, mixed>> $workoutSteps
+     *
      * @param-out list<ProposedSession>  $sessions
      */
     private function appendTaperSession(
@@ -2255,7 +2251,7 @@ final readonly class TrainingPlanGenerator
 
     private function resolveRaceEventTitle(RaceEvent $raceEvent): string
     {
-        $title = trim((string) ($raceEvent->getTitle() ?? ''));
+        $title = trim($raceEvent->getTitle() ?? '');
         if ('' !== $title) {
             return $title;
         }
@@ -2575,7 +2571,6 @@ final readonly class TrainingPlanGenerator
     private function resolveSessionCount(
         RaceProfileTrainingRules $rules,
         TrainingBlockPhase $phase,
-        float $loadMultiplier,
         bool $isCycleRecoveryWeek = false,
         ?TrainingPlan $linkedTrainingPlan = null,
         ?AdaptivePlanningContext $adaptivePlanningContext = null,
@@ -2876,9 +2871,7 @@ final readonly class TrainingPlanGenerator
 
         $ranking = array_flip($this->resolveDefaultDayOffsets($activityType, $isLongSession, $isKeySession));
 
-        usort($offsets, static function (int $left, int $right) use ($ranking): int {
-            return ($ranking[$left] ?? PHP_INT_MAX) <=> ($ranking[$right] ?? PHP_INT_MAX);
-        });
+        usort($offsets, static fn (int $left, int $right): int => ($ranking[$left] ?? PHP_INT_MAX) <=> ($ranking[$right] ?? PHP_INT_MAX));
 
         return array_values(array_unique($offsets));
     }
@@ -3658,7 +3651,7 @@ final readonly class TrainingPlanGenerator
      */
     private function applyPerformanceTargetsToSessions(array $sessions, ?TrainingPlan $linkedTrainingPlan = null): array
     {
-        if (null === $linkedTrainingPlan) {
+        if (!$linkedTrainingPlan instanceof TrainingPlan) {
             return $sessions;
         }
 
@@ -4073,7 +4066,7 @@ final readonly class TrainingPlanGenerator
         }
 
         $focus = $linkedTrainingPlan?->getTrainingFocus();
-        if (null === $focus) {
+        if (!$focus instanceof TrainingFocus) {
             return $defaultFocus;
         }
 
@@ -4107,7 +4100,7 @@ final readonly class TrainingPlanGenerator
     {
         return $linkedTrainingPlan instanceof TrainingPlan
             && TrainingPlanType::TRAINING === $linkedTrainingPlan->getType()
-            && null === $linkedTrainingPlan->getTargetRaceEventId();
+            && !$linkedTrainingPlan->getTargetRaceEventId() instanceof \App\Domain\TrainingPlanner\RaceEventId;
     }
 
     private function applySessionCountPreferenceAdjustments(
@@ -4308,7 +4301,10 @@ final readonly class TrainingPlanGenerator
 
         foreach ($dayValues as $value) {
             $dayNumber = (int) $value;
-            if ($dayNumber < 1 || $dayNumber > 7) {
+            if ($dayNumber < 1) {
+                continue;
+            }
+            if ($dayNumber > 7) {
                 continue;
             }
 
@@ -4667,9 +4663,7 @@ final readonly class TrainingPlanGenerator
      */
     private function countSessionsOnDay(array $sessions, SerializableDateTime $day): int
     {
-        return count(array_filter($sessions, static function (ProposedSession $session) use ($day): bool {
-            return $session->getDay()->format('Y-m-d') === $day->format('Y-m-d');
-        }));
+        return count(array_filter($sessions, static fn (ProposedSession $session): bool => $session->getDay()->format('Y-m-d') === $day->format('Y-m-d')));
     }
 
     /**
@@ -4677,10 +4671,8 @@ final readonly class TrainingPlanGenerator
      */
     private function countRunSessionsOnDay(array $sessions, SerializableDateTime $day): int
     {
-        return count(array_filter($sessions, static function (ProposedSession $session) use ($day): bool {
-            return $session->getDay()->format('Y-m-d') === $day->format('Y-m-d')
-                && ActivityType::RUN === $session->getActivityType();
-        }));
+        return count(array_filter($sessions, static fn (ProposedSession $session): bool => $session->getDay()->format('Y-m-d') === $day->format('Y-m-d')
+            && ActivityType::RUN === $session->getActivityType()));
     }
 
     /**
@@ -4688,7 +4680,7 @@ final readonly class TrainingPlanGenerator
      *
      * @return list<ProposedSession>
      */
-    private function addBrickSessionIfMissing(array $sessions, SerializableDateTime $weekStart): array
+    private function addBrickSessionIfMissing(array $sessions): array
     {
         $hasRide = false;
         $hasRun = false;
@@ -4750,19 +4742,17 @@ final readonly class TrainingPlanGenerator
      */
     private function mapExistingPlannedSessionsToProposedSessions(array $plannedSessions): array
     {
-        return array_map(function (PlannedSession $plannedSession): ProposedSession {
-            return ProposedSession::create(
-                day: $plannedSession->getDay(),
-                activityType: $plannedSession->getActivityType(),
-                targetIntensity: $this->resolvePlannedSessionIntensity($plannedSession),
-                title: $plannedSession->getTitle() ?? $this->buildEasySessionTitle($plannedSession->getActivityType()),
-                notes: $plannedSession->getNotes(),
-                targetDurationInSeconds: $plannedSession->getTargetDurationInSeconds() ?? $plannedSession->getWorkoutDurationInSeconds(),
-                isKeySession: $this->isKeyPlannedSession($plannedSession),
-                isBrickSession: $this->isBrickPlannedSession($plannedSession),
-                workoutSteps: $plannedSession->getWorkoutSteps(),
-            );
-        }, $plannedSessions);
+        return array_map(fn (PlannedSession $plannedSession): ProposedSession => ProposedSession::create(
+            day: $plannedSession->getDay(),
+            activityType: $plannedSession->getActivityType(),
+            targetIntensity: $this->resolvePlannedSessionIntensity($plannedSession),
+            title: $plannedSession->getTitle() ?? $this->buildEasySessionTitle($plannedSession->getActivityType()),
+            notes: $plannedSession->getNotes(),
+            targetDurationInSeconds: $plannedSession->getTargetDurationInSeconds() ?? $plannedSession->getWorkoutDurationInSeconds(),
+            isKeySession: $this->isKeyPlannedSession($plannedSession),
+            isBrickSession: $this->isBrickPlannedSession($plannedSession),
+            workoutSteps: $plannedSession->getWorkoutSteps(),
+        ), $plannedSessions);
     }
 
     /**
@@ -4854,9 +4844,11 @@ final readonly class TrainingPlanGenerator
         if ($plannedSession->hasWorkoutSteps() && PlannedSessionIntensity::MODERATE === $intensity && $targetDurationInSeconds >= 3_600) {
             return true;
         }
+        if (ActivityType::RIDE === $plannedSession->getActivityType() && $targetDurationInSeconds >= 5_400) {
+            return true;
+        }
 
-        return (ActivityType::RIDE === $plannedSession->getActivityType() && $targetDurationInSeconds >= 5_400)
-            || (ActivityType::RUN === $plannedSession->getActivityType() && $targetDurationInSeconds >= 4_500);
+        return ActivityType::RUN === $plannedSession->getActivityType() && $targetDurationInSeconds >= 4_500;
     }
 
     private function isBrickPlannedSession(PlannedSession $plannedSession): bool
@@ -4885,6 +4877,6 @@ final readonly class TrainingPlanGenerator
             return $targetRace->getDay()->setTime(23, 59, 59);
         }
 
-        return $proposedBlocks[array_key_last($proposedBlocks)]->getEndDay()->setTime(23, 59, 59);
+        return array_last($proposedBlocks)->getEndDay()->setTime(23, 59, 59);
     }
 }

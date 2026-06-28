@@ -272,5 +272,4 @@ final class PlanAdaptationRecommenderTest extends TestCase
             array_map(static fn ($recommendation): string => $recommendation->getTitle(), $recommendations),
         );
     }
-
 }

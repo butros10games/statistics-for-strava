@@ -116,7 +116,7 @@ final class TrainingPlanGeneratorTest extends TestCase
             allRaceEvents: [$targetRace],
         );
 
-        $recoveryBlock = $proposal->getProposedBlocks()[array_key_last($proposal->getProposedBlocks())];
+        $recoveryBlock = array_last($proposal->getProposedBlocks());
 
         self::assertSame(TrainingBlockPhase::RECOVERY, $recoveryBlock->getPhase());
         self::assertSame('2026-06-22', $recoveryBlock->getStartDay()->format('Y-m-d'));
@@ -1654,7 +1654,7 @@ final class TrainingPlanGeneratorTest extends TestCase
         ));
 
         self::assertNotEmpty($intervalTargetTypes);
-        self::assertSame($intervalTargetTypes, array_map('strval', $intervalTargetTypes));
+        self::assertSame($intervalTargetTypes, array_map(strval(...), $intervalTargetTypes));
         self::assertContains('time', $intervalTargetTypes);
         self::assertNotContains('distance', $intervalTargetTypes);
     }
@@ -2201,7 +2201,7 @@ final class TrainingPlanGeneratorTest extends TestCase
     private function parsePaceTargetToSeconds(string $pace): int
     {
         $normalizedPace = trim(str_replace('/km', '', $pace));
-        [$minutes, $seconds] = array_map('intval', explode(':', $normalizedPace));
+        [$minutes, $seconds] = array_map(intval(...), explode(':', $normalizedPace));
 
         return ($minutes * 60) + $seconds;
     }

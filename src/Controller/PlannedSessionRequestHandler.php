@@ -110,19 +110,19 @@ final readonly class PlannedSessionRequestHandler
             targetDurationInSeconds: $targetDurationInSeconds,
             targetIntensity: $targetIntensity,
             templateActivityId: $templateActivityId,
-            workoutSteps: $workoutSteps,
             estimationSource: $estimationSource,
             linkedActivityId: $existing?->getLinkedActivityId(),
             linkStatus: $existing?->getLinkStatus() ?? PlannedSessionLinkStatus::UNLINKED,
             createdAt: $existing?->getCreatedAt() ?? $now,
             updatedAt: $now,
+            workoutSteps: $workoutSteps,
         );
 
         if (($existing?->getLinkStatus() ?? PlannedSessionLinkStatus::UNLINKED) !== PlannedSessionLinkStatus::LINKED) {
             $matchedActivity = $this->plannedSessionActivityMatcher->findSuggestedMatch($plannedSession);
-            $plannedSession = null === $matchedActivity
-                ? $plannedSession->withoutLink($now)
-                : $plannedSession->withConfirmedLink($matchedActivity->getId(), $now);
+            $plannedSession = $matchedActivity instanceof Activity
+                ? $plannedSession->withConfirmedLink($matchedActivity->getId(), $now)
+                : $plannedSession->withoutLink($now);
         }
 
         $this->repository->upsert($plannedSession);
@@ -134,17 +134,17 @@ final readonly class PlannedSessionRequestHandler
     }
 
     #[Route(path: '/planned-session/confirm-link', methods: ['POST'])]
-    public function confirmLink(Request $request): Response
+    public function confirmLink(Request $request): RedirectResponse
     {
         $plannedSession = $this->findRequestedPlannedSession($request);
-        if (null === $plannedSession) {
+        if (!$plannedSession instanceof PlannedSession) {
             return $this->createRedirectResponse($request);
         }
 
         $linkedActivityId = $this->nullableActivityId($request->request->getString('linkedActivityId'))
             ?? $plannedSession->getLinkedActivityId();
 
-        if (null !== $linkedActivityId) {
+        if ($linkedActivityId instanceof ActivityId) {
             $this->repository->upsert($plannedSession->withConfirmedLink($linkedActivityId, $this->clock->getCurrentDateTimeImmutable()));
             $this->rebuildPlannerViews();
         }
@@ -153,10 +153,10 @@ final readonly class PlannedSessionRequestHandler
     }
 
     #[Route(path: '/planned-session/unlink', methods: ['POST'])]
-    public function unlink(Request $request): Response
+    public function unlink(Request $request): RedirectResponse
     {
         $plannedSession = $this->findRequestedPlannedSession($request);
-        if (null !== $plannedSession) {
+        if ($plannedSession instanceof PlannedSession) {
             $this->repository->upsert($plannedSession->withoutLink($this->clock->getCurrentDateTimeImmutable()));
             $this->rebuildPlannerViews();
         }
@@ -165,7 +165,7 @@ final readonly class PlannedSessionRequestHandler
     }
 
     #[Route(path: '/planned-session/delete', methods: ['POST'])]
-    public function delete(Request $request): Response
+    public function delete(Request $request): RedirectResponse
     {
         $plannedSessionId = $request->request->getString('plannedSessionId');
         if ('' !== $plannedSessionId) {
@@ -246,15 +246,15 @@ final readonly class PlannedSessionRequestHandler
         $plannerOutlookForecast = $this->plannedSessionForecastBuilder->build($today, self::PLANNER_OUTLOOK_HORIZON);
         $templateActivities = $this->buildTemplateActivityOptions($plannedSession?->getTemplateActivityId());
         $trainingSessionRecommendations = $this->buildTrainingSessionRecommendations();
-        $plannedSessionLoadEstimate = null === $plannedSession
-            ? null
-            : $this->plannedSessionLoadEstimator->estimate($plannedSession);
+        $plannedSessionLoadEstimate = $plannedSession instanceof PlannedSession
+            ? $this->plannedSessionLoadEstimator->estimate($plannedSession)
+            : null;
         $plannedSessionEstimatedLoad = $plannedSessionLoadEstimate?->getEstimatedLoad();
 
         return new Response($this->twig->render('html/dashboard/planned-session.html.twig', [
-            'plannedSession' => null === $plannedSession ? null : $this->toViewRecord($plannedSession),
-            'latestPlannedSession' => null === $latestPlannedSession ? null : $this->toViewRecord($latestPlannedSession),
-            'plannedSessionDefaultDay' => null === $plannedSession ? $defaultDay : $plannedSession->getDay()->format('Y-m-d'),
+            'plannedSession' => $plannedSession instanceof PlannedSession ? $this->toViewRecord($plannedSession) : null,
+            'latestPlannedSession' => $latestPlannedSession instanceof PlannedSession ? $this->toViewRecord($latestPlannedSession) : null,
+            'plannedSessionDefaultDay' => $plannedSession instanceof PlannedSession ? $plannedSession->getDay()->format('Y-m-d') : $defaultDay,
             'plannedSessionFormDefaults' => $this->plannedSessionFormDefaults($plannedSession, $plannedSessionEstimatedLoad),
             'matchedActivity' => $matchedActivity,
             'plannedSessionMatchStatus' => $plannedSessionMatchStatus,
@@ -360,7 +360,7 @@ final readonly class PlannedSessionRequestHandler
             }
         }
 
-        if (null !== $selectedTemplateActivityId && !isset($templateActivities[(string) $selectedTemplateActivityId])) {
+        if ($selectedTemplateActivityId instanceof ActivityId && !isset($templateActivities[(string) $selectedTemplateActivityId])) {
             try {
                 $templateActivities[(string) $selectedTemplateActivityId] = $this->toTemplateActivityRecord(
                     $this->activityRepository->find($selectedTemplateActivityId)
@@ -394,7 +394,7 @@ final readonly class PlannedSessionRequestHandler
      */
     private function resolveTemplateActivity(?ActivityId $templateActivityId): ?array
     {
-        if (null === $templateActivityId) {
+        if (!$templateActivityId instanceof ActivityId) {
             return null;
         }
 
@@ -534,9 +534,7 @@ final readonly class PlannedSessionRequestHandler
 
         $calculatedDurationInSeconds = $this->calculateWorkoutSequenceDuration($workoutSteps);
 
-        return null === $calculatedDurationInSeconds
-            ? $requestedTargetDurationInSeconds
-            : $calculatedDurationInSeconds;
+        return $calculatedDurationInSeconds ?? $requestedTargetDurationInSeconds;
     }
 
     /**
@@ -556,6 +554,7 @@ final readonly class PlannedSessionRequestHandler
     /**
      * @param list<array{headline: string, meta: string, depth: int}> &$previewRows
      * @param list<array<string, mixed>>                              $workoutSteps
+     *
      * @param-out list<array{headline: string, meta: string, depth: int}> $previewRows
      */
     private function appendWorkoutPreviewRows(array &$previewRows, array $workoutSteps, ActivityType $activityType, ?string $parentBlockId = null, int $depth = 0): void
@@ -837,7 +836,7 @@ final readonly class PlannedSessionRequestHandler
      */
     private function resolveMatchedActivity(?PlannedSession $plannedSession): array
     {
-        if (null === $plannedSession) {
+        if (!$plannedSession instanceof PlannedSession) {
             return [null, null];
         }
 
@@ -845,7 +844,7 @@ final readonly class PlannedSessionRequestHandler
         $matchedActivity = null;
 
         $linkedActivityId = $plannedSession->getLinkedActivityId();
-        if (null !== $linkedActivityId) {
+        if ($linkedActivityId instanceof ActivityId) {
             try {
                 $matchedActivity = $this->activityRepository->find($linkedActivityId);
                 $matchStatus = $plannedSession->getLinkStatus()->value;
@@ -854,12 +853,12 @@ final readonly class PlannedSessionRequestHandler
             }
         }
 
-        if (null === $matchedActivity && PlannedSessionLinkStatus::LINKED !== $plannedSession->getLinkStatus()) {
+        if (!$matchedActivity instanceof Activity && PlannedSessionLinkStatus::LINKED !== $plannedSession->getLinkStatus()) {
             $matchedActivity = $this->plannedSessionActivityMatcher->findSuggestedMatch($plannedSession);
-            $matchStatus = null === $matchedActivity ? null : PlannedSessionLinkStatus::SUGGESTED->value;
+            $matchStatus = $matchedActivity instanceof Activity ? PlannedSessionLinkStatus::SUGGESTED->value : null;
         }
 
-        if (null === $matchedActivity) {
+        if (!$matchedActivity instanceof Activity) {
             return [null, null];
         }
 
@@ -904,12 +903,12 @@ final readonly class PlannedSessionRequestHandler
             targetDurationInSeconds: $targetDurationInSeconds,
             targetIntensity: $targetIntensity,
             templateActivityId: $templateActivityId,
-            workoutSteps: $workoutSteps,
             estimationSource: PlannedSessionEstimationSource::UNKNOWN,
             linkedActivityId: $linkedActivityId,
             linkStatus: $linkStatus,
             createdAt: $createdAt,
             updatedAt: $updatedAt,
+            workoutSteps: $workoutSteps,
         ));
 
         return $estimate?->getEstimationSource() ?? PlannedSessionEstimationSource::UNKNOWN;
@@ -1084,11 +1083,11 @@ final readonly class PlannedSessionRequestHandler
     }
 
     /**
-    * @return array{title: string, activityType: string, targetLoad: ?float, targetDurationInMinutes: ?int, targetDurationInSecondsPart: ?int, targetIntensity: ?string, templateActivityId: ?string, workoutItems: list<array<string, mixed>>, notes: ?string}
+     * @return array{title: string, activityType: string, targetLoad: ?float, targetDurationInMinutes: ?int, targetDurationInSecondsPart: ?int, targetIntensity: ?string, templateActivityId: ?string, workoutItems: list<array<string, mixed>>, notes: ?string}
      */
     private function plannedSessionFormDefaults(?PlannedSession $plannedSession, ?float $estimatedTargetLoad = null): array
     {
-        if (null !== $plannedSession) {
+        if ($plannedSession instanceof PlannedSession) {
             [$targetDurationInMinutes, $targetDurationInSecondsPart] = $this->splitDurationInMinutesAndSeconds($plannedSession->getTargetDurationInSeconds());
             $workoutSteps = $this->mapWorkoutStepsForForm($plannedSession->getWorkoutSteps());
 
@@ -1148,9 +1147,9 @@ final readonly class PlannedSessionRequestHandler
     }
 
     /**
-    * @param list<array{itemId: string, parentBlockId: ?string, type: string, label: string, repetitions: string, targetType: string, conditionType: string, durationInMinutes: string, durationInSecondsPart: string, distanceInMeters: string, targetPace: string, targetPower: string, targetHeartRate: string, recoveryAfterInSeconds: string}> $workoutSteps
+     * @param list<array{itemId: string, parentBlockId: ?string, type: string, label: string, repetitions: string, targetType: string, conditionType: string, durationInMinutes: string, durationInSecondsPart: string, distanceInMeters: string, targetPace: string, targetPower: string, targetHeartRate: string, recoveryAfterInSeconds: string}> $workoutSteps
      *
-    * @return list<array<string, mixed>>
+     * @return list<array<string, mixed>>
      */
     private function buildWorkoutItemTree(array $workoutSteps): array
     {

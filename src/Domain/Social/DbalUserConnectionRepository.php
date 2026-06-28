@@ -58,8 +58,11 @@ final readonly class DbalUserConnectionRepository extends DbalRepository impleme
 
     public function areFriends(AppUserId $leftUserId, AppUserId $rightUserId): bool
     {
-        return $this->hasAcceptedConnection($leftUserId, $rightUserId, UserConnectionType::FRIEND)
-            || $this->hasAcceptedConnection($rightUserId, $leftUserId, UserConnectionType::FRIEND);
+        if ($this->hasAcceptedConnection($leftUserId, $rightUserId, UserConnectionType::FRIEND)) {
+            return true;
+        }
+
+        return $this->hasAcceptedConnection($rightUserId, $leftUserId, UserConnectionType::FRIEND);
     }
 
     public function isFollower(AppUserId $followerUserId, AppUserId $targetUserId): bool

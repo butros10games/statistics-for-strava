@@ -34,7 +34,7 @@ final readonly class CompressedString implements \Stringable
 
     public function uncompress(): string
     {
-        $uncompressed = self::uncompressWithExtension($this->compressedValue) ?? self::uncompressWithBinary($this->compressedValue);
+        $uncompressed = $this->uncompressWithExtension($this->compressedValue) ?? $this->uncompressWithBinary($this->compressedValue);
         if (!is_string($uncompressed)) {
             throw new \RuntimeException('ZSTD decompression failed');
         }
@@ -56,7 +56,7 @@ final readonly class CompressedString implements \Stringable
         return @zstd_compress($value, self::DEFAULT_ZSTD_LEVEL);
     }
 
-    private static function uncompressWithExtension(string $value): string|false|null
+    private function uncompressWithExtension(string $value): string|false|null
     {
         if (!function_exists('zstd_uncompress')) {
             return null;
@@ -78,7 +78,7 @@ final readonly class CompressedString implements \Stringable
         );
     }
 
-    private static function uncompressWithBinary(string $value): string|false|null
+    private function uncompressWithBinary(string $value): string|false|null
     {
         $binary = self::findZstdBinary();
         if (null === $binary) {
@@ -113,7 +113,7 @@ final readonly class CompressedString implements \Stringable
         static $binary = false;
 
         if (false === $binary) {
-            $binary = (new ExecutableFinder())->find(self::ZSTD_BINARY_NAME) ?: null;
+            $binary = new ExecutableFinder()->find(self::ZSTD_BINARY_NAME) ?: null;
         }
 
         return $binary;
