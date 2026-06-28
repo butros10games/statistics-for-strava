@@ -715,8 +715,13 @@ final readonly class TrainingAdvisorExportBuilder
 
         return [
             'estimatedLoad' => $estimate->getEstimatedLoad(),
+            'estimatedLoadRange' => $estimate->getEstimatedLoadRange(),
             'source' => $estimate->getEstimationSource()->value,
             'sourceLabel' => $estimate->getEstimationSource()->getLabel(),
+            'confidenceLabel' => $estimate->getConfidenceLabel(),
+            'confidenceScore' => $estimate->getConfidenceScore(),
+            'methodDetails' => $estimate->getMethodDetails(),
+            'sampleCount' => $estimate->getSampleCount(),
         ];
     }
 

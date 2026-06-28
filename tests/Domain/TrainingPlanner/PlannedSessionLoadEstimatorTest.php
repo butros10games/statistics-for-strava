@@ -16,6 +16,7 @@ use App\Domain\TrainingPlanner\PlannedSession;
 use App\Domain\TrainingPlanner\PlannedSessionEstimationSource;
 use App\Domain\TrainingPlanner\PlannedSessionId;
 use App\Domain\TrainingPlanner\PlannedSessionIntensity;
+use App\Domain\TrainingPlanner\PlannedSessionLoadEstimate;
 use App\Domain\TrainingPlanner\PlannedSessionLinkStatus;
 use App\Domain\TrainingPlanner\PlannedSessionLoadEstimator;
 use App\Infrastructure\ValueObject\Measurement\Velocity\KmPerHour;
@@ -65,6 +66,12 @@ final class PlannedSessionLoadEstimatorTest extends ContainerTestCase
         self::assertNotNull($estimate);
         self::assertSame(72.5, $estimate->getEstimatedLoad());
         self::assertSame(PlannedSessionEstimationSource::MANUAL_TARGET_LOAD, $estimate->getEstimationSource());
+        self::assertSame('High confidence', $estimate->getConfidenceLabel());
+        self::assertSame(1.0, $estimate->getConfidenceScore());
+        self::assertSame('Manual target load supplied on the planned session.', $estimate->getMethodDetails());
+        self::assertNull($estimate->getSampleCount());
+        self::assertSame(72.5, $estimate->getLowerEstimatedLoad());
+        self::assertSame(72.5, $estimate->getUpperEstimatedLoad());
     }
 
     public function testItUsesTemplateActivityLoadWhenTemplateExists(): void
@@ -83,6 +90,11 @@ final class PlannedSessionLoadEstimatorTest extends ContainerTestCase
         self::assertNotNull($estimate);
         self::assertSame($expectedLoad, $estimate->getEstimatedLoad());
         self::assertSame(PlannedSessionEstimationSource::TEMPLATE, $estimate->getEstimationSource());
+        self::assertSame('High confidence', $estimate->getConfidenceLabel());
+        self::assertSame(0.9, $estimate->getConfidenceScore());
+        self::assertSame('Template activity load estimated from the matched activity heart-rate load.', $estimate->getMethodDetails());
+        self::assertSame(1, $estimate->getSampleCount());
+        $this->assertEstimateHasUncertaintyRange($estimate);
     }
 
     public function testDurationAndIntensityEstimatesScaleWithIntensity(): void
@@ -108,6 +120,11 @@ final class PlannedSessionLoadEstimatorTest extends ContainerTestCase
         self::assertSame(PlannedSessionEstimationSource::DURATION_INTENSITY, $easyEstimate->getEstimationSource());
         self::assertSame(PlannedSessionEstimationSource::DURATION_INTENSITY, $hardEstimate->getEstimationSource());
         self::assertGreaterThan($easyEstimate->getEstimatedLoad(), $hardEstimate->getEstimatedLoad());
+        self::assertSame('Medium confidence', $easyEstimate->getConfidenceLabel());
+        self::assertSame(0.56, $easyEstimate->getConfidenceScore());
+        self::assertSame('Activity-specific historical load per hour adjusted by planned duration and intensity.', $easyEstimate->getMethodDetails());
+        self::assertSame(3, $easyEstimate->getSampleCount());
+        $this->assertEstimateHasUncertaintyRange($easyEstimate);
     }
 
     public function testWorkoutRidePowerTargetsIncreaseEstimatedLoad(): void
@@ -157,6 +174,11 @@ final class PlannedSessionLoadEstimatorTest extends ContainerTestCase
         self::assertSame(PlannedSessionEstimationSource::WORKOUT_TARGETS, $easyEstimate->getEstimationSource());
         self::assertSame(PlannedSessionEstimationSource::WORKOUT_TARGETS, $hardEstimate->getEstimationSource());
         self::assertGreaterThan($easyEstimate->getEstimatedLoad(), $hardEstimate->getEstimatedLoad());
+        self::assertSame('High confidence', $easyEstimate->getConfidenceLabel());
+        self::assertSame(0.88, $easyEstimate->getConfidenceScore());
+        self::assertSame('Power target scaled from cycling threshold power anchor.', $easyEstimate->getMethodDetails());
+        self::assertSame(1, $easyEstimate->getSampleCount());
+        $this->assertEstimateHasUncertaintyRange($easyEstimate);
     }
 
     public function testWorkoutRunPaceTargetsIncreaseEstimatedLoad(): void
@@ -422,6 +444,16 @@ final class PlannedSessionLoadEstimatorTest extends ContainerTestCase
         $intensity = max(0.0, min(1.5, $intensity));
 
         return round(($movingTimeInSeconds / 60) * $intensity * exp(1.92 * $intensity), 1);
+    }
+
+    private function assertEstimateHasUncertaintyRange(PlannedSessionLoadEstimate $estimate): void
+    {
+        self::assertLessThan($estimate->getEstimatedLoad(), $estimate->getLowerEstimatedLoad());
+        self::assertGreaterThan($estimate->getEstimatedLoad(), $estimate->getUpperEstimatedLoad());
+        self::assertSame([
+            'lower' => $estimate->getLowerEstimatedLoad(),
+            'upper' => $estimate->getUpperEstimatedLoad(),
+        ], $estimate->getEstimatedLoadRange());
     }
 
     private function clamp(float $value, float $min, float $max): float

@@ -232,9 +232,12 @@
 <div class="rounded-lg border border-gray-200 bg-white shadow-xs" data-planned-session-targets-card data-planned-session-form-id="planned-session-form-{{ uniqueId }}">
     <div class="px-4 py-3 border-b border-gray-100 flex items-center justify-between gap-2">
         <div class="text-xs font-semibold uppercase tracking-wide text-gray-500">{{ "Targets & estimation"|trans }}</div>
-        <span data-planned-session-estimate-badge data-planned-session-form-id="planned-session-form-{{ uniqueId }}" class="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-800 whitespace-nowrap{% if plannedSessionEstimatedLoad is null or not plannedSession %} hidden{% endif %}">
+        <span data-planned-session-estimate-badge data-planned-session-form-id="planned-session-form-{{ uniqueId }}" class="inline-flex items-center rounded-full bg-amber-100 px-2 py-0.5 text-[10px] font-semibold text-amber-800 whitespace-nowrap{% if plannedSessionEstimatedLoad is null or not plannedSession %} hidden{% endif %}"{% if plannedSessionLoadEstimate|default(null) %} title="{{ plannedSessionLoadEstimate.methodDetails }}"{% endif %}>
             {% if plannedSessionEstimatedLoad is not null and plannedSession %}
                 {{ "Est."|trans }} {{ plannedSessionEstimatedLoad|formatNumber(1) }} · {{ (plannedSessionEstimatedSourceLabel ?? plannedSession.estimationSource)|trans }}
+                {% if plannedSessionLoadEstimate|default(null) %}
+                    · {{ plannedSessionLoadEstimate.confidenceLabel|trans }}
+                {% endif %}
             {% endif %}
         </span>
     </div>
