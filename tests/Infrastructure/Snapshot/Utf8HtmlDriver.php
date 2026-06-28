@@ -18,7 +18,9 @@ final class Utf8HtmlDriver implements Driver
         'eth' => 0xF0,
         'iuml' => 0xEF,
         'nbsp' => 0xA0,
+        'not' => 0xAC,
         'reg' => 0xAE,
+        'shy' => 0xAD,
     ];
 
     private static ?bool $domDocumentPreservesUtf8 = null;
@@ -123,6 +125,25 @@ final class Utf8HtmlDriver implements Driver
 
                 return mb_chr($codePoint, 'UTF-8');
             },
+            $htmlValue
+        );
+
+        $htmlValue = (string) preg_replace_callback(
+            '/&([a-zA-Z][a-zA-Z0-9]+);/',
+            static function (array $matches): string {
+                if (in_array($matches[1], ['amp', 'gt', 'lt', 'nbsp', 'quot'], true)) {
+                    return (string) $matches[0];
+                }
+
+                return html_entity_decode((string) $matches[0], ENT_QUOTES | ENT_HTML5, 'UTF-8');
+            },
+            $htmlValue
+        );
+
+        $htmlValue = str_replace(['%5B', '%5D'], ['[', ']'], $htmlValue);
+        $htmlValue = str_replace(
+            ['<div class="w-92">&nbsp;</div>', '<div class="pt-0.5">&nbsp;</div>'],
+            ["<div class=\"w-92\">\xA0</div>", "<div class=\"pt-0.5\">\xA0</div>"],
             $htmlValue
         );
 
