@@ -27,6 +27,7 @@
 
   - [Locales and translations](development/locales-and-translations.md "Statistics for Strava | Locales and translations")
   - [Local development](development/local-development.md "Statistics for Strava | Local development")
+  - [Strava product and compliance foundation](development/strava-product-compliance-foundation.md "Statistics for Strava | Product and compliance foundation")
 
 - Community & Contributions
 

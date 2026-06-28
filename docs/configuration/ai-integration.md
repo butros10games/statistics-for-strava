@@ -5,6 +5,9 @@ To start using the AI features in **Statistics for Strava**, you first need to p
 > [!WARNING]
 > **Warning** Use caution when enabling this feature if your app is publicly accessible
 
+> [!WARNING]
+> **Strava data policy** Strava's current API policy restricts AI/ML use of Strava data. Do not enable AI features for Strava-derived activity, route, stream, photo, challenge, gear, or training-plan data in a hosted or reviewed Strava app until the flow has passed product/legal review. See the [Strava product and compliance foundation](../development/strava-product-compliance-foundation.md).
+
 > [!IMPORTANT]
 > **Important** Statistics for Strava uses the <a href="https://docs.neuron-ai.dev">Neuron AI</a> library to interface with AI models.
 > Only providers supported by Neuron AI are compatible. See the full list of <a href="https://docs.neuron-ai.dev/providers/ai-provider">supported providers</a>
