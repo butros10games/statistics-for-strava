@@ -69,7 +69,7 @@ final class Utf8HtmlDriver implements Driver
     private static function repairUtf8Entities(string $htmlValue): string
     {
         // Match DOMDocument's mixed mojibake output without requiring the full document to be valid UTF-8.
-        $literalBytePattern = '(?:\xC2[\x80-\xBF]|\xC3[\x82\x83\xA2\xAF\xB0])';
+        $literalBytePattern = '(?:\xC2[\x80-\xBF]|\xC3[\x82\x83\xA2\xAF\xB0]|[\x80-\xBF\xC2\xC3\xE2\xEF\xF0])';
         $byteEntityPattern = '(?:&#(?:12[8-9]|1[3-9][0-9]|2[0-4][0-9]|25[0-5]);|&(?:'.implode('|', array_keys(self::BYTE_ENTITY_MAP)).');)';
         $bytePattern = sprintf('(?:%s|%s)', $literalBytePattern, $byteEntityPattern);
 
@@ -142,6 +142,10 @@ final class Utf8HtmlDriver implements Driver
     private static function decodeLiteralByte(string $literalByte): ?int
     {
         $bytes = array_map(ord(...), str_split($literalByte));
+        if (1 === count($bytes)) {
+            return $bytes[0];
+        }
+
         if (2 !== count($bytes)) {
             return null;
         }
