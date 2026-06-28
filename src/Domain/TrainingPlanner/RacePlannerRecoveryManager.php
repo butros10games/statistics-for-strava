@@ -85,12 +85,12 @@ final readonly class RacePlannerRecoveryManager
                 targetDurationInSeconds: $proposedSession->getTargetDurationInSeconds(),
                 targetIntensity: $proposedSession->getTargetIntensity(),
                 templateActivityId: null,
-                workoutSteps: $this->mapWorkoutStepsForPlannedSession($proposedSession->getWorkoutSteps()),
                 estimationSource: $this->determineEstimationSource($proposedSession),
                 linkedActivityId: null,
                 linkStatus: PlannedSessionLinkStatus::UNLINKED,
                 createdAt: $now,
                 updatedAt: $now,
+                workoutSteps: $this->mapWorkoutStepsForPlannedSession($proposedSession->getWorkoutSteps()),
             ));
         }
 
@@ -290,10 +290,8 @@ final readonly class RacePlannerRecoveryManager
      */
     private function countRunSessionsOnDay(array $sessions, SerializableDateTime $day): int
     {
-        return count(array_filter($sessions, static function (PlannedSession $session) use ($day): bool {
-            return $session->getDay()->format('Y-m-d') === $day->format('Y-m-d')
-                && ActivityType::RUN === $session->getActivityType();
-        }));
+        return count(array_filter($sessions, static fn (PlannedSession $session): bool => $session->getDay()->format('Y-m-d') === $day->format('Y-m-d')
+            && ActivityType::RUN === $session->getActivityType()));
     }
 
     private function normalizeNullableString(?string $value): ?string

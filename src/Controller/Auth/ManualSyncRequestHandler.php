@@ -52,7 +52,7 @@ final readonly class ManualSyncRequestHandler
     public function syncStrava(): JsonResponse
     {
         $appUser = $this->currentAppUser->require();
-        if (null === $this->stravaConnectionRepository->findByUserId($appUser->getId())) {
+        if (!$this->stravaConnectionRepository->findByUserId($appUser->getId()) instanceof \App\Domain\Strava\Connection\AppUserStravaConnection) {
             return new JsonResponse([
                 'message' => 'Connect Strava before starting a manual Strava sync.',
             ], Response::HTTP_UNPROCESSABLE_ENTITY);

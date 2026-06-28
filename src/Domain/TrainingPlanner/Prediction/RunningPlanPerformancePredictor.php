@@ -258,7 +258,7 @@ final class RunningPlanPerformancePredictor
         array $existingSessions,
         ?SerializableDateTime $referenceDate,
     ): ?RunningPlanAdherenceSnapshot {
-        if (null === $referenceDate) {
+        if (!$referenceDate instanceof SerializableDateTime) {
             return null;
         }
 
@@ -284,8 +284,10 @@ final class RunningPlanPerformancePredictor
             if (ActivityType::RUN !== $plannedSession->getActivityType()) {
                 continue;
             }
-
-            if ($plannedSession->getDay() < $planStartDay || $plannedSession->getDay() > $historicalWindowEnd) {
+            if ($plannedSession->getDay() < $planStartDay) {
+                continue;
+            }
+            if ($plannedSession->getDay() > $historicalWindowEnd) {
                 continue;
             }
 
@@ -342,7 +344,7 @@ final class RunningPlanPerformancePredictor
     private function isCompletedPlannedSession(PlannedSession $plannedSession): bool
     {
         return PlannedSessionLinkStatus::LINKED === $plannedSession->getLinkStatus()
-            && null !== $plannedSession->getLinkedActivityId();
+            && $plannedSession->getLinkedActivityId() instanceof \App\Domain\Activity\ActivityId;
     }
 
     private function isKeyPlannedRunSession(PlannedSession $plannedSession): bool
@@ -357,13 +359,7 @@ final class RunningPlanPerformancePredictor
 
         $title = strtolower(trim((string) $plannedSession->getTitle()));
 
-        foreach (['interval', 'tempo', 'threshold', 'hill', 'fartlek', 'progression', 'race pace', 'vo2'] as $needle) {
-            if (str_contains($title, $needle)) {
-                return true;
-            }
-        }
-
-        return false;
+        return array_any(['interval', 'tempo', 'threshold', 'hill', 'fartlek', 'progression', 'race pace', 'vo2'], fn (string $needle): bool => str_contains($title, $needle));
     }
 
     private function isLongRunPlannedSession(PlannedSession $plannedSession): bool

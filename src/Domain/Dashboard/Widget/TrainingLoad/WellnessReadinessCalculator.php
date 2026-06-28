@@ -61,7 +61,7 @@ final class WellnessReadinessCalculator
         $score += $tsbComponent;
 
         $acRatioComponent = 0.0;
-        if (($currentAcRatio = $trainingMetrics->getCurrentAcRatio()) !== null) {
+        if (($currentAcRatio = $trainingMetrics->getCurrentAcRatio()) instanceof AcRatio) {
             $acRatioComponent = match ($currentAcRatio->getStatus()) {
                 AcRatioStatus::LOW_RISK => 6,
                 AcRatioStatus::LOW_TRAINING_LOAD => -3,

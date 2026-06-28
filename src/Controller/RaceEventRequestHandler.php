@@ -75,7 +75,7 @@ final readonly class RaceEventRequestHandler
     }
 
     #[Route(path: '/race-event/delete', methods: ['POST'])]
-    public function delete(Request $request): Response
+    public function delete(Request $request): RedirectResponse
     {
         $raceEventId = $request->request->getString('raceEventId');
         if ('' !== $raceEventId) {
@@ -94,9 +94,9 @@ final readonly class RaceEventRequestHandler
 
         return new Response($this->twig->render('html/dashboard/race-event.html.twig', [
             'raceEvent' => $raceEvent,
-            'raceEventDefaultDay' => null === $raceEvent
-                ? $request->query->getString('day', $today->format('Y-m-d'))
-                : $raceEvent->getDay()->format('Y-m-d'),
+            'raceEventDefaultDay' => $raceEvent instanceof RaceEvent
+                ? $raceEvent->getDay()->format('Y-m-d')
+                : $request->query->getString('day', $today->format('Y-m-d')),
             'raceEventFamilyOptions' => RaceEventFamily::cases(),
             'raceEventProfileOptionGroups' => $this->buildRaceEventProfileOptionGroups(),
             'raceEventPriorityOptions' => RaceEventPriority::cases(),

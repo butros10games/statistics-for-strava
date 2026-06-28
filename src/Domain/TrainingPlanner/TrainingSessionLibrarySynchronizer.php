@@ -31,7 +31,7 @@ final readonly class TrainingSessionLibrarySynchronizer
 
         $primaryDuplicateTrainingSession = array_shift($duplicateTrainingSessions);
 
-        if (null !== $existingTrainingSession && $existingTrainingSession->getId() !== $primaryDuplicateTrainingSession->getId()) {
+        if ($existingTrainingSession instanceof TrainingSession && $existingTrainingSession->getId() !== $primaryDuplicateTrainingSession->getId()) {
             $this->trainingSessionRepository->deleteById($existingTrainingSession->getId());
         }
 

@@ -131,10 +131,7 @@ final readonly class RunImportCommandHandler implements CommandHandler
         try {
             $this->commandBus->dispatch($command);
         } catch (\Throwable $e) {
-            throw new \RuntimeException(
-                sprintf('Import failed during stage "%s" while "%s" (%s).', $stageName, $message, $command::class),
-                previous: $e,
-            );
+            throw new \RuntimeException(sprintf('Import failed during stage "%s" while "%s" (%s).', $stageName, $message, $command::class), previous: $e);
         }
     }
 
@@ -143,10 +140,7 @@ final readonly class RunImportCommandHandler implements CommandHandler
         try {
             $this->connection->executeStatement('VACUUM');
         } catch (\Throwable $e) {
-            throw new \RuntimeException(
-                'Import failed during stage "Database maintenance" while "Vacuuming database".',
-                previous: $e,
-            );
+            throw new \RuntimeException('Import failed during stage "Database maintenance" while "Vacuuming database".', previous: $e);
         }
     }
 }

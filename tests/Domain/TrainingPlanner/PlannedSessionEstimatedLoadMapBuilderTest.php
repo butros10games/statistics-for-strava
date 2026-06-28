@@ -11,8 +11,8 @@ use App\Domain\TrainingPlanner\PlannedSessionEstimationSource;
 use App\Domain\TrainingPlanner\PlannedSessionId;
 use App\Domain\TrainingPlanner\PlannedSessionIntensity;
 use App\Domain\TrainingPlanner\PlannedSessionLinkStatus;
-use App\Tests\ContainerTestCase;
 use App\Infrastructure\ValueObject\Time\SerializableDateTime;
+use App\Tests\ContainerTestCase;
 
 final class PlannedSessionEstimatedLoadMapBuilderTest extends ContainerTestCase
 {

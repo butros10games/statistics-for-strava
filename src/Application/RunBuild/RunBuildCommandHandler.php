@@ -167,10 +167,7 @@ This is not a bug, once all your activities have been imported, your gear statis
         try {
             $this->commandBus->dispatch($command);
         } catch (\Throwable $e) {
-            throw new \RuntimeException(
-                sprintf('Build failed during stage "%s" while "%s" (%s).', $stageName, $message, $command::class),
-                previous: $e,
-            );
+            throw new \RuntimeException(sprintf('Build failed during stage "%s" while "%s" (%s).', $stageName, $message, $command::class), previous: $e);
         }
     }
 }

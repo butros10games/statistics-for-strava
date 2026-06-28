@@ -14,7 +14,7 @@ use App\Domain\TrainingPlanner\RaceReadinessContextBuilder;
 use App\Domain\TrainingPlanner\TrainingBlock;
 use App\Infrastructure\ValueObject\Time\SerializableDateTime;
 
-final class CurrentWeekCoachInsightsBuilder
+final readonly class CurrentWeekCoachInsightsBuilder
 {
     public function __construct(
         private RaceReadinessContextBuilder $raceReadinessContextBuilder,
@@ -135,8 +135,10 @@ final class CurrentWeekCoachInsightsBuilder
                 $hasRide = $hasRide || ActivityType::RIDE === $plannedSession->getActivityType();
                 $hasRun = $hasRun || ActivityType::RUN === $plannedSession->getActivityType();
             }
-
-            if (!$hasRide || !$hasRun) {
+            if (!$hasRide) {
+                continue;
+            }
+            if (!$hasRun) {
                 continue;
             }
 
@@ -156,7 +158,7 @@ final class CurrentWeekCoachInsightsBuilder
     private function buildRaceIntentForWeek(RaceReadinessContext $raceReadinessContext): ?array
     {
         $targetRace = $raceReadinessContext->getTargetRace();
-        if (null === $targetRace) {
+        if (!$targetRace instanceof RaceEvent) {
             return null;
         }
 
@@ -351,7 +353,7 @@ final class CurrentWeekCoachInsightsBuilder
                     'title' => 'Race week looks controlled',
                     'body' => 'The week has enough work to stay sharp without turning the final build into one last fitness chase.',
                 ];
-        } elseif (null !== $primaryTrainingBlock && 'taper' === $primaryTrainingBlock->getPhase()->value) {
+        } elseif ($primaryTrainingBlock instanceof TrainingBlock && 'taper' === $primaryTrainingBlock->getPhase()->value) {
             $cues[] = $hardSessionCount > 1 || $totalEstimatedLoad > 280.0
                 ? [
                     'tone' => 'warning',
@@ -363,7 +365,7 @@ final class CurrentWeekCoachInsightsBuilder
                     'title' => 'Taper looks controlled',
                     'body' => 'The load is light enough to protect freshness while keeping a bit of rhythm in the legs.',
                 ];
-        } elseif (null !== $primaryTrainingBlock && 'build' === $primaryTrainingBlock->getPhase()->value && 0 === $hardSessionCount && $sessionCount >= 3 && $totalEstimatedLoad >= 180.0) {
+        } elseif ($primaryTrainingBlock instanceof TrainingBlock && 'build' === $primaryTrainingBlock->getPhase()->value && 0 === $hardSessionCount && $sessionCount >= 3 && $totalEstimatedLoad >= 180.0) {
             $cues[] = [
                 'tone' => 'info',
                 'title' => 'Build week needs a clear quality touch',
@@ -500,15 +502,7 @@ final class CurrentWeekCoachInsightsBuilder
                     'body' => sprintf('There is open space after %s, which gives that session room to actually do its job.', $this->buildPlannedSessionShortLabel($keySession)),
                 ];
             }
-
-            $hasEasyNextDay = false;
-            foreach ($nextDaySessions as $nextDaySession) {
-                if (PlannedSessionDemandClassifier::isEasy($nextDaySession, $plannedSessionEstimatesById)) {
-                    $hasEasyNextDay = true;
-
-                    break;
-                }
-            }
+            $hasEasyNextDay = array_any($nextDaySessions, fn (PlannedSession $nextDaySession): bool => PlannedSessionDemandClassifier::isEasy($nextDaySession, $plannedSessionEstimatesById));
 
             if (!$hasEasyNextDay) {
                 return [

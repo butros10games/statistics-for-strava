@@ -96,13 +96,7 @@ final readonly class PlannedSessionActivityMatcher
      */
     private function matchesTitleTokens(string $activityName, array $tokens): bool
     {
-        foreach ($tokens as $token) {
-            if (str_contains($activityName, $token)) {
-                return true;
-            }
-        }
-
-        return false;
+        return array_any($tokens, fn (string $token): bool => str_contains($activityName, $token));
     }
 
     private function normalize(?string $value): string

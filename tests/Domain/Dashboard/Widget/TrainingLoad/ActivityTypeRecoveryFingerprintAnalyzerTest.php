@@ -13,7 +13,7 @@ final class ActivityTypeRecoveryFingerprintAnalyzerTest extends TestCase
 {
     public function testItBuildsRecoveryFingerprintsPerActivityType(): void
     {
-        $fingerprints = (new ActivityTypeRecoveryFingerprintAnalyzer())->analyze([
+        $fingerprints = new ActivityTypeRecoveryFingerprintAnalyzer()->analyze([
             ['day' => '2026-03-28', 'activityType' => ActivityType::RUN, 'load' => 120, 'nextDayHrv' => 58.0, 'nextDaySleepScore' => 72, 'nextDayFatigue' => 4],
             ['day' => '2026-03-30', 'activityType' => ActivityType::RUN, 'load' => 125, 'nextDayHrv' => 57.0, 'nextDaySleepScore' => 71, 'nextDayFatigue' => 4],
             ['day' => '2026-04-01', 'activityType' => ActivityType::RUN, 'load' => 118, 'nextDayHrv' => 59.0, 'nextDaySleepScore' => 73, 'nextDayFatigue' => 4],

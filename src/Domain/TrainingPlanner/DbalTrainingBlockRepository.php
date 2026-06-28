@@ -153,7 +153,6 @@ final readonly class DbalTrainingBlockRepository extends DbalRepository implemen
     {
         return TrainingBlock::create(
             trainingBlockId: TrainingBlockId::fromString($result['trainingBlockId']),
-            ownerUserId: null === ($result['ownerUserId'] ?? null) ? null : AppUserId::fromString((string) $result['ownerUserId']),
             startDay: SerializableDateTime::fromString($result['startDay']),
             endDay: SerializableDateTime::fromString($result['endDay']),
             targetRaceEventId: null === $result['targetRaceEventId'] ? null : RaceEventId::fromString((string) $result['targetRaceEventId']),
@@ -163,13 +162,14 @@ final readonly class DbalTrainingBlockRepository extends DbalRepository implemen
             notes: $result['notes'],
             createdAt: SerializableDateTime::fromString($result['createdAt']),
             updatedAt: SerializableDateTime::fromString($result['updatedAt']),
+            ownerUserId: null === ($result['ownerUserId'] ?? null) ? null : AppUserId::fromString((string) $result['ownerUserId']),
         );
     }
 
     private function applyOwnerScope(QueryBuilder $queryBuilder, ?AppUserId $ownerUserId): void
     {
         $ownerUserId = $this->resolveOwnerUserId($ownerUserId);
-        if (null === $ownerUserId) {
+        if (!$ownerUserId instanceof AppUserId) {
             return;
         }
 

@@ -93,7 +93,7 @@ final readonly class RaceEvent
             ownerUserId: $ownerUserId,
             day: $day->setTime(0, 0),
             type: RaceEventType::fromProfile($profile),
-            family: $normalizedFamily === $family ? $family : $normalizedFamily,
+            family: $normalizedFamily,
             profile: $profile,
             title: self::normalizeNullableString($title),
             location: self::normalizeNullableString($location),

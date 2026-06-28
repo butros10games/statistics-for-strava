@@ -19,9 +19,9 @@ final readonly class StravaRefreshTokenResolver
     public function resolve(): StravaRefreshToken
     {
         $appUserId = $this->currentAppUser->getId();
-        if (null !== $appUserId) {
+        if ($appUserId instanceof \App\Domain\Auth\AppUserId) {
             $connection = $this->stravaConnectionRepository->findByUserId($appUserId);
-            if (null !== $connection) {
+            if ($connection instanceof Connection\AppUserStravaConnection) {
                 return StravaRefreshToken::fromString($connection->getRefreshToken());
             }
         }

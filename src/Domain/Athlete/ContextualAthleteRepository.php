@@ -29,7 +29,7 @@ final readonly class ContextualAthleteRepository extends DbalRepository implemen
     {
         $currentUser = $this->currentAppUser->get();
 
-        if (null === $currentUser) {
+        if (!$currentUser instanceof \App\Domain\Auth\AppUser) {
             $this->keyValueStore->save(KeyValue::fromState(
                 key: Key::ATHLETE,
                 value: Value::fromString(Json::encode($athlete)),

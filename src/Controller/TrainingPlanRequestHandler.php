@@ -75,6 +75,8 @@ final readonly class TrainingPlanRequestHandler
             targetRaceEventId: TrainingPlanType::RACE === $type ? $this->nullableRaceEventId($request->request->getString('targetRaceEventId')) : null,
             title: $this->nullableString($request->request->getString('title')),
             notes: $this->nullableString($request->request->getString('notes')),
+            createdAt: $existing?->getCreatedAt() ?? $now,
+            updatedAt: $now,
             discipline: $discipline,
             sportSchedule: $this->parseSportSchedule($request),
             performanceMetrics: $this->parsePerformanceMetrics($request),
@@ -87,8 +89,6 @@ final readonly class TrainingPlanRequestHandler
             runHillSessionsEnabled: TrainingPlanType::TRAINING === $type
                 && TrainingPlanDiscipline::RUNNING === $discipline
                 && $request->request->getBoolean('runHillSessionsEnabled'),
-            createdAt: $existing?->getCreatedAt() ?? $now,
-            updatedAt: $now,
         );
 
         $this->repository->upsert($trainingPlan);
@@ -99,15 +99,13 @@ final readonly class TrainingPlanRequestHandler
     }
 
     #[Route(path: '/training-plan/delete', methods: ['POST'])]
-    public function delete(Request $request): Response
+    public function delete(Request $request): RedirectResponse
     {
         $trainingPlanId = $request->request->getString('trainingPlanId');
         if ('' !== $trainingPlanId) {
             $trainingPlan = $this->repository->findById(TrainingPlanId::fromString($trainingPlanId));
             $now = $this->clock->getCurrentDateTimeImmutable();
-            $plannerDataChanged = $trainingPlan instanceof TrainingPlan && null !== $trainingPlan->getTargetRaceEventId()
-                ? $this->deleteReplaceableUpcomingSessions($trainingPlan, $now)
-                : false;
+            $plannerDataChanged = $trainingPlan instanceof TrainingPlan && $trainingPlan->getTargetRaceEventId() instanceof RaceEventId && $this->deleteReplaceableUpcomingSessions($trainingPlan, $now);
 
             $this->repository->delete(TrainingPlanId::fromString($trainingPlanId));
             $this->rebuildViews($now, $plannerDataChanged);
@@ -130,11 +128,11 @@ final readonly class TrainingPlanRequestHandler
         );
         $defaultStartDay = $this->resolveDefaultStartDay($trainingPlan, $afterTrainingPlan, $selectedRaceEvent, $today);
         $linkedRaceEventIds = $this->buildLinkedRaceEventIds($raceEventOptions, $trainingPlan?->getId());
-        $suggestedRaceEvent = $trainingPlan?->getTargetRaceEventId()
+        $suggestedRaceEvent = $trainingPlan?->getTargetRaceEventId() instanceof RaceEventId
             ? $this->findRaceEventById($raceEventOptions, $trainingPlan->getTargetRaceEventId())
             : $selectedRaceEvent;
 
-        if (null === $suggestedRaceEvent && null === $trainingPlan) {
+        if (!$suggestedRaceEvent instanceof RaceEvent && !$trainingPlan instanceof TrainingPlan) {
             $suggestedRaceEvent = $this->findSuggestedRaceEvent(
                 $raceEventOptions,
                 $linkedRaceEventIds,
@@ -148,7 +146,7 @@ final readonly class TrainingPlanRequestHandler
             'trainingPlan' => $trainingPlan,
             'afterTrainingPlan' => $afterTrainingPlan,
             'trainingPlanTypeOptions' => TrainingPlanType::cases(),
-            'trainingPlanDefaultType' => $trainingPlan?->getType() ?? (null === $suggestedRaceEvent ? TrainingPlanType::TRAINING : TrainingPlanType::RACE),
+            'trainingPlanDefaultType' => $trainingPlan?->getType() ?? ($suggestedRaceEvent instanceof RaceEvent ? TrainingPlanType::RACE : TrainingPlanType::TRAINING),
             'trainingPlanDefaultTitle' => $trainingPlan?->getTitle() ?? $suggestedRaceEvent?->getTitle(),
             'trainingPlanDefaultStartDay' => $trainingPlan?->getStartDay()->format('Y-m-d') ?? $defaultStartDay->format('Y-m-d'),
             'trainingPlanDefaultEndDay' => $trainingPlan?->getEndDay()->format('Y-m-d') ?? $defaultEndDay->format('Y-m-d'),
@@ -180,7 +178,7 @@ final readonly class TrainingPlanRequestHandler
         $earliestRaceEvent = $this->raceEventRepository->findEarliest();
         $latestRaceEvent = $this->raceEventRepository->findLatest();
 
-        if (null === $earliestRaceEvent || null === $latestRaceEvent) {
+        if (!$earliestRaceEvent instanceof RaceEvent || !$latestRaceEvent instanceof RaceEvent) {
             return [];
         }
 
@@ -195,7 +193,7 @@ final readonly class TrainingPlanRequestHandler
      */
     private function findRaceEventById(array $raceEvents, ?RaceEventId $raceEventId): ?RaceEvent
     {
-        if (null === $raceEventId) {
+        if (!$raceEventId instanceof RaceEventId) {
             return null;
         }
 
@@ -219,7 +217,7 @@ final readonly class TrainingPlanRequestHandler
 
         foreach ($this->repository->findAll() as $trainingPlan) {
             if (
-                null !== $excludedTrainingPlanId
+                $excludedTrainingPlanId instanceof TrainingPlanId
                 && (string) $trainingPlan->getId() === (string) $excludedTrainingPlanId
             ) {
                 continue;
@@ -268,15 +266,15 @@ final readonly class TrainingPlanRequestHandler
         ?RaceEvent $selectedRaceEvent,
         SerializableDateTime $today,
     ): SerializableDateTime {
-        if (null !== $trainingPlan) {
+        if ($trainingPlan instanceof TrainingPlan) {
             return $trainingPlan->getStartDay();
         }
 
-        if (null !== $afterTrainingPlan) {
+        if ($afterTrainingPlan instanceof TrainingPlan) {
             return $afterTrainingPlan->getEndDay()->modify('+1 day')->setTime(0, 0);
         }
 
-        if (null !== $selectedRaceEvent) {
+        if ($selectedRaceEvent instanceof RaceEvent) {
             $suggestedPlanStartDay = $selectedRaceEvent->getDay()->modify('-12 weeks')->setTime(0, 0);
 
             return $suggestedPlanStartDay > $today ? $suggestedPlanStartDay : $today;
@@ -290,11 +288,11 @@ final readonly class TrainingPlanRequestHandler
         SerializableDateTime $defaultStartDay,
         ?RaceEvent $suggestedRaceEvent,
     ): SerializableDateTime {
-        if (null !== $trainingPlan) {
+        if ($trainingPlan instanceof TrainingPlan) {
             return $trainingPlan->getEndDay();
         }
 
-        if (null !== $suggestedRaceEvent && $suggestedRaceEvent->getDay() >= $defaultStartDay) {
+        if ($suggestedRaceEvent instanceof RaceEvent && $suggestedRaceEvent->getDay() >= $defaultStartDay) {
             return $suggestedRaceEvent->getDay()->setTime(0, 0);
         }
 
@@ -322,11 +320,11 @@ final readonly class TrainingPlanRequestHandler
     ): bool {
         $plannerDataChanged = false;
 
-        if (null !== $existingTrainingPlan?->getTargetRaceEventId()) {
+        if ($existingTrainingPlan?->getTargetRaceEventId() instanceof RaceEventId) {
             $plannerDataChanged = $this->deleteReplaceableUpcomingSessions($existingTrainingPlan, $now);
         }
 
-        if (null === $savedTrainingPlan->getTargetRaceEventId()) {
+        if (!$savedTrainingPlan->getTargetRaceEventId() instanceof RaceEventId) {
             return $plannerDataChanged;
         }
 
@@ -334,8 +332,11 @@ final readonly class TrainingPlanRequestHandler
         if (!$targetRace instanceof RaceEvent) {
             return $plannerDataChanged;
         }
+        if ($this->racePlannerUpcomingSessionRegenerator->regenerate($targetRace, $now)->hasChanges()) {
+            return true;
+        }
 
-        return $this->racePlannerUpcomingSessionRegenerator->regenerate($targetRace, $now)->hasChanges() || $plannerDataChanged;
+        return $plannerDataChanged;
     }
 
     private function deleteReplaceableUpcomingSessions(TrainingPlan $trainingPlan, SerializableDateTime $now): bool
@@ -346,7 +347,7 @@ final readonly class TrainingPlanRequestHandler
                 $trainingPlan->getEndDay()->setTime(23, 59, 59),
             )),
             static fn (PlannedSession $plannedSession): bool => $plannedSession->getDay() >= $now->setTime(0, 0)
-                && null === $plannedSession->getLinkedActivityId(),
+                && !$plannedSession->getLinkedActivityId() instanceof \App\Domain\Activity\ActivityId,
         ));
 
         foreach ($replaceableSessions as $plannedSession) {
@@ -594,7 +595,7 @@ final readonly class TrainingPlanRequestHandler
     private function resolveDefaultPerformanceMetrics(?TrainingPlan $trainingPlan, SerializableDateTime $today): array
     {
         // If editing, use stored values.
-        if (null !== $trainingPlan && null !== $trainingPlan->getPerformanceMetrics()) {
+        if ($trainingPlan instanceof TrainingPlan && null !== $trainingPlan->getPerformanceMetrics()) {
             return $trainingPlan->getPerformanceMetrics();
         }
 

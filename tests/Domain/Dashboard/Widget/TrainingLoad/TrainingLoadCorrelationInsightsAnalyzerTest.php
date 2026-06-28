@@ -19,7 +19,7 @@ final class TrainingLoadCorrelationInsightsAnalyzerTest extends TestCase
     {
         $context = $this->buildContext();
 
-        $insights = (new TrainingLoadCorrelationInsightsAnalyzer())->analyze($context, 10);
+        $insights = new TrainingLoadCorrelationInsightsAnalyzer()->analyze($context, 10);
         $keys = array_map(static fn ($insight): string => $insight->getKey(), $insights);
 
         self::assertContains('loadToNextDayHrv', $keys);

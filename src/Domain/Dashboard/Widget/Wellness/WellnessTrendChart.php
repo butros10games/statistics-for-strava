@@ -12,13 +12,11 @@ final readonly class WellnessTrendChart
      * @param list<string>         $labels
      * @param list<int|float|null> $values
      */
-    // @phpstan-ignore-next-line constructor.unusedParameter
     private function __construct(
         private string $title,
         private array $labels,
         private array $values,
         private string $color,
-        string $unit,
         private TranslatorInterface $translator,
     ) {
     }
@@ -32,7 +30,6 @@ final readonly class WellnessTrendChart
         array $labels,
         array $values,
         string $color,
-        string $unit,
         TranslatorInterface $translator,
     ): self {
         return new self(
@@ -40,7 +37,6 @@ final readonly class WellnessTrendChart
             labels: $labels,
             values: $values,
             color: $color,
-            unit: $unit,
             translator: $translator,
         );
     }

@@ -35,7 +35,7 @@ final readonly class ProcessWebhookEventCommandHandler implements CommandHandler
         $connection = isset($payload['owner_id'])
             ? $this->stravaConnectionRepository->findByAthleteId((string) $payload['owner_id'])
             : null;
-        if (null !== $connection) {
+        if ($connection instanceof \App\Domain\Strava\Connection\AppUserStravaConnection) {
             $payload['app_user_id'] = (string) $connection->getAppUserId();
         }
 

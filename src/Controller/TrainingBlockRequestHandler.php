@@ -67,7 +67,7 @@ final readonly class TrainingBlockRequestHandler
     }
 
     #[Route(path: '/training-block/delete', methods: ['POST'])]
-    public function delete(Request $request): Response
+    public function delete(Request $request): RedirectResponse
     {
         $trainingBlockId = $request->request->getString('trainingBlockId');
         if ('' !== $trainingBlockId) {
@@ -87,8 +87,8 @@ final readonly class TrainingBlockRequestHandler
 
         return new Response($this->twig->render('html/dashboard/training-block.html.twig', [
             'trainingBlock' => $trainingBlock,
-            'trainingBlockDefaultStartDay' => null === $trainingBlock ? $defaultDay : $trainingBlock->getStartDay()->format('Y-m-d'),
-            'trainingBlockDefaultEndDay' => null === $trainingBlock ? $defaultDay : $trainingBlock->getEndDay()->format('Y-m-d'),
+            'trainingBlockDefaultStartDay' => $trainingBlock instanceof TrainingBlock ? $trainingBlock->getStartDay()->format('Y-m-d') : $defaultDay,
+            'trainingBlockDefaultEndDay' => $trainingBlock instanceof TrainingBlock ? $trainingBlock->getEndDay()->format('Y-m-d') : $defaultDay,
             'trainingBlockPhaseOptions' => TrainingBlockPhase::cases(),
             'trainingBlockRaceEventOptions' => $this->loadRaceEventOptions(),
             'redirectTo' => $this->resolveRedirectTarget($request),
@@ -102,7 +102,7 @@ final readonly class TrainingBlockRequestHandler
     {
         $earliestRaceEvent = $this->raceEventRepository->findEarliest();
         $latestRaceEvent = $this->raceEventRepository->findLatest();
-        if (null === $earliestRaceEvent || null === $latestRaceEvent) {
+        if (!$earliestRaceEvent instanceof \App\Domain\TrainingPlanner\RaceEvent || !$latestRaceEvent instanceof \App\Domain\TrainingPlanner\RaceEvent) {
             return [];
         }
 

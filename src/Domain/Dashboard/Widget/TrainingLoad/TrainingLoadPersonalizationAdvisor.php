@@ -110,7 +110,7 @@ final class TrainingLoadPersonalizationAdvisor
             }
         }
 
-        $readinessAdjustment = (int) max(-6, min(6, $readinessAdjustment));
+        $readinessAdjustment = max(-6, min(6, $readinessAdjustment));
         $forecastLoadFactor = max(0.92, min(1.15, round($forecastLoadFactor, 2)));
 
         if (0 === $readinessAdjustment && abs($forecastLoadFactor - 1.0) < 0.01) {

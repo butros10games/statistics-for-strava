@@ -102,7 +102,7 @@ final readonly class TrainingLoadAnalyticsContext
             return null;
         }
 
-        return $this->rows[array_key_last($this->rows)];
+        return array_last($this->rows);
     }
 
     /**

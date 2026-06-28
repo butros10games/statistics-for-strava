@@ -21,7 +21,7 @@ final readonly class DisconnectStravaRequestHandler
     }
 
     #[Route(path: '/account/strava/disconnect', name: 'app_account_strava_disconnect', methods: ['POST'])]
-    public function handle(): Response
+    public function handle(): RedirectResponse
     {
         $this->stravaConnectionRepository->deleteByUserId($this->currentAppUser->require()->getId());
 

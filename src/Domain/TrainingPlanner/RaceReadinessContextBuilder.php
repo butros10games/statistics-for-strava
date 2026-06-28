@@ -183,7 +183,7 @@ final class RaceReadinessContextBuilder
         }
 
         $currentTrainingBlockTargetRaceEventId = $currentTrainingBlock?->getTargetRaceEventId();
-        if (null !== $currentTrainingBlockTargetRaceEventId) {
+        if ($currentTrainingBlockTargetRaceEventId instanceof RaceEventId) {
             $targetRace = $raceEventsById[(string) $currentTrainingBlockTargetRaceEventId] ?? null;
             if (null !== $targetRace) {
                 return $targetRace;
@@ -203,7 +203,7 @@ final class RaceReadinessContextBuilder
 
     private function buildTargetRaceCountdownDays(SerializableDateTime $referenceDate, ?RaceEvent $targetRace): ?int
     {
-        if (null === $targetRace) {
+        if (!$targetRace instanceof RaceEvent) {
             return null;
         }
 
@@ -239,5 +239,4 @@ final class RaceReadinessContextBuilder
 
         return $brickDays;
     }
-
 }

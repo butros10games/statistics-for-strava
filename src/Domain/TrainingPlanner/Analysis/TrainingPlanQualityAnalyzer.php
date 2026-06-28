@@ -70,15 +70,7 @@ final class TrainingPlanQualityAnalyzer
                 }
 
                 foreach (array_keys($sessionsByDay) as $sessionDay) {
-                    $hasHardOrKeyDay = false;
-                    foreach ($sessionsByDay[$sessionDay] as $session) {
-                        if ($session->isKeySession() || in_array($session->getTargetIntensity()->value, ['hard', 'race'], true)) {
-                            $hasHardOrKeyDay = true;
-
-                            break;
-                        }
-                    }
-
+                    $hasHardOrKeyDay = array_any($sessionsByDay[$sessionDay], fn (ProposedSession $session): bool => $session->isKeySession() || in_array($session->getTargetIntensity()->value, ['hard', 'race'], true));
                     if (!$hasHardOrKeyDay) {
                         continue;
                     }
@@ -374,8 +366,11 @@ final class TrainingPlanQualityAnalyzer
         if ('' === $title || !str_contains($title, 'easy')) {
             return false;
         }
+        if ($session->isKeySession()) {
+            return true;
+        }
 
-        return $session->isKeySession() || in_array($session->getTargetIntensity()->value, ['hard', 'race'], true);
+        return in_array($session->getTargetIntensity()->value, ['hard', 'race'], true);
     }
 
     private function isLongSession(ProposedSession $session): bool

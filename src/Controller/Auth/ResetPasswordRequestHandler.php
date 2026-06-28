@@ -30,7 +30,7 @@ final readonly class ResetPasswordRequestHandler
     {
         $user = $this->appUserRepository->findByPasswordResetToken($token);
 
-        if (null === $user) {
+        if (!$user instanceof \App\Domain\Auth\AppUser) {
             return new Response($this->twig->render('auth/reset-password.html.twig', [
                 'error' => 'That reset link is not valid anymore.',
             ]), Response::HTTP_NOT_FOUND);

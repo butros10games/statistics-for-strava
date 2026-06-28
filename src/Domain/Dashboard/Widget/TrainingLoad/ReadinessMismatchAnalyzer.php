@@ -11,7 +11,7 @@ final class ReadinessMismatchAnalyzer
      */
     public function analyze(?ReadinessAssessment $readinessAssessment, ?array $latestRecoveryCheckIn): ?ReadinessMismatchInsight
     {
-        if (null === $readinessAssessment || null === $latestRecoveryCheckIn) {
+        if (!$readinessAssessment instanceof ReadinessAssessment || null === $latestRecoveryCheckIn) {
             return null;
         }
 

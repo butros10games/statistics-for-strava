@@ -164,7 +164,6 @@ final readonly class DbalPlannedSessionRepository extends DbalRepository impleme
     {
         return PlannedSession::create(
             plannedSessionId: PlannedSessionId::fromString($result['plannedSessionId']),
-            ownerUserId: null === ($result['ownerUserId'] ?? null) ? null : AppUserId::fromString((string) $result['ownerUserId']),
             day: SerializableDateTime::fromString($result['day']),
             activityType: ActivityType::from($result['activityType']),
             title: $result['title'],
@@ -173,19 +172,20 @@ final readonly class DbalPlannedSessionRepository extends DbalRepository impleme
             targetDurationInSeconds: null === $result['targetDurationInSeconds'] ? null : (int) $result['targetDurationInSeconds'],
             targetIntensity: null === $result['targetIntensity'] ? null : PlannedSessionIntensity::from($result['targetIntensity']),
             templateActivityId: null === $result['templateActivityId'] ? null : ActivityId::fromString($result['templateActivityId']),
-            workoutSteps: Json::decode((string) ($result['workoutSteps'] ?? '[]')),
             estimationSource: PlannedSessionEstimationSource::from($result['estimationSource']),
             linkedActivityId: null === $result['linkedActivityId'] ? null : ActivityId::fromString($result['linkedActivityId']),
             linkStatus: PlannedSessionLinkStatus::from($result['linkStatus']),
             createdAt: SerializableDateTime::fromString($result['createdAt']),
             updatedAt: SerializableDateTime::fromString($result['updatedAt']),
+            ownerUserId: null === ($result['ownerUserId'] ?? null) ? null : AppUserId::fromString((string) $result['ownerUserId']),
+            workoutSteps: Json::decode((string) ($result['workoutSteps'] ?? '[]')),
         );
     }
 
     private function applyOwnerScope(QueryBuilder $queryBuilder, ?AppUserId $ownerUserId): void
     {
         $ownerUserId = $this->resolveOwnerUserId($ownerUserId);
-        if (null === $ownerUserId) {
+        if (!$ownerUserId instanceof AppUserId) {
             return;
         }
 

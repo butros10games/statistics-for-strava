@@ -14,7 +14,7 @@ final class TrainingLoadForecastProjection
     private array $forecast = [];
     private ?int $daysUntilTsbHealthy = null;
     private ?int $daysUntilAcRatioHealthy = null;
-    private TrainingLoadForecastConfidence $confidence;
+    private readonly TrainingLoadForecastConfidence $confidence;
 
     private function __construct(
         private readonly TrainingMetrics $trainingMetrics,

@@ -99,7 +99,7 @@ class RunImportCommandHandlerTest extends ContainerTestCase
 
         $handler = new RunImportCommandHandler(
             $this->getContainer()->get(Strava::class),
-            new class() implements CommandBus {
+            new class implements CommandBus {
                 public function dispatch(Command $command): void
                 {
                     if ($command instanceof ImportSegments) {

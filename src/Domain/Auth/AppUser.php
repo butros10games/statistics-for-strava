@@ -115,10 +115,6 @@ final readonly class AppUser implements UserInterface, PasswordAuthenticatedUser
         return self::normalizeRoles($this->roles);
     }
 
-    public function eraseCredentials(): void
-    {
-    }
-
     #[\Override]
     public function getUserIdentifier(): string
     {
@@ -222,7 +218,7 @@ final readonly class AppUser implements UserInterface, PasswordAuthenticatedUser
     {
         $roles[] = 'ROLE_USER';
         $roles = array_values(array_unique(array_filter(
-            array_map(static fn (mixed $role): string => strtoupper(trim((string) $role)), $roles),
+            array_map(static fn (mixed $role): string => strtoupper(trim($role)), $roles),
             static fn (string $role): bool => '' !== $role,
         )));
         sort($roles);
