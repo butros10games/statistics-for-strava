@@ -4,6 +4,7 @@ namespace App\Tests\Application;
 
 use App\Application\AppUrl;
 use App\Application\importDataAndBuildAppCronAction;
+use App\Application\RunImport\RunImport;
 use App\Application\UpdateData\GarminBridgeUpdater;
 use App\Domain\Activity\ActivityRepository;
 use App\Domain\Strava\Webhook\WebhookAspectType;
@@ -93,6 +94,43 @@ class importDataAndBuildAppCronActionTest extends ContainerTestCase
         $this->importAndBuildAppCronAction->runForWebhooks($output);
 
         $this->assertMatchesJsonSnapshot(Json::encode($this->commandBus->getDispatchedCommands()));
+    }
+
+    public function testRunForWebhooksLetsDeleteWinOverQueuedCreateOrUpdate(): void
+    {
+        $output = new SpySymfonyStyleOutput(new StringInput('input'), new NullOutput());
+
+        $this->getContainer()->get(WebhookEventRepository::class)->add(WebhookEvent::create(
+            objectId: '1',
+            objectType: 'activity',
+            aspectType: WebhookAspectType::CREATE,
+            payload: [],
+        ));
+        $this->getContainer()->get(WebhookEventRepository::class)->add(WebhookEvent::create(
+            objectId: '1',
+            objectType: 'activity',
+            aspectType: WebhookAspectType::DELETE,
+            payload: [],
+        ));
+        $this->getContainer()->get(WebhookEventRepository::class)->add(WebhookEvent::create(
+            objectId: '2',
+            objectType: 'activity',
+            aspectType: WebhookAspectType::UPDATE,
+            payload: [],
+        ));
+
+        $this->migrationRunner
+            ->expects($this->once())
+            ->method('run');
+
+        $this->importAndBuildAppCronAction->runForWebhooks($output);
+
+        $commands = $this->commandBus->getDispatchedCommands();
+        self::assertInstanceOf(RunImport::class, $commands[0]);
+        self::assertSame(
+            ['activity-2'],
+            array_map(strval(...), $commands[0]->getRestrictToActivityIds()?->toArray() ?? [])
+        );
     }
 
     public function testRunForWebhooksWhenLockIsAlreadyAcquired(): void

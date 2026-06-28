@@ -1,20 +1,29 @@
 [
     {
+        "appUserId": null,
+        "aspectType": "create",
+        "eventId": "activity:test:create:global:unknown-owner",
         "objectId": "test",
         "objectType": "activity",
-        "aspectType": "create",
+        "ownerAthleteId": null,
         "payload": "[]"
     },
     {
+        "appUserId": null,
+        "aspectType": "create",
+        "eventId": "activity:test-3:create:global:unknown-owner",
         "objectId": "test-3",
         "objectType": "activity",
-        "aspectType": "create",
+        "ownerAthleteId": null,
         "payload": "[]"
     },
     {
+        "appUserId": null,
+        "aspectType": "create",
+        "eventId": "activity:test-2:create:global:unknown-owner",
         "objectId": "test-2",
         "objectType": "activity",
-        "aspectType": "create",
+        "ownerAthleteId": null,
         "payload": "[]"
     }
 ]
