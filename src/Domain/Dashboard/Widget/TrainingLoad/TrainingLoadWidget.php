@@ -157,6 +157,12 @@ final readonly class TrainingLoadWidget implements Widget
             from: $now->modify('-6 days'),
             till: $now,
         )))->getNumberOfRestDays();
+        $dailyTrainingGuidance = DailyTrainingGuidance::fromSignals(
+            readinessScore: $readinessScore,
+            trainingMetrics: $trainingMetrics,
+            restDaysInLast7Days: $numberOfRestDays,
+            recoveryTrendWarnings: $recoveryTrendWarnings,
+        );
 
         $this->buildStorage->write(
             'training-load.html',
@@ -170,6 +176,7 @@ final readonly class TrainingLoadWidget implements Widget
                     )->build()
                 ),
                 'trainingMetrics' => $trainingMetrics,
+                'dailyTrainingGuidance' => $dailyTrainingGuidance,
                 'readinessScore' => $readinessScore,
                 'readinessAssessment' => $readinessAssessment,
                 'readinessMismatchInsight' => $readinessMismatchInsight,
@@ -195,6 +202,7 @@ final readonly class TrainingLoadWidget implements Widget
         return $this->twig->load('html/dashboard/widget/widget--training-load.html.twig')->render([
             'timeInHeartRateZonesForLast30Days' => $timeInHeartRateZonesForLast30Days,
             'trainingMetrics' => $trainingMetrics,
+            'dailyTrainingGuidance' => $dailyTrainingGuidance,
             'readinessScore' => $readinessScore,
             'readinessAssessment' => $readinessAssessment,
             'readinessMismatchInsight' => $readinessMismatchInsight,

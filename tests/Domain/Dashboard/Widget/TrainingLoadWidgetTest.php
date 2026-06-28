@@ -77,6 +77,7 @@ final class TrainingLoadWidgetTest extends ContainerTestCase
         $trainingLoadModal = $this->buildStorage->read('training-load.html');
 
         self::assertStringContainsString('Training Load Analysis', $renderedWidget);
+        self::assertStringContainsString('Today\'s guidance', $renderedWidget);
         self::assertStringContainsString('Planned sessions forecast', $trainingLoadModal);
         self::assertStringContainsString('Forecast confidence', $trainingLoadModal);
         self::assertStringContainsString('Manual ride', $trainingLoadModal);
