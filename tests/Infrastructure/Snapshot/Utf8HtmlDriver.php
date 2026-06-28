@@ -112,7 +112,7 @@ final class Utf8HtmlDriver implements Driver
             $htmlValue
         );
 
-        return (string) preg_replace_callback(
+        $htmlValue = (string) preg_replace_callback(
             '/&#([0-9]+);/',
             static function (array $matches): string {
                 $codePoint = (int) $matches[1];
@@ -123,6 +123,12 @@ final class Utf8HtmlDriver implements Driver
 
                 return mb_chr($codePoint, 'UTF-8');
             },
+            $htmlValue
+        );
+
+        return (string) preg_replace_callback(
+            "/\\s([a-zA-Z_:][a-zA-Z0-9_:.:-]*)='([^']*)'/",
+            static fn (array $matches): string => sprintf(' %s="%s"', $matches[1], str_replace('"', '&quot;', (string) $matches[2])),
             $htmlValue
         );
     }
