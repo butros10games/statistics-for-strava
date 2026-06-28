@@ -150,6 +150,26 @@ final class AuthFlowTest extends WebTestCase
             'createdAt' => $now,
             'updatedAt' => $now,
         ]);
+        $connection->insert('TrainingSession', [
+            'trainingSessionId' => 'legacy-training-session',
+            'ownerUserId' => null,
+            'sourcePlannedSessionId' => 'legacy-session',
+            'activityType' => 'Run',
+            'title' => 'Legacy library session',
+            'notes' => null,
+            'targetLoad' => null,
+            'targetDurationInSeconds' => null,
+            'targetIntensity' => null,
+            'templateActivityId' => null,
+            'workoutSteps' => null,
+            'estimationSource' => 'unknown',
+            'sessionSource' => 'plannedSession',
+            'sessionPhase' => null,
+            'sessionObjective' => null,
+            'lastPlannedOn' => $now,
+            'createdAt' => $now,
+            'updatedAt' => $now,
+        ]);
         $connection->insert('RaceEvent', [
             'raceEventId' => 'legacy-race',
             'ownerUserId' => null,
@@ -185,6 +205,7 @@ final class AuthFlowTest extends WebTestCase
         self::assertSame($appUserId, $connection->fetchOne('SELECT ownerUserId FROM TrainingPlan WHERE trainingPlanId = ?', ['legacy-plan']));
         self::assertSame($appUserId, $connection->fetchOne('SELECT ownerUserId FROM TrainingBlock WHERE trainingBlockId = ?', ['legacy-block']));
         self::assertSame($appUserId, $connection->fetchOne('SELECT ownerUserId FROM PlannedSession WHERE plannedSessionId = ?', ['legacy-session']));
+        self::assertSame($appUserId, $connection->fetchOne('SELECT ownerUserId FROM TrainingSession WHERE trainingSessionId = ?', ['legacy-training-session']));
         self::assertSame($appUserId, $connection->fetchOne('SELECT ownerUserId FROM RaceEvent WHERE raceEventId = ?', ['legacy-race']));
         self::assertSame($legacyAthletePayload, $connection->fetchOne('SELECT payload FROM AthleteProfile WHERE appUserId = ?', [$appUserId]));
         self::assertSame('legacy-athlete-1', $connection->fetchOne('SELECT stravaAthleteId FROM AppUserStravaConnection WHERE appUserId = ?', [$appUserId]));

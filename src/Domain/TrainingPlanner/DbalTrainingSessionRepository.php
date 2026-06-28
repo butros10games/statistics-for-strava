@@ -6,24 +6,38 @@ namespace App\Domain\TrainingPlanner;
 
 use App\Domain\Activity\ActivityId;
 use App\Domain\Activity\ActivityType;
+use App\Domain\Auth\AppUserId;
 use App\Infrastructure\Repository\DbalRepository;
 use App\Infrastructure\Serialization\Json;
+use App\Infrastructure\User\CurrentAppUser;
 use App\Infrastructure\ValueObject\Time\SerializableDateTime;
+use Doctrine\DBAL\Connection;
+use Doctrine\DBAL\Query\QueryBuilder;
 
 final readonly class DbalTrainingSessionRepository extends DbalRepository implements TrainingSessionRepository
 {
+    public function __construct(
+        Connection $connection,
+        private ?CurrentAppUser $currentAppUser = null,
+    ) {
+        parent::__construct($connection);
+    }
+
     public function upsert(TrainingSession $trainingSession): void
     {
+        $ownerUserId = $this->resolveOwnerUserId($trainingSession->getOwnerUserId());
+
         $sql = 'INSERT INTO TrainingSession (
-                    trainingSessionId, sourcePlannedSessionId, activityType, title, notes, targetLoad,
+                    trainingSessionId, ownerUserId, sourcePlannedSessionId, activityType, title, notes, targetLoad,
                     targetDurationInSeconds, targetIntensity, templateActivityId, workoutSteps,
                     estimationSource, sessionSource, sessionPhase, sessionObjective, lastPlannedOn, createdAt, updatedAt
                 ) VALUES (
-                    :trainingSessionId, :sourcePlannedSessionId, :activityType, :title, :notes, :targetLoad,
+                    :trainingSessionId, :ownerUserId, :sourcePlannedSessionId, :activityType, :title, :notes, :targetLoad,
                     :targetDurationInSeconds, :targetIntensity, :templateActivityId, :workoutSteps,
                     :estimationSource, :sessionSource, :sessionPhase, :sessionObjective, :lastPlannedOn, :createdAt, :updatedAt
                 )
                 ON CONFLICT(`trainingSessionId`) DO UPDATE SET
+                    ownerUserId = excluded.ownerUserId,
                     sourcePlannedSessionId = excluded.sourcePlannedSessionId,
                     activityType = excluded.activityType,
                     title = excluded.title,
@@ -43,6 +57,7 @@ final readonly class DbalTrainingSessionRepository extends DbalRepository implem
 
         $this->connection->executeStatement($sql, [
             'trainingSessionId' => (string) $trainingSession->getId(),
+            'ownerUserId' => $ownerUserId?->__toString(),
             'sourcePlannedSessionId' => $trainingSession->getSourcePlannedSessionId()?->__toString(),
             'activityType' => $trainingSession->getActivityType()->value,
             'title' => $trainingSession->getTitle(),
@@ -62,45 +77,49 @@ final readonly class DbalTrainingSessionRepository extends DbalRepository implem
         ]);
     }
 
-    public function deleteById(TrainingSessionId $trainingSessionId): void
+    public function deleteById(TrainingSessionId $trainingSessionId, ?AppUserId $ownerUserId = null): void
     {
-        $this->connection->createQueryBuilder()
+        $queryBuilder = $this->connection->createQueryBuilder()
             ->delete('TrainingSession')
             ->andWhere('trainingSessionId = :trainingSessionId')
-            ->setParameter('trainingSessionId', (string) $trainingSessionId)
-            ->executeStatement();
+            ->setParameter('trainingSessionId', (string) $trainingSessionId);
+
+        $this->applyOwnerScope($queryBuilder, $ownerUserId);
+        $queryBuilder->executeStatement();
     }
 
-    public function findById(TrainingSessionId $trainingSessionId): ?TrainingSession
+    public function findById(TrainingSessionId $trainingSessionId, ?AppUserId $ownerUserId = null): ?TrainingSession
     {
-        $result = $this->connection->createQueryBuilder()
+        $queryBuilder = $this->connection->createQueryBuilder()
             ->select('*')
             ->from('TrainingSession')
             ->andWhere('trainingSessionId = :trainingSessionId')
             ->setParameter('trainingSessionId', (string) $trainingSessionId)
-            ->setMaxResults(1)
-            ->executeQuery()
-            ->fetchAssociative();
+            ->setMaxResults(1);
+
+        $this->applyOwnerScope($queryBuilder, $ownerUserId);
+        $result = $queryBuilder->executeQuery()->fetchAssociative();
 
         return false === $result ? null : $this->hydrate($result);
     }
 
-    public function findBySourcePlannedSessionId(PlannedSessionId $plannedSessionId): ?TrainingSession
+    public function findBySourcePlannedSessionId(PlannedSessionId $plannedSessionId, ?AppUserId $ownerUserId = null): ?TrainingSession
     {
-        $result = $this->connection->createQueryBuilder()
+        $queryBuilder = $this->connection->createQueryBuilder()
             ->select('*')
             ->from('TrainingSession')
             ->andWhere('sourcePlannedSessionId = :sourcePlannedSessionId')
             ->setParameter('sourcePlannedSessionId', (string) $plannedSessionId)
             ->orderBy('updatedAt', 'DESC')
-            ->setMaxResults(1)
-            ->executeQuery()
-            ->fetchAssociative();
+            ->setMaxResults(1);
+
+        $this->applyOwnerScope($queryBuilder, $ownerUserId);
+        $result = $queryBuilder->executeQuery()->fetchAssociative();
 
         return false === $result ? null : $this->hydrate($result);
     }
 
-    public function findDuplicatesOf(TrainingSession $trainingSession, ?TrainingSessionId $excludeTrainingSessionId = null): array
+    public function findDuplicatesOf(TrainingSession $trainingSession, ?TrainingSessionId $excludeTrainingSessionId = null, ?AppUserId $ownerUserId = null): array
     {
         $queryBuilder = $this->connection->createQueryBuilder()
             ->select('*')
@@ -108,6 +127,8 @@ final readonly class DbalTrainingSessionRepository extends DbalRepository implem
             ->orderBy('lastPlannedOn', 'DESC')
             ->addOrderBy('updatedAt', 'DESC')
             ->addOrderBy('createdAt', 'ASC');
+
+        $this->applyOwnerScope($queryBuilder, $ownerUserId ?? $trainingSession->getOwnerUserId());
 
         foreach ($trainingSession->getDeduplicationValues() as $column => $value) {
             $this->applyNullableEqualityFilter($queryBuilder, $column, $value);
@@ -125,7 +146,7 @@ final readonly class DbalTrainingSessionRepository extends DbalRepository implem
         );
     }
 
-    public function findRecommended(ActivityType $activityType, int $limit = 12, ?TrainingSessionRecommendationCriteria $criteria = null): array
+    public function findRecommended(ActivityType $activityType, int $limit = 12, ?TrainingSessionRecommendationCriteria $criteria = null, ?AppUserId $ownerUserId = null): array
     {
         if ($limit <= 0) {
             return [];
@@ -136,6 +157,8 @@ final readonly class DbalTrainingSessionRepository extends DbalRepository implem
             ->from('TrainingSession')
             ->andWhere('activityType = :activityType')
             ->setParameter('activityType', $activityType->value);
+
+        $this->applyOwnerScope($queryBuilder, $ownerUserId);
 
         if ($criteria?->getSessionPhase() instanceof TrainingBlockPhase) {
             $queryBuilder
@@ -227,10 +250,28 @@ final readonly class DbalTrainingSessionRepository extends DbalRepository implem
             sessionSource: is_string($result['sessionSource'] ?? null) ? TrainingSessionSource::from($result['sessionSource']) : TrainingSessionSource::PLANNED_SESSION,
             sessionPhase: is_string($result['sessionPhase'] ?? null) ? TrainingBlockPhase::from($result['sessionPhase']) : null,
             sessionObjective: is_string($result['sessionObjective'] ?? null) ? TrainingSessionObjective::from($result['sessionObjective']) : null,
+            ownerUserId: null === ($result['ownerUserId'] ?? null) ? null : AppUserId::fromString((string) $result['ownerUserId']),
         );
     }
 
-    private function applyNullableEqualityFilter(\Doctrine\DBAL\Query\QueryBuilder $queryBuilder, string $column, mixed $value): void
+    private function applyOwnerScope(QueryBuilder $queryBuilder, ?AppUserId $ownerUserId): void
+    {
+        $ownerUserId = $this->resolveOwnerUserId($ownerUserId);
+        if (!$ownerUserId instanceof AppUserId) {
+            return;
+        }
+
+        $queryBuilder
+            ->andWhere('ownerUserId = :ownerUserId')
+            ->setParameter('ownerUserId', (string) $ownerUserId);
+    }
+
+    private function resolveOwnerUserId(?AppUserId $ownerUserId): ?AppUserId
+    {
+        return $ownerUserId ?? $this->currentAppUser?->getId();
+    }
+
+    private function applyNullableEqualityFilter(QueryBuilder $queryBuilder, string $column, mixed $value): void
     {
         if (null === $value) {
             $queryBuilder->andWhere(sprintf('%s IS NULL', $column));

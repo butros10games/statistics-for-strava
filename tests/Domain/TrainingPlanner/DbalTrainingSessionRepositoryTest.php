@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Domain\TrainingPlanner;
 
 use App\Domain\Activity\ActivityType;
+use App\Domain\Auth\AppUserId;
 use App\Domain\TrainingPlanner\DbalTrainingSessionRepository;
 use App\Domain\TrainingPlanner\PlannedSession;
 use App\Domain\TrainingPlanner\PlannedSessionEstimationSource;
@@ -122,6 +123,35 @@ final class DbalTrainingSessionRepositoryTest extends ContainerTestCase
         self::assertSame('VO2 run', $recommendedTrainingSessions[1]->getTitle());
         self::assertSame(ActivityType::RUN, $recommendedTrainingSessions[0]->getActivityType());
         self::assertSame(ActivityType::RUN, $recommendedTrainingSessions[1]->getActivityType());
+    }
+
+    public function testFindRecommendedAndSourceLookupsCanBeScopedToOwner(): void
+    {
+        $ownerA = AppUserId::random();
+        $ownerB = AppUserId::random();
+        $ownerBSourcePlannedSessionId = PlannedSessionId::random();
+
+        $this->repository->upsert($this->createTrainingSessionRecommendation(
+            title: 'Owner A tempo',
+            ownerUserId: $ownerA,
+            day: '2026-04-12 00:00:00',
+        ));
+        $this->repository->upsert($this->createTrainingSessionRecommendation(
+            title: 'Owner B tempo',
+            ownerUserId: $ownerB,
+            day: '2026-04-13 00:00:00',
+            sourcePlannedSessionId: $ownerBSourcePlannedSessionId,
+        ));
+
+        $ownerARecommendations = $this->repository->findRecommended(ActivityType::RUN, 10, ownerUserId: $ownerA);
+        $ownerBRecommendations = $this->repository->findRecommended(ActivityType::RUN, 10, ownerUserId: $ownerB);
+
+        self::assertCount(1, $ownerARecommendations);
+        self::assertSame('Owner A tempo', $ownerARecommendations[0]->getTitle());
+        self::assertCount(1, $ownerBRecommendations);
+        self::assertSame('Owner B tempo', $ownerBRecommendations[0]->getTitle());
+        self::assertNull($this->repository->findBySourcePlannedSessionId($ownerBSourcePlannedSessionId, $ownerA));
+        self::assertNotNull($this->repository->findBySourcePlannedSessionId($ownerBSourcePlannedSessionId, $ownerB));
     }
 
     public function testFindDuplicatesOfMatchesEquivalentSessionsIgnoringSourceAndDates(): void
@@ -381,6 +411,30 @@ final class DbalTrainingSessionRepositoryTest extends ContainerTestCase
             linkStatus: PlannedSessionLinkStatus::UNLINKED,
             createdAt: SerializableDateTime::fromString('2026-04-01 08:00:00'),
             updatedAt: SerializableDateTime::fromString($updatedAt),
+        );
+    }
+
+    private function createTrainingSessionRecommendation(
+        string $title,
+        AppUserId $ownerUserId,
+        string $day,
+        ?PlannedSessionId $sourcePlannedSessionId = null,
+    ): TrainingSession {
+        return TrainingSession::create(
+            trainingSessionId: TrainingSessionId::random(),
+            sourcePlannedSessionId: $sourcePlannedSessionId,
+            activityType: ActivityType::RUN,
+            title: $title,
+            notes: 'Scoped recommendation',
+            targetLoad: 58.0,
+            targetDurationInSeconds: 3600,
+            targetIntensity: PlannedSessionIntensity::MODERATE,
+            templateActivityId: null,
+            estimationSource: PlannedSessionEstimationSource::MANUAL_TARGET_LOAD,
+            lastPlannedOn: SerializableDateTime::fromString($day),
+            createdAt: SerializableDateTime::fromString('2026-04-01 08:00:00'),
+            updatedAt: SerializableDateTime::fromString($day),
+            ownerUserId: $ownerUserId,
         );
     }
 }
