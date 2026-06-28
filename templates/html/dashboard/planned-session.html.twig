@@ -38,6 +38,7 @@
             'trainingSessionRecommendations': trainingSessionRecommendations,
             'selectedTemplateActivity': selectedTemplateActivity,
             'plannedSessionEstimatedLoad': plannedSessionEstimatedLoad,
+            'plannedSessionLoadEstimate': plannedSessionLoadEstimate,
             'matchedActivity': matchedActivity|default(null),
             'plannedSessionMatchStatus': plannedSessionMatchStatus|default(null),
             'redirectTo': redirectTo|default('/dashboard')
@@ -114,6 +115,7 @@
                                                 <th scope="col" class="px-3 py-2">{{ "Day"|trans }}</th>
                                                 <th scope="col" class="px-3 py-2">{{ "Session"|trans }}</th>
                                                 <th scope="col" class="px-3 py-2">{{ "Source"|trans }}</th>
+                                                <th scope="col" class="px-3 py-2">{{ "Confidence"|trans }}</th>
                                                 <th scope="col" class="px-3 py-2 text-right">{{ "Load"|trans }}</th>
                                             </tr>
                                         </thead>
@@ -122,8 +124,17 @@
                                             <tr class="border-t border-gray-100">
                                                 <td class="px-3 py-1.5 font-medium text-gray-900 whitespace-nowrap">{{ estimate.getDay()|date('D j M') }}</td>
                                                 <td class="px-3 py-1.5 text-gray-700 truncate max-w-24">{{ estimate.getTitle() ?: (estimate.getActivityType()|trans) }}</td>
-                                                <td class="px-3 py-1.5 text-gray-500">{{ estimate.getEstimationSource().getLabel()|trans }}</td>
-                                                <td class="px-3 py-1.5 font-semibold text-gray-900 text-right">{{ estimate.getEstimatedLoad()|formatNumber(1) }}</td>
+                                                <td class="px-3 py-1.5 text-gray-500" title="{{ estimate.getMethodDetails() }}">{{ estimate.getEstimationSource().getLabel()|trans }}</td>
+                                                <td class="px-3 py-1.5 text-gray-500 whitespace-nowrap" title="{{ estimate.getMethodDetails() }}">
+                                                    {{ estimate.getConfidenceLabel()|trans }}
+                                                    {% if estimate.getSampleCount() is not null %}
+                                                        <span class="text-gray-400">· n={{ estimate.getSampleCount() }}</span>
+                                                    {% endif %}
+                                                </td>
+                                                <td class="px-3 py-1.5 text-right">
+                                                    <div class="font-semibold text-gray-900">{{ estimate.getEstimatedLoad()|formatNumber(1) }}</div>
+                                                    <div class="text-[10px] text-gray-400">{{ estimate.getLowerEstimatedLoad()|formatNumber(1) }}-{{ estimate.getUpperEstimatedLoad()|formatNumber(1) }}</div>
+                                                </td>
                                             </tr>
                                         {% endfor %}
                                         </tbody>

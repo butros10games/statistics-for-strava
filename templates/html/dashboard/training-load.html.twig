@@ -435,6 +435,7 @@
                                             <th scope="col" class="px-4 py-3">{{ "Day"|trans }}</th>
                                             <th scope="col" class="px-4 py-3">{{ "Session"|trans }}</th>
                                             <th scope="col" class="px-4 py-3">{{ "Based on"|trans }}</th>
+                                            <th scope="col" class="px-4 py-3">{{ "Confidence"|trans }}</th>
                                             <th scope="col" class="px-4 py-3">{{ "Projected load"|trans }}</th>
                                         </tr>
                                     </thead>
@@ -445,8 +446,17 @@
                                             <td class="px-4 py-3 text-gray-700">
                                                 {{ estimate.getTitle() ?: (estimate.getActivityType()|trans) }}
                                             </td>
-                                            <td class="px-4 py-3">{{ estimate.getEstimationSource().getLabel()|trans }}</td>
-                                            <td class="px-4 py-3 font-semibold text-gray-900">{{ estimate.getEstimatedLoad()|formatNumber(1) }}</td>
+                                            <td class="px-4 py-3" title="{{ estimate.getMethodDetails() }}">{{ estimate.getEstimationSource().getLabel()|trans }}</td>
+                                            <td class="px-4 py-3" title="{{ estimate.getMethodDetails() }}">
+                                                <div class="font-medium text-gray-900">{{ estimate.getConfidenceLabel()|trans }}</div>
+                                                {% if estimate.getSampleCount() is not null %}
+                                                    <div class="text-[10px] text-gray-400">n={{ estimate.getSampleCount() }}</div>
+                                                {% endif %}
+                                            </td>
+                                            <td class="px-4 py-3">
+                                                <div class="font-semibold text-gray-900">{{ estimate.getEstimatedLoad()|formatNumber(1) }}</div>
+                                                <div class="text-[10px] text-gray-400">{{ estimate.getLowerEstimatedLoad()|formatNumber(1) }}-{{ estimate.getUpperEstimatedLoad()|formatNumber(1) }}</div>
+                                            </td>
                                         </tr>
                                     {% endfor %}
                                     </tbody>

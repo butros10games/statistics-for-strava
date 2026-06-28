@@ -21,6 +21,7 @@ use App\Domain\TrainingPlanner\PlannedSessionForecastBuilder;
 use App\Domain\TrainingPlanner\PlannedSessionId;
 use App\Domain\TrainingPlanner\PlannedSessionIntensity;
 use App\Domain\TrainingPlanner\PlannedSessionLinkStatus;
+use App\Domain\TrainingPlanner\PlannedSessionLoadEstimate;
 use App\Domain\TrainingPlanner\PlannedSessionLoadEstimator;
 use App\Domain\TrainingPlanner\PlannedSessionStepConditionType;
 use App\Domain\TrainingPlanner\PlannedSessionStepTargetType;
@@ -252,7 +253,7 @@ final readonly class PlannedSessionRequestHandler
         $plannedSessionEstimatedLoad = $plannedSessionLoadEstimate?->getEstimatedLoad();
 
         return new Response($this->twig->render('html/dashboard/planned-session.html.twig', [
-            'plannedSession' => $plannedSession instanceof PlannedSession ? $this->toViewRecord($plannedSession) : null,
+            'plannedSession' => $plannedSession instanceof PlannedSession ? $this->toViewRecord($plannedSession, $plannedSessionLoadEstimate) : null,
             'latestPlannedSession' => $latestPlannedSession instanceof PlannedSession ? $this->toViewRecord($latestPlannedSession) : null,
             'plannedSessionDefaultDay' => $plannedSession instanceof PlannedSession ? $plannedSession->getDay()->format('Y-m-d') : $defaultDay,
             'plannedSessionFormDefaults' => $this->plannedSessionFormDefaults($plannedSession, $plannedSessionEstimatedLoad),
@@ -269,6 +270,7 @@ final readonly class PlannedSessionRequestHandler
             'selectedTemplateActivity' => $this->resolveTemplateActivity($plannedSession?->getTemplateActivityId()),
             'plannedSessionEstimatedLoad' => $plannedSessionEstimatedLoad,
             'plannedSessionEstimatedSourceLabel' => $plannedSessionLoadEstimate?->getEstimationSource()->getLabel(),
+            'plannedSessionLoadEstimate' => $this->toLoadEstimateViewRecord($plannedSessionLoadEstimate),
             'plannedSessionEstimationContext' => $this->buildPlannerEstimationContext(),
             'plannedSessionHasManualTargetLoad' => PlannedSessionEstimationSource::MANUAL_TARGET_LOAD === $plannedSession?->getEstimationSource(),
             'plannedSessionWorkoutPreview' => $this->buildWorkoutPreviewRows($plannedSession?->getWorkoutSteps() ?? [], $plannedSession?->getActivityType() ?? ActivityType::RUN),
@@ -1057,10 +1059,11 @@ final readonly class PlannedSessionRequestHandler
      *     workoutSteps: list<array{itemId: string, parentBlockId: ?string, type: string, label: string, repetitions: string, targetType: string, conditionType: string, durationInMinutes: string, distanceInMeters: string, targetPace: string, targetPower: string, targetHeartRate: string, recoveryAfterInSeconds: string}>,
      *     estimationSource: string,
      *     linkedActivityId: ?string,
-     *     linkStatus: string
+     *     linkStatus: string,
+     *     loadEstimate: array{estimatedLoad: float, estimatedLoadRange: array{lower: float, upper: float}, source: string, sourceLabel: string, confidenceLabel: string, confidenceScore: float, methodDetails: string, sampleCount: ?int}|null
      * }
      */
-    private function toViewRecord(PlannedSession $plannedSession): array
+    private function toViewRecord(PlannedSession $plannedSession, ?PlannedSessionLoadEstimate $loadEstimate = null): array
     {
         [$targetDurationInMinutes, $targetDurationInSecondsPart] = $this->splitDurationInMinutesAndSeconds($plannedSession->getTargetDurationInSeconds());
 
@@ -1079,6 +1082,28 @@ final readonly class PlannedSessionRequestHandler
             'estimationSource' => $plannedSession->getEstimationSource()->getLabel(),
             'linkedActivityId' => $plannedSession->getLinkedActivityId()?->__toString(),
             'linkStatus' => $plannedSession->getLinkStatus()->getLabel(),
+            'loadEstimate' => $this->toLoadEstimateViewRecord($loadEstimate),
+        ];
+    }
+
+    /**
+     * @return array{estimatedLoad: float, estimatedLoadRange: array{lower: float, upper: float}, source: string, sourceLabel: string, confidenceLabel: string, confidenceScore: float, methodDetails: string, sampleCount: ?int}|null
+     */
+    private function toLoadEstimateViewRecord(?PlannedSessionLoadEstimate $loadEstimate): ?array
+    {
+        if (!$loadEstimate instanceof PlannedSessionLoadEstimate) {
+            return null;
+        }
+
+        return [
+            'estimatedLoad' => $loadEstimate->getEstimatedLoad(),
+            'estimatedLoadRange' => $loadEstimate->getEstimatedLoadRange(),
+            'source' => $loadEstimate->getEstimationSource()->value,
+            'sourceLabel' => $loadEstimate->getEstimationSource()->getLabel(),
+            'confidenceLabel' => $loadEstimate->getConfidenceLabel(),
+            'confidenceScore' => $loadEstimate->getConfidenceScore(),
+            'methodDetails' => $loadEstimate->getMethodDetails(),
+            'sampleCount' => $loadEstimate->getSampleCount(),
         ];
     }
 
