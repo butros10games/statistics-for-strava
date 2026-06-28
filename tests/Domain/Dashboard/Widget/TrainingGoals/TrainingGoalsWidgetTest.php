@@ -6,6 +6,7 @@ use App\Domain\Dashboard\Widget\TrainingGoals\TrainingGoalsWidget;
 use App\Domain\Dashboard\Widget\WidgetConfiguration;
 use App\Infrastructure\ValueObject\Time\SerializableDateTime;
 use App\Tests\ContainerTestCase;
+use App\Tests\Infrastructure\Snapshot\Utf8HtmlDriver;
 use App\Tests\ProvideTestData;
 use Spatie\Snapshots\MatchesSnapshots;
 
@@ -67,7 +68,7 @@ class TrainingGoalsWidgetTest extends ContainerTestCase
             now: SerializableDateTime::fromString('2025-10-16'),
             configuration: $config
         );
-        $this->assertMatchesHtmlSnapshot($render);
+        $this->assertMatchesSnapshot($render, new Utf8HtmlDriver());
     }
 
     public function testRenderWhenNoGoals(): void

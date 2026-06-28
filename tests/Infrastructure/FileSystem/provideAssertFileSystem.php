@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Infrastructure\FileSystem;
 
 use App\Infrastructure\ValueObject\String\CompressedString;
+use App\Tests\Infrastructure\Snapshot\Utf8HtmlDriver;
 use League\Flysystem\FileAttributes;
 use League\Flysystem\FilesystemOperator;
 use PHPUnit\Framework\Assert;
@@ -44,7 +45,7 @@ trait provideAssertFileSystem
                 continue;
             }
             if (str_ends_with($path, '.html')) {
-                $this->assertMatchesHtmlSnapshot($content);
+                $this->assertMatchesSnapshot($content, new Utf8HtmlDriver());
                 continue;
             }
             if (str_ends_with($path, '.gpx') || str_ends_with($path, '.svg')) {

@@ -9,6 +9,7 @@ use App\Infrastructure\CQRS\Command\Bus\CommandBus;
 use App\Infrastructure\Localisation\Locale;
 use App\Infrastructure\ValueObject\Time\SerializableDateTime;
 use App\Tests\ContainerTestCase;
+use App\Tests\Infrastructure\Snapshot\Utf8HtmlDriver;
 use App\Tests\ProvideTestData;
 use Carbon\Carbon;
 use League\Flysystem\FileAttributes;
@@ -55,7 +56,7 @@ class ConfigureAppLocaleCommandHandlerTest extends ContainerTestCase
             if (!$item instanceof FileAttributes) {
                 continue;
             }
-            $this->assertMatchesHtmlSnapshot($fileSystem->read($path));
+            $this->assertMatchesSnapshot($fileSystem->read($path), new Utf8HtmlDriver());
         }
 
         $this->assertEquals(
