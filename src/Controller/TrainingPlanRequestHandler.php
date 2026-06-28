@@ -105,7 +105,7 @@ final readonly class TrainingPlanRequestHandler
         if ('' !== $trainingPlanId) {
             $trainingPlan = $this->repository->findById(TrainingPlanId::fromString($trainingPlanId));
             $now = $this->clock->getCurrentDateTimeImmutable();
-            $plannerDataChanged = $trainingPlan instanceof TrainingPlan && $trainingPlan->getTargetRaceEventId() instanceof RaceEventId && $this->deleteReplaceableUpcomingSessions($trainingPlan, $now);
+            $plannerDataChanged = $trainingPlan instanceof TrainingPlan && $this->deleteReplaceableUpcomingSessions($trainingPlan, $now);
 
             $this->repository->delete(TrainingPlanId::fromString($trainingPlanId));
             $this->rebuildViews($now, $plannerDataChanged);
@@ -320,7 +320,7 @@ final readonly class TrainingPlanRequestHandler
     ): bool {
         $plannerDataChanged = false;
 
-        if ($existingTrainingPlan?->getTargetRaceEventId() instanceof RaceEventId) {
+        if ($existingTrainingPlan instanceof TrainingPlan) {
             $plannerDataChanged = $this->deleteReplaceableUpcomingSessions($existingTrainingPlan, $now);
         }
 
@@ -346,8 +346,7 @@ final readonly class TrainingPlanRequestHandler
                 $trainingPlan->getStartDay()->setTime(0, 0),
                 $trainingPlan->getEndDay()->setTime(23, 59, 59),
             )),
-            static fn (PlannedSession $plannedSession): bool => $plannedSession->getDay() >= $now->setTime(0, 0)
-                && !$plannedSession->getLinkedActivityId() instanceof \App\Domain\Activity\ActivityId,
+            static fn (PlannedSession $plannedSession): bool => $plannedSession->isReplaceableByTrainingPlan($trainingPlan->getId(), $now),
         ));
 
         foreach ($replaceableSessions as $plannedSession) {

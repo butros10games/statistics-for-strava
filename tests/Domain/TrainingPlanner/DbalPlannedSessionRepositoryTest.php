@@ -13,6 +13,8 @@ use App\Domain\TrainingPlanner\PlannedSessionId;
 use App\Domain\TrainingPlanner\PlannedSessionIntensity;
 use App\Domain\TrainingPlanner\PlannedSessionLinkStatus;
 use App\Domain\TrainingPlanner\PlannedSessionRepository;
+use App\Domain\TrainingPlanner\PlannedSessionSource;
+use App\Domain\TrainingPlanner\TrainingPlanId;
 use App\Infrastructure\ValueObject\Time\DateRange;
 use App\Infrastructure\ValueObject\Time\SerializableDateTime;
 use App\Tests\ContainerTestCase;
@@ -137,6 +139,9 @@ final class DbalPlannedSessionRepositoryTest extends ContainerTestCase
 
         self::assertCount(2, $records);
         self::assertSame('Morning run', $this->repository->findById($id)?->getTitle());
+        self::assertSame(PlannedSessionSource::MANUAL, $this->repository->findById($id)?->getSessionSource());
+        self::assertNull($this->repository->findById($id)?->getSourceTrainingPlanId());
+        self::assertFalse($this->repository->findById($id)?->isProtectedFromPlanMutation());
         self::assertCount(4, $this->repository->findById($id)?->getWorkoutSteps() ?? []);
         self::assertSame('block-1', $this->repository->findById($id)?->getWorkoutSteps()[2]['parentBlockId']);
         self::assertNull($this->repository->findById($id)?->getWorkoutSteps()[2]['conditionType']);
@@ -148,6 +153,42 @@ final class DbalPlannedSessionRepositoryTest extends ContainerTestCase
 
         $this->repository->delete($id);
         self::assertNull($this->repository->findById($id));
+    }
+
+    public function testUpsertPersistsGeneratedPlanProvenance(): void
+    {
+        $id = PlannedSessionId::random();
+        $trainingPlanId = TrainingPlanId::random();
+
+        $this->repository->upsert(PlannedSession::create(
+            plannedSessionId: $id,
+            day: SerializableDateTime::fromString('2026-04-11 06:00:00'),
+            activityType: ActivityType::RUN,
+            title: 'Generated plan run',
+            notes: null,
+            targetLoad: null,
+            targetDurationInSeconds: 3_600,
+            targetIntensity: PlannedSessionIntensity::EASY,
+            templateActivityId: null,
+            estimationSource: PlannedSessionEstimationSource::DURATION_INTENSITY,
+            linkedActivityId: null,
+            linkStatus: PlannedSessionLinkStatus::UNLINKED,
+            createdAt: SerializableDateTime::fromString('2026-04-07 09:00:00'),
+            updatedAt: SerializableDateTime::fromString('2026-04-07 09:00:00'),
+            sessionSource: PlannedSessionSource::TRAINING_PLAN,
+            sourceTrainingPlanId: $trainingPlanId,
+            protectedFromPlanMutation: true,
+        ));
+
+        $stored = $this->repository->findById($id);
+
+        self::assertNotNull($stored);
+        self::assertSame(PlannedSessionSource::TRAINING_PLAN, $stored->getSessionSource());
+        self::assertSame((string) $trainingPlanId, (string) $stored->getSourceTrainingPlanId());
+        self::assertTrue($stored->isGenerated());
+        self::assertTrue($stored->isGeneratedByTrainingPlan($trainingPlanId));
+        self::assertTrue($stored->isProtectedFromPlanMutation());
+        self::assertFalse($stored->isReplaceableByTrainingPlan($trainingPlanId, SerializableDateTime::fromString('2026-04-01 00:00:00')));
     }
 
     public function testFindByIdCalculatesWorkoutDurationFromUnitlessRunningPace(): void

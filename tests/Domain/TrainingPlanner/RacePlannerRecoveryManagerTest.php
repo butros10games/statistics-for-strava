@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Domain\TrainingPlanner;
 
 use App\Domain\TrainingPlanner\PlannedSessionRepository;
+use App\Domain\TrainingPlanner\PlannedSessionSource;
 use App\Domain\TrainingPlanner\RaceEvent;
 use App\Domain\TrainingPlanner\RaceEventId;
 use App\Domain\TrainingPlanner\RaceEventPriority;
@@ -63,6 +64,10 @@ final class RacePlannerRecoveryManagerTest extends ContainerTestCase
         self::assertCount(1, $recoveryBlocks);
         self::assertSame('2026-06-22', $recoveryBlocks[0]->getStartDay()->format('Y-m-d'));
         self::assertNotEmpty($recoverySessions);
+        foreach ($recoverySessions as $recoverySession) {
+            self::assertSame(PlannedSessionSource::RACE_PLANNER, $recoverySession->getSessionSource());
+            self::assertNull($recoverySession->getSourceTrainingPlanId());
+        }
 
         $secondSave = $this->racePlannerRecoveryManager->save(
             $targetRace,

@@ -38,17 +38,17 @@ final readonly class RacePlannerUpcomingSessionRegenerator
         $regenerationStartDay = $now->setTime(0, 0);
         $regenerationEndDay = $linkedTrainingPlan->getEndDay()->setTime(23, 59, 59);
         $existingSessions = $planningContext['existingSessions'];
+        $linkedTrainingPlanId = $linkedTrainingPlan->getId();
 
         $preservedSessions = array_values(array_filter(
             $existingSessions,
-            fn (PlannedSession $plannedSession): bool => $this->shouldPreserveSession($plannedSession, $regenerationStartDay),
+            fn (PlannedSession $plannedSession): bool => $this->shouldPreserveSession($plannedSession, $linkedTrainingPlanId, $regenerationStartDay),
         ));
 
         $sessionsToReplace = array_values(array_filter(
             $existingSessions,
-            fn (PlannedSession $plannedSession): bool => $plannedSession->getDay() >= $regenerationStartDay
+            fn (PlannedSession $plannedSession): bool => $plannedSession->isReplaceableByTrainingPlan($linkedTrainingPlanId, $regenerationStartDay)
                 && $plannedSession->getDay() <= $regenerationEndDay
-                && !$this->shouldPreserveSession($plannedSession, $regenerationStartDay),
         ));
 
         foreach ($sessionsToReplace as $plannedSession) {
@@ -77,7 +77,10 @@ final readonly class RacePlannerUpcomingSessionRegenerator
                 linkStatus: PlannedSessionLinkStatus::UNLINKED,
                 createdAt: $now,
                 updatedAt: $now,
+                ownerUserId: $linkedTrainingPlan->getOwnerUserId(),
                 workoutSteps: $this->mapWorkoutStepsForPlannedSession($proposedSession->getWorkoutSteps()),
+                sessionSource: PlannedSessionSource::TRAINING_PLAN,
+                sourceTrainingPlanId: $linkedTrainingPlanId,
             ));
             ++$createdSessionCount;
         }
@@ -88,13 +91,16 @@ final readonly class RacePlannerUpcomingSessionRegenerator
         );
     }
 
-    private function shouldPreserveSession(PlannedSession $plannedSession, SerializableDateTime $regenerationStartDay): bool
-    {
-        if ($plannedSession->getDay() < $regenerationStartDay) {
+    private function shouldPreserveSession(
+        PlannedSession $plannedSession,
+        ?TrainingPlanId $trainingPlanId,
+        SerializableDateTime $regenerationStartDay,
+    ): bool {
+        if (!$trainingPlanId instanceof TrainingPlanId) {
             return true;
         }
 
-        return $plannedSession->getLinkedActivityId() instanceof \App\Domain\Activity\ActivityId;
+        return !$plannedSession->isReplaceableByTrainingPlan($trainingPlanId, $regenerationStartDay);
     }
 
     /**
@@ -350,10 +356,11 @@ final readonly class RacePlannerUpcomingSessionRegenerator
             : $this->trainingBlockRepository->findByDateRange($dateRange);
         $existingSessions = $this->plannedSessionRepository->findByDateRange($dateRange);
         $regenerationStartDay = $now->setTime(0, 0);
+        $linkedTrainingPlanId = $linkedTrainingPlan?->getId();
         $currentWeekStartDay = SerializableDateTime::fromDateTimeImmutable($regenerationStartDay->modify('monday this week'))->setTime(0, 0);
         $preservedSessions = array_values(array_filter(
             $existingSessions,
-            fn (PlannedSession $plannedSession): bool => $this->shouldPreserveSession($plannedSession, $regenerationStartDay),
+            fn (PlannedSession $plannedSession): bool => $this->shouldPreserveSession($plannedSession, $linkedTrainingPlanId, $regenerationStartDay),
         ));
         $planningSeedSessions = array_values(array_filter(
             $preservedSessions,

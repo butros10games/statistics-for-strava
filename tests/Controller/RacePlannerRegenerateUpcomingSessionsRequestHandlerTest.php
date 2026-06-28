@@ -16,6 +16,7 @@ use App\Domain\TrainingPlanner\PlannedSessionId;
 use App\Domain\TrainingPlanner\PlannedSessionIntensity;
 use App\Domain\TrainingPlanner\PlannedSessionLinkStatus;
 use App\Domain\TrainingPlanner\PlannedSessionRepository;
+use App\Domain\TrainingPlanner\PlannedSessionSource;
 use App\Domain\TrainingPlanner\RaceEvent;
 use App\Domain\TrainingPlanner\RaceEventId;
 use App\Domain\TrainingPlanner\RaceEventPriority;
@@ -73,7 +74,7 @@ final class RacePlannerRegenerateUpcomingSessionsRequestHandlerTest extends Cont
         );
         $this->raceEventRepository->upsert($targetRace);
 
-        $this->trainingPlanRepository->upsert(TrainingPlan::create(
+        $trainingPlan = TrainingPlan::create(
             trainingPlanId: TrainingPlanId::random(),
             type: TrainingPlanType::RACE,
             startDay: $planStartDay,
@@ -84,7 +85,8 @@ final class RacePlannerRegenerateUpcomingSessionsRequestHandlerTest extends Cont
             createdAt: $now,
             updatedAt: $now,
             discipline: TrainingPlanDiscipline::TRIATHLON,
-        ));
+        );
+        $this->trainingPlanRepository->upsert($trainingPlan);
 
         $this->trainingBlockRepository->upsert(TrainingBlock::create(
             trainingBlockId: TrainingBlockId::random(),
@@ -114,6 +116,8 @@ final class RacePlannerRegenerateUpcomingSessionsRequestHandlerTest extends Cont
             linkStatus: PlannedSessionLinkStatus::UNLINKED,
             createdAt: $now,
             updatedAt: $now,
+            sessionSource: PlannedSessionSource::TRAINING_PLAN,
+            sourceTrainingPlanId: $trainingPlan->getId(),
         );
         $linkedFutureSession = PlannedSession::create(
             plannedSessionId: PlannedSessionId::random(),
@@ -130,6 +134,8 @@ final class RacePlannerRegenerateUpcomingSessionsRequestHandlerTest extends Cont
             linkStatus: PlannedSessionLinkStatus::SUGGESTED,
             createdAt: $now,
             updatedAt: $now,
+            sessionSource: PlannedSessionSource::TRAINING_PLAN,
+            sourceTrainingPlanId: $trainingPlan->getId(),
         );
         $staleUpcomingSession = PlannedSession::create(
             plannedSessionId: PlannedSessionId::random(),
@@ -146,11 +152,30 @@ final class RacePlannerRegenerateUpcomingSessionsRequestHandlerTest extends Cont
             linkStatus: PlannedSessionLinkStatus::UNLINKED,
             createdAt: $now,
             updatedAt: $now,
+            sessionSource: PlannedSessionSource::TRAINING_PLAN,
+            sourceTrainingPlanId: $trainingPlan->getId(),
+        );
+        $manualUpcomingSession = PlannedSession::create(
+            plannedSessionId: PlannedSessionId::random(),
+            day: SerializableDateTime::fromDateTimeImmutable($now->modify('+5 days')),
+            activityType: ActivityType::RIDE,
+            title: 'Manual future ride',
+            notes: 'Manual session should not be replaced by regeneration.',
+            targetLoad: null,
+            targetDurationInSeconds: 3_000,
+            targetIntensity: PlannedSessionIntensity::EASY,
+            templateActivityId: null,
+            estimationSource: PlannedSessionEstimationSource::DURATION_INTENSITY,
+            linkedActivityId: null,
+            linkStatus: PlannedSessionLinkStatus::UNLINKED,
+            createdAt: $now,
+            updatedAt: $now,
         );
 
         $this->plannedSessionRepository->upsert($pastSession);
         $this->plannedSessionRepository->upsert($linkedFutureSession);
         $this->plannedSessionRepository->upsert($staleUpcomingSession);
+        $this->plannedSessionRepository->upsert($manualUpcomingSession);
 
         $this->commandBus
             ->expects(self::exactly(3))
@@ -186,6 +211,7 @@ final class RacePlannerRegenerateUpcomingSessionsRequestHandlerTest extends Cont
 
         self::assertContains((string) $pastSession->getId(), $sessionIds);
         self::assertContains((string) $linkedFutureSession->getId(), $sessionIds);
+        self::assertContains((string) $manualUpcomingSession->getId(), $sessionIds);
         self::assertNotContains((string) $staleUpcomingSession->getId(), $sessionIds);
         self::assertNotContains('Old future ride', $sessionTitles);
         self::assertNotEmpty($newUpcomingUnlinkedSessions);

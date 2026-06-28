@@ -18,6 +18,7 @@ use App\Domain\TrainingPlanner\PlannedSessionId;
 use App\Domain\TrainingPlanner\PlannedSessionIntensity;
 use App\Domain\TrainingPlanner\PlannedSessionLinkStatus;
 use App\Domain\TrainingPlanner\PlannedSessionRepository;
+use App\Domain\TrainingPlanner\PlannedSessionSource;
 use App\Domain\TrainingPlanner\RaceEvent;
 use App\Domain\TrainingPlanner\RaceEventId;
 use App\Domain\TrainingPlanner\RaceEventPriority;
@@ -367,8 +368,27 @@ final class TrainingPlanRequestHandlerTest extends ContainerTestCase
             linkStatus: PlannedSessionLinkStatus::UNLINKED,
             createdAt: $now,
             updatedAt: $now,
+            sessionSource: PlannedSessionSource::TRAINING_PLAN,
+            sourceTrainingPlanId: $existingPlan->getId(),
+        );
+        $manualUpcomingSession = PlannedSession::create(
+            plannedSessionId: PlannedSessionId::random(),
+            day: SerializableDateTime::fromDateTimeImmutable($now->modify('+5 days')),
+            activityType: ActivityType::RUN,
+            title: 'Manual future run',
+            notes: 'Manual user-created session in the plan window.',
+            targetLoad: null,
+            targetDurationInSeconds: 2_400,
+            targetIntensity: PlannedSessionIntensity::EASY,
+            templateActivityId: null,
+            estimationSource: PlannedSessionEstimationSource::DURATION_INTENSITY,
+            linkedActivityId: null,
+            linkStatus: PlannedSessionLinkStatus::UNLINKED,
+            createdAt: $now,
+            updatedAt: $now,
         );
         $this->plannedSessionRepository->upsert($staleUpcomingSession);
+        $this->plannedSessionRepository->upsert($manualUpcomingSession);
 
         $dispatchedCommands = [];
         $this->commandBus
@@ -418,6 +438,7 @@ final class TrainingPlanRequestHandlerTest extends ContainerTestCase
         ));
 
         self::assertNotContains((string) $staleUpcomingSession->getId(), $sessionIds);
+        self::assertContains((string) $manualUpcomingSession->getId(), $sessionIds);
         self::assertNotEmpty($newUpcomingUnlinkedSessions);
         self::assertContainsOnlyInstancesOf(BuildTrainingPlansHtml::class, array_filter($dispatchedCommands, static fn ($command): bool => $command instanceof BuildTrainingPlansHtml));
         self::assertContainsOnlyInstancesOf(BuildDashboardHtml::class, array_filter($dispatchedCommands, static fn ($command): bool => $command instanceof BuildDashboardHtml));
@@ -478,6 +499,8 @@ final class TrainingPlanRequestHandlerTest extends ContainerTestCase
             linkStatus: PlannedSessionLinkStatus::UNLINKED,
             createdAt: $now,
             updatedAt: $now,
+            sessionSource: PlannedSessionSource::TRAINING_PLAN,
+            sourceTrainingPlanId: $trainingPlan->getId(),
         );
         $linkedUpcomingSession = PlannedSession::create(
             plannedSessionId: PlannedSessionId::random(),
@@ -494,9 +517,48 @@ final class TrainingPlanRequestHandlerTest extends ContainerTestCase
             linkStatus: PlannedSessionLinkStatus::LINKED,
             createdAt: $now,
             updatedAt: $now,
+            sessionSource: PlannedSessionSource::TRAINING_PLAN,
+            sourceTrainingPlanId: $trainingPlan->getId(),
+        );
+        $manualUpcomingSession = PlannedSession::create(
+            plannedSessionId: PlannedSessionId::random(),
+            day: SerializableDateTime::fromDateTimeImmutable($now->modify('+7 days')),
+            activityType: ActivityType::RUN,
+            title: 'Manual future run',
+            notes: 'Manual sessions in the same plan window should survive.',
+            targetLoad: null,
+            targetDurationInSeconds: 2_400,
+            targetIntensity: PlannedSessionIntensity::EASY,
+            templateActivityId: null,
+            estimationSource: PlannedSessionEstimationSource::DURATION_INTENSITY,
+            linkedActivityId: null,
+            linkStatus: PlannedSessionLinkStatus::UNLINKED,
+            createdAt: $now,
+            updatedAt: $now,
+        );
+        $protectedGeneratedSession = PlannedSession::create(
+            plannedSessionId: PlannedSessionId::random(),
+            day: SerializableDateTime::fromDateTimeImmutable($now->modify('+8 days')),
+            activityType: ActivityType::RUN,
+            title: 'Protected generated run',
+            notes: 'Generated but protected from bulk plan mutation.',
+            targetLoad: null,
+            targetDurationInSeconds: 2_700,
+            targetIntensity: PlannedSessionIntensity::EASY,
+            templateActivityId: null,
+            estimationSource: PlannedSessionEstimationSource::DURATION_INTENSITY,
+            linkedActivityId: null,
+            linkStatus: PlannedSessionLinkStatus::UNLINKED,
+            createdAt: $now,
+            updatedAt: $now,
+            sessionSource: PlannedSessionSource::TRAINING_PLAN,
+            sourceTrainingPlanId: $trainingPlan->getId(),
+            protectedFromPlanMutation: true,
         );
         $this->plannedSessionRepository->upsert($replaceableUpcomingSession);
         $this->plannedSessionRepository->upsert($linkedUpcomingSession);
+        $this->plannedSessionRepository->upsert($manualUpcomingSession);
+        $this->plannedSessionRepository->upsert($protectedGeneratedSession);
 
         $dispatchedCommands = [];
         $this->commandBus
@@ -525,6 +587,8 @@ final class TrainingPlanRequestHandlerTest extends ContainerTestCase
 
         self::assertNotContains((string) $replaceableUpcomingSession->getId(), $sessionIds);
         self::assertContains((string) $linkedUpcomingSession->getId(), $sessionIds);
+        self::assertContains((string) $manualUpcomingSession->getId(), $sessionIds);
+        self::assertContains((string) $protectedGeneratedSession->getId(), $sessionIds);
         self::assertContainsOnlyInstancesOf(BuildTrainingPlansHtml::class, array_filter($dispatchedCommands, static fn ($command): bool => $command instanceof BuildTrainingPlansHtml));
         self::assertContainsOnlyInstancesOf(BuildDashboardHtml::class, array_filter($dispatchedCommands, static fn ($command): bool => $command instanceof BuildDashboardHtml));
         self::assertContainsOnlyInstancesOf(BuildMonthlyStatsHtml::class, array_filter($dispatchedCommands, static fn ($command): bool => $command instanceof BuildMonthlyStatsHtml));
