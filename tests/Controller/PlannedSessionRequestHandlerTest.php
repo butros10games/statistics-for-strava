@@ -207,10 +207,16 @@ final class PlannedSessionRequestHandlerTest extends ContainerTestCase
         self::assertEquals(new RedirectResponse('/dashboard', Response::HTTP_FOUND), $secondResponse);
 
         $recommendedTrainingSessions = $this->trainingSessionRepository->findRecommended(ActivityType::RUN, 10);
+        $secondPlannedSession = $this->repository->findByDay(SerializableDateTime::fromString('2026-04-19 00:00:00'))[0] ?? null;
 
         self::assertCount(1, $recommendedTrainingSessions);
         self::assertSame('Sunday long run', $recommendedTrainingSessions[0]->getTitle());
         self::assertSame('2026-04-19 00:00:00', $recommendedTrainingSessions[0]->getLastPlannedOn()?->format('Y-m-d H:i:s'));
+        self::assertNotNull($secondPlannedSession);
+        self::assertSame(
+            (string) $recommendedTrainingSessions[0]->getId(),
+            (string) $this->trainingSessionRepository->findBySourcePlannedSessionId($secondPlannedSession->getId())?->getId(),
+        );
     }
 
     public function testHandlePostKeepsWorkoutEstimateSourceWhenManualOverrideIsDisabled(): void

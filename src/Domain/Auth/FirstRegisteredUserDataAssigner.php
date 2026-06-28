@@ -46,7 +46,7 @@ final readonly class FirstRegisteredUserDataAssigner
 
     private function claimLegacyPlannerData(AppUserId $appUserId): void
     {
-        foreach (['TrainingPlan', 'TrainingBlock', 'PlannedSession', 'RaceEvent'] as $table) {
+        foreach (['TrainingPlan', 'TrainingBlock', 'PlannedSession', 'RaceEvent', 'TrainingSession'] as $table) {
             $this->connection->executeStatement(
                 sprintf('UPDATE %s SET ownerUserId = :ownerUserId WHERE ownerUserId IS NULL', $table),
                 ['ownerUserId' => (string) $appUserId],

@@ -5,6 +5,7 @@ declare(strict_types=1);
 namespace App\Tests\Domain\TrainingPlanner;
 
 use App\Domain\Activity\ActivityType;
+use App\Domain\Auth\AppUserId;
 use App\Domain\Dashboard\Widget\TrainingLoad\ReadinessScore;
 use App\Domain\TrainingPlanner\AdaptivePlanningContext;
 use App\Domain\TrainingPlanner\PlanGenerator\TrainingPlanGenerator;
@@ -2277,27 +2278,27 @@ final class TrainingPlanGeneratorTest extends TestCase
                 throw new \BadMethodCallException('Not implemented for this test stub.');
             }
 
-            public function deleteById(TrainingSessionId $trainingSessionId): void
+            public function deleteById(TrainingSessionId $trainingSessionId, ?AppUserId $ownerUserId = null): void
             {
                 throw new \BadMethodCallException('Not implemented for this test stub.');
             }
 
-            public function findById(TrainingSessionId $trainingSessionId): ?TrainingSession
+            public function findById(TrainingSessionId $trainingSessionId, ?AppUserId $ownerUserId = null): ?TrainingSession
             {
                 throw new \BadMethodCallException('Not implemented for this test stub.');
             }
 
-            public function findBySourcePlannedSessionId(PlannedSessionId $plannedSessionId): ?TrainingSession
+            public function findBySourcePlannedSessionId(PlannedSessionId $plannedSessionId, ?AppUserId $ownerUserId = null): ?TrainingSession
             {
                 throw new \BadMethodCallException('Not implemented for this test stub.');
             }
 
-            public function findDuplicatesOf(TrainingSession $trainingSession, ?TrainingSessionId $excludeTrainingSessionId = null): array
+            public function findDuplicatesOf(TrainingSession $trainingSession, ?TrainingSessionId $excludeTrainingSessionId = null, ?AppUserId $ownerUserId = null): array
             {
                 throw new \BadMethodCallException('Not implemented for this test stub.');
             }
 
-            public function findRecommended(ActivityType $activityType, int $limit = 12, ?TrainingSessionRecommendationCriteria $criteria = null): array
+            public function findRecommended(ActivityType $activityType, int $limit = 12, ?TrainingSessionRecommendationCriteria $criteria = null, ?AppUserId $ownerUserId = null): array
             {
                 return ($this->resolver)($activityType, $criteria, $limit);
             }

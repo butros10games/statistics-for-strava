@@ -40,7 +40,7 @@ final readonly class TrainingSessionLibrarySynchronizer
         }
 
         $this->trainingSessionRepository->upsert(
-            $candidateTrainingSession->withPersistedIdentity($primaryDuplicateTrainingSession, true),
+            $candidateTrainingSession->withPersistedIdentity($primaryDuplicateTrainingSession),
         );
     }
 }

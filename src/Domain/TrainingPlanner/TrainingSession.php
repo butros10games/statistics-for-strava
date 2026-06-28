@@ -6,12 +6,14 @@ namespace App\Domain\TrainingPlanner;
 
 use App\Domain\Activity\ActivityId;
 use App\Domain\Activity\ActivityType;
+use App\Domain\Auth\AppUserId;
 use App\Infrastructure\Serialization\Json;
 use App\Infrastructure\ValueObject\Time\SerializableDateTime;
 use Doctrine\ORM\Mapping as ORM;
 
 #[ORM\Entity]
 #[ORM\Table(name: 'TrainingSession')]
+#[ORM\Index(name: 'TrainingSession_ownerUserId', columns: ['ownerUserId'])]
 #[ORM\Index(name: 'TrainingSession_sourcePlannedSessionId', columns: ['sourcePlannedSessionId'])]
 #[ORM\Index(name: 'TrainingSession_lastPlannedOn', columns: ['lastPlannedOn'])]
 #[ORM\Index(name: 'TrainingSession_activityType_updatedAt', columns: ['activityType', 'updatedAt'])]
@@ -24,6 +26,8 @@ final readonly class TrainingSession
     private function __construct(
         #[ORM\Id, ORM\Column(type: 'string', unique: true)]
         private TrainingSessionId $trainingSessionId,
+        #[ORM\Column(type: 'string', nullable: true)]
+        private ?AppUserId $ownerUserId,
         #[ORM\Column(type: 'string', nullable: true)]
         private ?PlannedSessionId $sourcePlannedSessionId,
         #[ORM\Column(type: 'string')]
@@ -82,9 +86,11 @@ final readonly class TrainingSession
         TrainingSessionSource $sessionSource = TrainingSessionSource::PLANNED_SESSION,
         ?TrainingBlockPhase $sessionPhase = null,
         ?TrainingSessionObjective $sessionObjective = null,
+        ?AppUserId $ownerUserId = null,
     ): self {
         return new self(
             trainingSessionId: $trainingSessionId,
+            ownerUserId: $ownerUserId,
             sourcePlannedSessionId: $sourcePlannedSessionId,
             activityType: $activityType,
             title: self::normalizeNullableString($title),
@@ -124,12 +130,18 @@ final readonly class TrainingSession
             sessionSource: TrainingSessionSource::PLANNED_SESSION,
             sessionPhase: self::inferSessionPhase($plannedSession->getTitle(), $plannedSession->getNotes(), $plannedSession->getTargetIntensity()),
             sessionObjective: self::inferSessionObjective($plannedSession->getTitle(), $plannedSession->getNotes(), $plannedSession->getTargetIntensity()),
+            ownerUserId: $plannedSession->getOwnerUserId() ?? $existingTrainingSession?->getOwnerUserId(),
         );
     }
 
     public function getId(): TrainingSessionId
     {
         return $this->trainingSessionId;
+    }
+
+    public function getOwnerUserId(): ?AppUserId
+    {
+        return $this->ownerUserId;
     }
 
     public function getSourcePlannedSessionId(): ?PlannedSessionId
@@ -252,6 +264,7 @@ final readonly class TrainingSession
             sessionSource: $this->getSessionSource(),
             sessionPhase: $this->getSessionPhase(),
             sessionObjective: $this->getSessionObjective(),
+            ownerUserId: $this->getOwnerUserId() ?? $persistedTrainingSession->getOwnerUserId(),
         );
     }
 
