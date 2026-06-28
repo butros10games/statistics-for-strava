@@ -12,15 +12,22 @@ final class Utf8HtmlDriver implements Driver
 {
     /** @var array<string, int> */
     private const array BYTE_ENTITY_MAP = [
+        'Acirc' => 0xC2,
         'acirc' => 0xE2,
+        'acute' => 0xB4,
         'cedil' => 0xB8,
         'copy' => 0xA9,
+        'deg' => 0xB0,
         'eth' => 0xF0,
+        'frac12' => 0xBD,
         'iuml' => 0xEF,
+        'middot' => 0xB7,
         'nbsp' => 0xA0,
         'not' => 0xAC,
         'reg' => 0xAE,
         'shy' => 0xAD,
+        'sup1' => 0xB9,
+        'yen' => 0xA5,
     ];
 
     #[\Override]
@@ -76,7 +83,7 @@ final class Utf8HtmlDriver implements Driver
         $htmlValue = (string) preg_replace_callback(
             sprintf('/(?:%s){2,}/', $bytePattern),
             static function (array $matches) use ($literalBytePattern): string {
-                preg_match_all(sprintf('/&#([0-9]+);|&([a-z]+);|(%s)/', $literalBytePattern), (string) $matches[0], $byteMatches, PREG_SET_ORDER);
+                preg_match_all(sprintf('/&#([0-9]+);|&([a-zA-Z0-9]+);|(%s)/', $literalBytePattern), (string) $matches[0], $byteMatches, PREG_SET_ORDER);
 
                 $bytes = '';
                 foreach ($byteMatches as $byteMatch) {
