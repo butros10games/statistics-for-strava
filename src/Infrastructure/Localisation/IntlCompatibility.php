@@ -18,7 +18,13 @@ final class IntlCompatibility
             $countries[$countryCode] = Countries::getName($countryCode, $displayLocale);
         }
 
-        natcasesort($countries);
+        uksort(
+            $countries,
+            static fn (string $firstCountryCode, string $secondCountryCode): int => strnatcasecmp(
+                $countries[$firstCountryCode],
+                $countries[$secondCountryCode],
+            ) ?: strcmp($firstCountryCode, $secondCountryCode)
+        );
 
         return $countries;
     }

@@ -23,8 +23,6 @@ final class Utf8HtmlDriver implements Driver
         'shy' => 0xAD,
     ];
 
-    private static ?bool $domDocumentPreservesUtf8 = null;
-
     #[\Override]
     public function serialize($data): string
     {
@@ -47,9 +45,7 @@ final class Utf8HtmlDriver implements Driver
         @$domDocument->loadHTML($data, LIBXML_HTML_NODEFDTD);
 
         $htmlValue = (string) $domDocument->saveHTML();
-        if (!self::domDocumentPreservesUtf8()) {
-            $htmlValue = self::repairUtf8Entities($htmlValue);
-        }
+        $htmlValue = self::repairUtf8Entities($htmlValue);
 
         if (PHP_OS_FAMILY === 'Windows') {
             $htmlValue = implode("\n", explode("\r\n", $htmlValue));
@@ -70,55 +66,39 @@ final class Utf8HtmlDriver implements Driver
         Assert::assertEquals($expected, $this->serialize($actual));
     }
 
-    private static function domDocumentPreservesUtf8(): bool
-    {
-        if (null !== self::$domDocumentPreservesUtf8) {
-            return self::$domDocumentPreservesUtf8;
-        }
-
-        $domDocument = new \DOMDocument('1.0');
-        $domDocument->preserveWhiteSpace = false;
-        $domDocument->formatOutput = true;
-
-        @$domDocument->loadHTML('<html><body>👑</body></html>', LIBXML_HTML_NODEFDTD);
-
-        self::$domDocumentPreservesUtf8 = str_contains((string) $domDocument->saveHTML(), '👑');
-
-        return self::$domDocumentPreservesUtf8;
-    }
-
     private static function repairUtf8Entities(string $htmlValue): string
     {
-        $htmlValue = (string) preg_replace_callback(
-            '/[\x{0080}-\x{00BF}\x{00C2}\x{00C3}\x{00E2}\x{00EF}\x{00F0}]/u',
-            static fn (array $matches): string => sprintf('&#%d;', mb_ord((string) $matches[0], 'UTF-8')),
-            $htmlValue
-        );
+        if (mb_check_encoding($htmlValue, 'UTF-8')) {
+            $literalBytePattern = '[\x{0080}-\x{00BF}\x{00C2}\x{00C3}\x{00E2}\x{00EF}\x{00F0}]';
+            $byteEntityPattern = '(?:&#(?:12[8-9]|1[3-9][0-9]|2[0-4][0-9]|25[0-5]);|&(?:'.implode('|', array_keys(self::BYTE_ENTITY_MAP)).');)';
+            $bytePattern = sprintf('(?:%s|%s)', $literalBytePattern, $byteEntityPattern);
 
-        $byteEntityPattern = '(?:&#(?:12[8-9]|1[3-9][0-9]|2[0-4][0-9]|25[0-5]);|&(?:'.implode('|', array_keys(self::BYTE_ENTITY_MAP)).');)';
+            $htmlValue = (string) preg_replace_callback(
+                sprintf('/(?:%s){2,}/u', $bytePattern),
+                static function (array $matches) use ($literalBytePattern): string {
+                    preg_match_all(sprintf('/&#([0-9]+);|&([a-z]+);|(%s)/u', $literalBytePattern), (string) $matches[0], $byteMatches, PREG_SET_ORDER);
 
-        $htmlValue = (string) preg_replace_callback(
-            sprintf('/(?:%s){2,}/', $byteEntityPattern),
-            static function (array $matches): string {
-                preg_match_all('/&#([0-9]+);|&([a-z]+);/', (string) $matches[0], $entityMatches, PREG_SET_ORDER);
+                    $bytes = '';
+                    foreach ($byteMatches as $byteMatch) {
+                        $byte = match (true) {
+                            isset($byteMatch[1]) && '' !== $byteMatch[1] => (int) $byteMatch[1],
+                            isset($byteMatch[2]) && '' !== $byteMatch[2] => self::BYTE_ENTITY_MAP[$byteMatch[2]] ?? null,
+                            isset($byteMatch[3]) && '' !== $byteMatch[3] => mb_ord((string) $byteMatch[3], 'UTF-8'),
+                            default => null,
+                        };
 
-                $bytes = '';
-                foreach ($entityMatches as $entityMatch) {
-                    $byte = isset($entityMatch[1]) && '' !== $entityMatch[1]
-                        ? (int) $entityMatch[1]
-                        : (self::BYTE_ENTITY_MAP[$entityMatch[2]] ?? null);
+                        if (!is_int($byte) || $byte < 128 || $byte > 255) {
+                            return (string) $matches[0];
+                        }
 
-                    if (!is_int($byte) || $byte < 128 || $byte > 255) {
-                        return (string) $matches[0];
+                        $bytes .= chr($byte);
                     }
 
-                    $bytes .= chr($byte);
-                }
-
-                return mb_check_encoding($bytes, 'UTF-8') ? $bytes : (string) $matches[0];
-            },
-            $htmlValue
-        );
+                    return mb_check_encoding($bytes, 'UTF-8') ? $bytes : (string) $matches[0];
+                },
+                $htmlValue
+            );
+        }
 
         $htmlValue = (string) preg_replace_callback(
             '/&#([0-9]+);/',
